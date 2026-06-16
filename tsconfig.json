@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "ui.trophy": ["./components/ui/ui-trophy.ts"]
     }
   },
   "include": [

@@ -1,0 +1,54 @@
+{
+  "model_version": "mv_v2",
+  "target": "log(Market_Value_perKg (INR))",
+  "selection_metric": "mape_pct",
+  "best_model": "linear_regression",
+  "n_train": 58500,
+  "n_test": 14600,
+  "linear_regression": {
+    "mae": 5.869,
+    "rmse": 9.726,
+    "r2": 0.9988,
+    "mape_pct": 6.11
+  },
+  "random_forest": {
+    "mae": 12.953,
+    "rmse": 24.669,
+    "r2": 0.9921,
+    "mape_pct": 9.8
+  },
+  "leakage_demo_predicting_payout_with_txn_vars": {
+    "mae": 6.712,
+    "rmse": 10.199,
+    "r2": 0.9986,
+    "mape_pct": 9.96
+  },
+  "rf_top_features": {
+    "Material Type_Catalytic Converter": 0.2535,
+    "Material Type_Copper": 0.1443,
+    "Material Type_Cardboard": 0.1382,
+    "Material Type_Brass": 0.0992,
+    "Material Type_Plastic": 0.0833,
+    "Material Type_Newspaper": 0.0683,
+    "Material Type_Tin": 0.0538,
+    "Material Type_Radiator": 0.0323,
+    "Material Type_Car Body": 0.0256,
+    "Material Type_Aluminum": 0.0197,
+    "Market Demand": 0.0164,
+    "Material Type_Iron": 0.015
+  },
+  "rf_worst_material_mae": {
+    "Aluminum": 12.91,
+    "Stainless Steel": 18.67,
+    "Copper": 30.42,
+    "Brass": 48.44,
+    "Catalytic Converter": 75.53
+  },
+  "rf_best_material_mae": {
+    "Cardboard": 0.67,
+    "Plastic": 1.53,
+    "Tin": 1.74,
+    "Newspaper": 1.98,
+    "Car Body": 2.8
+  }
+}

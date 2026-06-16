@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# tool output / caches (not source)
+/graphify-out/
+/.planning/
+/.agents/
+/.codex/
+
+# stray nested create-next-app scaffold (duplicate of root app)
+/trashium-app/
+
+# academic deliverables (large binaries, not app source)
+*.pdf

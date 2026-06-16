@@ -1,0 +1,812 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ImpactCard from "@/components/dashboard/impact-card";
+import EcoLevelBadge, { TRASHIUM_EVALUATION_TIERS, getTierIcon, getTierIconUrl } from "@/components/dashboard/eco-level-badge";
+import SchedulePickupModal from "@/components/dashboard/schedule-pickup-modal";
+import RecentPickups from "@/components/dashboard/recent-pickups";
+
+import type { Profile, PickupRequest } from "@/lib/types";
+import { StreakCard } from "@/components/ui/streak-card";
+import { AchievementBadge, AchievementCard, AchievementUnlocked, type UserAchievement } from 'ui.trophy';
+import type { StreakPeriod } from "@/components/ui/streak-calendar";
+import { LeaderboardCard } from "@/components/ui/leaderboard-card";
+import { toast } from "sonner";
+
+function getStreakPeriods(dates: string[]): StreakPeriod[] {
+  if (dates.length === 0) return [];
+  const periods: StreakPeriod[] = [];
+  let start = dates[0];
+  let end = dates[0];
+
+  for (let i = 1; i < dates.length; i++) {
+    const prevDate = new Date(dates[i - 1]);
+    const currDate = new Date(dates[i]);
+    const diffTime = Math.abs(currDate.getTime() - prevDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+      end = dates[i];
+    } else {
+      periods.push({ periodStart: start, periodEnd: end });
+      start = dates[i];
+      end = dates[i];
+    }
+  }
+  periods.push({ periodStart: start, periodEnd: end });
+  return periods;
+}
+
+interface DashboardContentProps {
+  profile: Profile;
+  initialPickups: PickupRequest[];
+}
+
+const OPERATIONAL_SECTORS = ['Rishra', 'Howrah', 'Shyamnagar', 'Tarakeswar', 'Hugli-Chinsura'];
+
+const normalizeSectorName = (zone: string) => {
+  if (zone === 'Bally' || zone === 'Belur') return 'Howrah';
+  return zone;
+};
+
+const normalizePickup = (p: any): PickupRequest => ({
+  ...p,
+  location: normalizeSectorName(p.location)
+});
+
+export default function DashboardContent({
+  profile,
+  initialPickups,
+}: DashboardContentProps) {
+  const [pickups, setPickups] = useState<PickupRequest[]>(() => initialPickups.map(normalizePickup));
+  const supabase = createClient();
+  const [selectedSector, setSelectedSector] = useState("Rishra");
+
+  // Core local states for credits & sorting verification
+  const [greenCredits, setGreenCredits] = useState(profile?.green_credits ?? 0);
+  const [isWasteSegregated, setIsWasteSegregated] = useState(false);
+
+  // DYNAMIC PICKUP STREAK DETECTION (Task 1)
+  const hasPickupToday = pickups.some(p => {
+    const pickupDate = new Date(p.scheduled_date).toDateString();
+    const todayDate = new Date().toDateString();
+    return pickupDate === todayDate;
+  });
+
+  // WASTE SEGREGATION HANDLER PIPELINE (Task 2)
+  const handleLogWasteSegregation = async () => {
+    if (isWasteSegregated) return;
+    setIsWasteSegregated(true);
+    
+    setGreenCredits(prev => {
+      const nextCredits = prev + 2;
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          supabase
+            .from("profiles")
+            .update({ green_credits: nextCredits })
+            .eq("id", user.id)
+            .then(({ error }) => {
+              if (error) console.error("Error updating credits in db:", error);
+            });
+        }
+      });
+      return nextCredits;
+    });
+  };
+
+  // Trivia Quiz States
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState<any>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizFeedbackText, setQuizFeedbackText] = useState("");
+  const [quizzesCorrectToday, setQuizzesCorrectToday] = useState(0); // Progress tracker (Max 5 successful completions)
+  const [quizStrikesUsed, setQuizStrikesUsed] = useState(0); // Lives tracker (Max 2 incorrect strikes allowed)
+
+  // Achievements real-time unlocking states
+  const [unlockedAchievement, setUnlockedAchievement] = useState<UserAchievement | null>(null);
+  const [showUnlockToast, setShowUnlockToast] = useState(false);
+  const [previouslyUnlockedIds, setPreviouslyUnlockedIds] = useState<string[]>(() => {
+    const initialUnlocked: string[] = [];
+    if (profile.pickups_completed >= 1) initialUnlocked.push("first-sorting");
+    if (profile.kg_recycled >= 10) initialUnlocked.push("10kg-recycled");
+    if (profile.green_credits >= 100) initialUnlocked.push("green-champion");
+    return initialUnlocked;
+  });
+
+  // Load from localStorage on mount and check daily reset
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedDate = localStorage.getItem("quizDate");
+      const today = new Date().toDateString();
+      if (savedDate !== today) {
+        localStorage.setItem("quizDate", today);
+        localStorage.setItem("quizzesCorrectToday", "0");
+        localStorage.setItem("quizStrikesUsed", "0");
+      } else {
+        const completed = localStorage.getItem("quizzesCorrectToday");
+        const strikes = localStorage.getItem("quizStrikesUsed");
+        if (completed) setQuizzesCorrectToday(parseInt(completed, 10));
+        if (strikes) setQuizStrikesUsed(parseInt(strikes, 10));
+      }
+    }
+  }, []);
+
+  // Write to localStorage on change
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const today = new Date().toDateString();
+      const savedDate = localStorage.getItem("quizDate");
+      if (savedDate === today) {
+        localStorage.setItem("quizzesCorrectToday", quizzesCorrectToday.toString());
+      }
+    }
+  }, [quizzesCorrectToday]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const today = new Date().toDateString();
+      const savedDate = localStorage.getItem("quizDate");
+      if (savedDate === today) {
+        localStorage.setItem("quizStrikesUsed", quizStrikesUsed.toString());
+      }
+    }
+  }, [quizStrikesUsed]);
+
+  const ecoTriviaPool = [
+    { q: "Which type of waste plastic degrades slowest in landfills?", a: ["PET Bottles", "PVC Pipes", "Styrofoam Cups", "HDPE Jugs"], correct: 2 },
+    { q: "What is the primary eco-benefit of source-segregating dry waste?", a: ["Saves logistical space", "Prevents cross-contamination", "Reduces total weight", "Increases landfill capacity"], correct: 1 },
+    { q: "How long does a standard aluminum beverage can take to decompose naturally?", a: ["50 Years", "80-200 Years", "500 Years", "Never"], correct: 1 },
+    { q: "What percentage of energy is saved by recycling paper vs making it raw?", a: ["15%", "40%", "60%", "90%"], correct: 2 }
+  ];
+
+  const handleLaunchQuiz = () => {
+    if (quizStrikesUsed >= 2) {
+      toast.error("Daily chances exhausted. You have committed 2 incorrect answers today.");
+      return;
+    }
+    if (quizzesCorrectToday >= 5) {
+      toast.success("Daily limit achieved! You have completed all 5 educational quizzes for today.");
+      return;
+    }
+    const randomIndex = Math.floor(Math.random() * ecoTriviaPool.length);
+    setCurrentQuestion(ecoTriviaPool[randomIndex]);
+    setSelectedAnswer(null);
+    setQuizSubmitted(false);
+    setQuizFeedbackText("");
+    setIsQuizOpen(true);
+  };
+
+  const handleSubmitQuiz = async () => {
+    if (selectedAnswer === null) {
+      toast.error("Please select an answer first");
+      return;
+    }
+    setQuizSubmitted(true);
+
+    if (selectedAnswer === currentQuestion.correct) {
+      if (quizzesCorrectToday < 5) {
+        setGreenCredits(prev => prev + 1);
+        setQuizzesCorrectToday(prev => prev + 1);
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Fix: previously wrote a non-existent `total_points` column. Credits live in green_credits.
+          await supabase.from('profiles').update({ green_credits: greenCredits + 1 }).eq('id', user.id);
+        }
+
+        setQuizFeedbackText(`Correct! +1 Green Credit earned. Current progress: ${quizzesCorrectToday + 1}/5.`);
+        toast.success(`Correct! +1 Green Credit earned. Current progress: ${quizzesCorrectToday + 1}/5.`);
+      }
+    } else {
+      setQuizStrikesUsed(prev => {
+        const newStrikes = prev + 1;
+        if (newStrikes === 1) {
+          setQuizFeedbackText("Incorrect answer. Strike 1/2 committed! Be careful on your final chance.");
+          toast.warning("Incorrect answer. Strike 1/2 committed! Be careful on your final chance.");
+        } else if (newStrikes === 2) {
+          setQuizFeedbackText("Incorrect answer. Strike 2/2 committed. Your quiz engine is now locked until tomorrow.");
+          toast.error("Incorrect answer. Strike 2/2 committed. Your quiz engine is now locked until tomorrow.");
+        }
+        return newStrikes;
+      });
+    }
+  };
+
+  const getSectorRankings = (sector: string) => {
+    const sectorMocks: { [key: string]: Array<{ name: string; email: string; value: number }> } = {
+      Rishra: [
+        { name: "Amartya Singh", email: "amartya.singh@gmail.com", value: 145 },
+        { name: "Sam Sulek", email: "sam.sulek@gmail.com", value: 120 },
+        { name: "Priya Das", email: "priya.das@outlook.com", value: 95 },
+        { name: "Rahul Sen", email: "rahul.sen@gmail.com", value: 80 },
+        { name: "Ananya Roy", email: "ananya.roy@yahoo.com", value: 65 },
+      ],
+      Howrah: [
+        { name: "Vikram Malhotra", email: "vikram.m@gmail.com", value: 180 },
+        { name: "Sneha Chatterjee", email: "sneha.c@gmail.com", value: 110 },
+        { name: "Amit Ghosh", email: "amit.ghosh@hotmail.com", value: 85 },
+        { name: "Riya Paul", email: "riya.p@gmail.com", value: 75 },
+      ],
+      Shyamnagar: [
+        { name: "Debabrata Dey", email: "debabrata.d@gmail.com", value: 210 },
+        { name: "Tanmoy Bose", email: "tanmoy.bose@gmail.com", value: 150 },
+        { name: "Soma Mukherjee", email: "soma.m@gmail.com", value: 130 },
+        { name: "Kushal Mitra", email: "kushal.mitra@gmail.com", value: 90 },
+      ],
+      Tarakeswar: [
+        { name: "Ayan Saha", email: "ayan.saha@gmail.com", value: 115 },
+        { name: "Payel Sen", email: "payel.sen@gmail.com", value: 90 },
+        { name: "Subhadip Roy", email: "subhadip.roy@gmail.com", value: 70 },
+      ],
+      "Hugli-Chinsura": [
+        { name: "Pritha Dey", email: "pritha.dey@gmail.com", value: 125 },
+        { name: "Sourav Kar", email: "sourav.kar@gmail.com", value: 105 },
+        { name: "Mimi Das", email: "mimi.das@gmail.com", value: 85 },
+      ],
+    };
+
+    const mocks = sectorMocks[sector] || [];
+    const userTotals: { [userId: string]: { name: string; email: string; totalWeight: number } } = {};
+    
+    pickups.forEach((p) => {
+      const isCompleted = (p.status as string) === "completed" || (p.status as string) === "processed" || (p.status as string) === "collected";
+      const matchesSector = p.location.toLowerCase().includes(sector.toLowerCase()) || 
+                            p.address.toLowerCase().includes(sector.toLowerCase());
+      
+      if (isCompleted && matchesSector) {
+        const userId = p.user_id;
+        const name = (p as any).profiles?.full_name || p.full_name || "User";
+        const email = (p as any).profiles?.email || "User";
+        const weight = Number(p.estimated_weight || 0);
+
+        if (!userTotals[userId]) {
+          userTotals[userId] = { name, email, totalWeight: 0 };
+        }
+        userTotals[userId].totalWeight += weight;
+      }
+    });
+
+    const mergedList: Array<{ userId: string; userName: string; byline: string; value: number }> = [];
+    
+    Object.entries(userTotals).forEach(([userId, info]) => {
+      mergedList.push({
+        userId,
+        userName: info.name,
+        byline: info.email,
+        value: Math.round(info.totalWeight),
+      });
+    });
+
+    mocks.forEach((mock, idx) => {
+      if (!mergedList.some(item => item.userName.toLowerCase() === mock.name.toLowerCase())) {
+        mergedList.push({
+          userId: `mock-user-${sector}-${idx}`,
+          userName: mock.name,
+          byline: mock.email,
+          value: mock.value,
+        });
+      }
+    });
+
+    const sorted = mergedList.sort((a, b) => b.value - a.value);
+
+    const rankings = sorted.map((item, index) => ({
+      userId: item.userId,
+      userName: item.userName,
+      byline: item.byline,
+      value: item.value,
+      rank: index + 1,
+      displayed: true,
+      rankChange: index === 0 ? 0 : index === 1 ? 1 : -1,
+    }));
+
+    const podiumRankings = rankings.slice(0, 3);
+
+    return { rankings, podiumRankings };
+  };
+
+  const { rankings: sectorRankings, podiumRankings: sectorPodium } = getSectorRankings(selectedSector);
+
+  // ─── Client-side pickup fetcher ────────────────────────────────────
+  const refreshPickups = useCallback(async () => {
+    const { data } = await supabase
+      .from("pickup_requests")
+      .select("*")
+      .eq("user_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (data) {
+      setPickups(data.map(normalizePickup) as PickupRequest[]);
+    }
+  }, [supabase, profile.id]);
+
+  // Fetch pickups on mount (ensures fresh data even if server cache is stale)
+  useEffect(() => {
+    refreshPickups();
+  }, [refreshPickups]);
+
+  // ─── Safe accessors (defensive even though server guarantees values) ──
+  const credits = greenCredits;
+  const kgRecycled = Number(profile?.kg_recycled ?? 0);
+  const co2Saved = Number(profile?.co2_saved ?? 0);
+  const fullName = profile?.full_name || "Eco Warrior";
+
+  // ─── Level calculation using the new 20-tier matrix ─────────────────
+  const currentPoints = greenCredits;
+  const activeTier = [...TRASHIUM_EVALUATION_TIERS].reverse().find(t => currentPoints >= t.minPoints) || TRASHIUM_EVALUATION_TIERS[0];
+  const nextTierIndex = TRASHIUM_EVALUATION_TIERS.findIndex(t => t.rank === activeTier.rank) + 1;
+  const nextTier = nextTierIndex < TRASHIUM_EVALUATION_TIERS.length ? TRASHIUM_EVALUATION_TIERS[nextTierIndex] : null;
+  const activeTierIcon = getTierIcon(activeTier.rank);
+  const activeTierIconUrl = getTierIconUrl(activeTier.rank);
+
+  // Compute completed pickup dates for streaks (only for household role)
+  const isHousehold = profile?.role === "household";
+  const todayStrLocal = new Date().toLocaleDateString();
+  const hasDailyActionToday = hasPickupToday || isWasteSegregated || quizzesCorrectToday > 0;
+  
+  const completedDates = isHousehold
+    ? Array.from(
+        new Set([
+          ...pickups
+            .filter((p) => (p.status as string) === "completed" || (p.status as string) === "collected" || (p.status as string) === "processed")
+            .map((p) => new Date(p.scheduled_date).toLocaleDateString()),
+          ...(hasDailyActionToday ? [todayStrLocal] : [])
+        ])
+      ).sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+    : [];
+
+  const computedPeriods = getStreakPeriods(completedDates);
+
+  let currentStreak = 0;
+  let longestStreak = 0;
+
+  if (completedDates.length > 0) {
+    computedPeriods.forEach((p) => {
+      const s = new Date(p.periodStart);
+      const e = new Date(p.periodEnd);
+      const diff = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      if (diff > longestStreak) {
+        longestStreak = diff;
+      }
+    });
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStrLocal = yesterday.toLocaleDateString();
+
+    const lastPeriod = computedPeriods[computedPeriods.length - 1];
+    if (lastPeriod.periodEnd === todayStrLocal || lastPeriod.periodEnd === yesterdayStrLocal) {
+      const s = new Date(lastPeriod.periodStart);
+      const e = new Date(lastPeriod.periodEnd);
+      currentStreak = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    }
+  }
+
+  // Define achievements dynamically
+  const achievements: UserAchievement[] = [
+    {
+      id: "first-sorting",
+      name: "First Sorting Milestone",
+      description: "Complete your first dry waste sorting & scheduled collection slot.",
+      trigger: "metric",
+      achievedAt: profile.pickups_completed >= 1 ? profile.created_at : null,
+      progress: profile.pickups_completed >= 1 ? 100 : 0,
+      rarity: 85,
+    },
+    {
+      id: "10kg-recycled",
+      name: "10kg Recycled Club",
+      description: "Divert at least 10 kg of dry waste from local landfills.",
+      trigger: "metric",
+      achievedAt: profile.kg_recycled >= 10 ? profile.created_at : null,
+      progress: Math.min(100, Math.round((profile.kg_recycled / 10) * 100)),
+      rarity: 45,
+    },
+    {
+      id: "green-champion",
+      name: "Green Champion",
+      description: "Earn 100 Green Credits by participating in eco-activities.",
+      trigger: "metric",
+      achievedAt: greenCredits >= 100 ? new Date().toISOString() : null,
+      progress: Math.min(100, Math.round((greenCredits / 100) * 100)),
+      rarity: 15,
+    },
+  ];
+
+  // Watch for real-time changes to unlock achievements
+  useEffect(() => {
+    achievements.forEach((ach) => {
+      if (ach.achievedAt !== null && !previouslyUnlockedIds.includes(ach.id)) {
+        setUnlockedAchievement(ach);
+        setShowUnlockToast(true);
+        setPreviouslyUnlockedIds((prev) => [...prev, ach.id]);
+        toast.success(`Achievement Unlocked: ${ach.name}! 🎉`, {
+          description: ach.description || "You've earned a new milestone badge."
+        });
+      }
+    });
+  }, [profile.pickups_completed, profile.kg_recycled, greenCredits]);
+
+  // ─── Cancel & Reschedule Handlers ─────────────────────────────────
+  const handleCancelPickup = async (targetId: string, pickup: PickupRequest) => {
+    const status = pickup.status as string;
+    const isDispatchedOrAssigned = 
+      status === "accepted" || 
+      status === "confirmed" || 
+      status === "assigned" || 
+      status === "dispatched";
+
+    if (isDispatchedOrAssigned) {
+      let pickupTime = new Date(pickup.scheduled_date);
+      if (typeof pickup.scheduled_date === "string" && !pickup.scheduled_date.includes("T") && !pickup.scheduled_date.includes(" ")) {
+        pickupTime = new Date(pickup.scheduled_date + "T09:00:00");
+      }
+      
+      const currentTime = new Date();
+      const diffMs = pickupTime.getTime() - currentTime.getTime();
+      const diffMinutes = Math.abs(diffMs / (1000 * 60));
+
+      if (diffMinutes <= 120) {
+        toast.error("Cancellation Locked: Collection crew has already dispatched for your zone.");
+        return;
+      }
+    }
+
+    const { error } = await supabase
+      .from("pickup_requests")
+      .update({ status: "cancelled" })
+      .eq("id", targetId);
+
+    if (error) {
+      toast.error("Failed to cancel pickup. Please try again.");
+      console.error("Cancel error:", error);
+    } else {
+      toast.success("Pickup request cancelled successfully.");
+      refreshPickups();
+    }
+  };
+
+  const handleReschedulePickup = async (targetId: string, newDate: string, newTimeSlot: string) => {
+    const { error } = await supabase
+      .from("pickup_requests")
+      .update({ 
+        scheduled_date: newDate,
+        time_slot: newTimeSlot
+      })
+      .eq("id", targetId);
+
+    if (error) {
+      toast.error("Failed to reschedule pickup. Please try again.");
+      console.error("Reschedule error:", error);
+    } else {
+      toast.success(
+        `Pickup rescheduled to ${new Date(newDate).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })} (${newTimeSlot}).`
+      );
+      setPickups(prev => prev.map(p => 
+        p.id === targetId 
+          ? { ...p, scheduled_date: newDate, time_slot: newTimeSlot } 
+          : p
+      ));
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-7xl px-6 py-10 relative z-10 font-[family-name:var(--font-dm)]">
+      {/* Welcome Header */}
+      <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-6 pb-4 relative z-10 min-h-[auto]">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-950 leading-tight block py-1">
+            Welcome back,{" "}
+            <span className="text-gradient-terra font-semibold">{fullName}</span>{" "}
+            <span className="inline-flex items-center justify-center h-8 w-8 relative align-middle ml-1 animate-float" title={activeTier.rank}>
+              {/* Supabase PNG */}
+              <img 
+                src={activeTierIconUrl} 
+                alt={activeTier.rank} 
+                crossOrigin="anonymous"
+                className="w-full h-full object-contain filter drop-shadow-[0_2px_4px_rgba(44,31,20,0.15)]"
+              />
+            </span>
+          </h1>
+          <p className="mt-1 text-sm text-smoke">
+            Rank: <span className="font-semibold text-bark">{activeTier.rank}</span> • Here&apos;s your environmental impact overview
+          </p>
+        </div>
+        <SchedulePickupModal
+          userId={profile?.id ?? ""}
+          userName={profile?.full_name || profile?.email || "User"}
+          onScheduled={refreshPickups}
+        />
+      </div>
+
+      {/* Impact Cards */}
+      <div className="grid gap-5 sm:grid-cols-3 mb-8">
+        <ImpactCard
+          title="Green Credits"
+          value={credits}
+          subtitle="Total earned to date"
+          icon="credits"
+        />
+        <ImpactCard
+          title="Kg Recycled"
+          value={kgRecycled.toFixed(1)}
+          subtitle="Waste diverted from landfills"
+          icon="recycled"
+        />
+        <ImpactCard
+          title="CO₂ Saved"
+          value={`${co2Saved.toFixed(1)} kg`}
+          subtitle="Carbon footprint offset"
+          icon="co2"
+        />
+      </div>
+
+      {/* Eco Level + Recent Pickups */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1 flex flex-col gap-6">
+          <EcoLevelBadge greenCredits={credits} />
+          
+          {isHousehold && (
+            <div className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] transition-all duration-300 hover:shadow-md flex flex-col gap-6">
+              <div className="space-y-1">
+                <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark">
+                  Gamification & Streaks
+                </h3>
+                <p className="text-xs text-smoke">Track your green activities and accolades</p>
+              </div>
+
+              <StreakCard
+                streak={computedPeriods}
+                currentStreak={currentStreak}
+                longestStreak={longestStreak}
+                total={profile.pickups_completed}
+                title="Pickups Streak"
+                primaryColor="#C4704A"
+                accentColor="#7A9E7E"
+                textColor="#2C1F14"
+                theme="light"
+                showHowItWorks={true}
+                onLaunchQuiz={handleLaunchQuiz}
+                hasPickupToday={hasPickupToday}
+                isWasteSegregated={isWasteSegregated}
+                onLogWasteSegregation={handleLogWasteSegregation}
+              />
+            </div>
+          )}
+
+          {isHousehold && (
+            <div className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/30 backdrop-blur-md flex flex-col gap-4 animate-fadeIn">
+              <h4 className="font-[family-name:var(--font-syne)] text-sm font-semibold text-bark">
+                My Earned Badges
+              </h4>
+              <div className="grid grid-cols-3 sm:grid-cols-3 gap-4 mt-2">
+                {/* Badge 1: First Sorter */}
+                {(() => {
+                  const isUnlocked = profile.pickups_completed >= 1;
+                  return (
+                    <div className="flex flex-col items-center">
+                      <div className={cn(
+                        "h-16 w-16 rounded-full flex items-center justify-center border-2 text-2xl transition-all select-none",
+                        isUnlocked 
+                          ? "bg-[#7A9E7E]/10 border-[#7A9E7E]/40 text-[#4A6741]" 
+                          : "bg-[#E4DDD3]/50 border-[#D4C5B0] text-[#6B5744] opacity-50"
+                      )}>
+                        🌱
+                      </div>
+                      <span className="font-syne text-xs font-bold text-center text-[#2C1F14] mt-2 block">
+                        First Sorter
+                      </span>
+                    </div>
+                  );
+                })()}
+
+                {/* Badge 2: 10KG Recycler */}
+                {(() => {
+                  const isUnlocked = profile.kg_recycled >= 10;
+                  return (
+                    <div className="flex flex-col items-center">
+                      <div className={cn(
+                        "h-16 w-16 rounded-full flex items-center justify-center border-2 text-2xl transition-all select-none",
+                        isUnlocked 
+                          ? "bg-gradient-to-br from-[#EDE5D8] to-[#C4704A]/20 border-[#C4704A]/40 text-clay" 
+                          : "bg-[#E4DDD3]/50 border-[#D4C5B0] text-[#6B5744] opacity-50"
+                      )}>
+                        ⚖️
+                      </div>
+                      <span className="font-syne text-xs font-bold text-center text-[#2C1F14] mt-2 block">
+                        10KG Recycler
+                      </span>
+                    </div>
+                  );
+                })()}
+
+                {/* Badge 3: Green Champion */}
+                {(() => {
+                  const isUnlocked = greenCredits >= 100;
+                  return (
+                    <div className="flex flex-col items-center">
+                      <div className={cn(
+                        "h-16 w-16 rounded-full flex items-center justify-center border-2 text-2xl transition-all select-none",
+                        isUnlocked 
+                          ? "bg-[#C4704A]/10 border-[#D4885E] text-clay" 
+                          : "bg-[#E4DDD3]/50 border-[#D4C5B0] text-[#6B5744] opacity-50"
+                      )}>
+                        🏆
+                      </div>
+                      <span className="font-syne text-xs font-bold text-center text-[#2C1F14] mt-2 block">
+                        Green Champion
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+              <p className="font-dm text-[11px] text-[#6B5744] tracking-normal text-left mt-1">
+                Badges update dynamically following municipal collection scale completions.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="lg:col-span-2 t-glass-card p-6 flex flex-col gap-4">
+          <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark">
+            Recent Pickups
+          </h3>
+          <RecentPickups pickups={pickups} onCancel={handleCancelPickup} onReschedule={handleReschedulePickup} />
+        </div>
+      </div>
+
+
+
+      {/* Leaderboard segment (Household role gate) */}
+      {isHousehold && (
+        <div className="mt-8 grid gap-6 lg:grid-cols-3 animate-fadeIn">
+          <div className="lg:col-span-3">
+            <LeaderboardCard
+              title="Regional Sector Leaderboard"
+              fromDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
+              toDate={new Date()}
+              podiumRankings={sectorPodium}
+              rankings={sectorRankings}
+              runOptions={[
+                { id: "Rishra", label: "Rishra Sector" },
+                { id: "Howrah", label: "Howrah Sector" },
+                { id: "Shyamnagar", label: "Shyamnagar Sector" },
+                { id: "Tarakeswar", label: "Tarakeswar Sector" },
+                { id: "Hugli-Chinsura", label: "Hugli-Chinsura Sector" },
+              ]}
+              selectedRunId={selectedSector}
+              onRunChange={(runId) => setSelectedSector(runId)}
+              primaryColor="#C4704A"
+              accentColor="#7A9E7E"
+              textColor="#2C1F14"
+              theme="light"
+              className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/40 backdrop-blur-md"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Eco-Knowledge Quiz Modal Overlay */}
+      {isQuizOpen && currentQuestion && (
+        <div className="fixed inset-0 bg-[#2C1F14]/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn" style={{ margin: 0 }}>
+          <div className="bg-[#F4EFE6] border border-[#D4C5B0] w-full max-w-md p-6 rounded-xl shadow-xl mx-4 text-bark relative">
+            <h3 className="font-syne font-bold text-lg text-[#2C1F14] mb-2">Eco-Knowledge Micro-Quiz</h3>
+            <p className="text-xs text-smoke font-[family-name:var(--font-dm)] mb-5">Test your waste recycling awareness and earn bonus credits</p>
+            
+            <div className="mb-5 bg-[#EDE5D8]/30 rounded-xl p-4 border border-[#D4C5B0]/30">
+              <span className="text-xs font-semibold uppercase tracking-wider text-smoke block mb-1 font-[family-name:var(--font-syne)]">Trivia Question</span>
+              <p className="text-sm font-semibold text-[#2C1F14] font-[family-name:var(--font-dm)] leading-relaxed">
+                {currentQuestion.q}
+              </p>
+            </div>
+
+            <div className="space-y-2 mb-6">
+              {currentQuestion.a.map((option: string, index: number) => {
+                const isSelected = selectedAnswer === index;
+                const showResult = quizSubmitted;
+                const isCorrect = index === currentQuestion.correct;
+                
+                let btnStyle = "w-full text-left p-3.5 rounded-xl border transition-all text-sm font-medium font-[family-name:var(--font-dm)] cursor-pointer ";
+                if (showResult) {
+                  if (isCorrect) {
+                    btnStyle += "bg-[#7A9E7E]/15 border-[#7A9E7E] text-[#4A6741]";
+                  } else if (isSelected) {
+                    btnStyle += "bg-red-50 border-red-300 text-red-800";
+                  } else {
+                    btnStyle += "bg-[#EDE5D8]/20 border-[#D4C5B0]/20 text-smoke/60 cursor-not-allowed";
+                  }
+                } else {
+                  if (isSelected) {
+                    btnStyle += "bg-[#EDE5D8] border-[#C4704A] text-[#2C1F14] ring-1 ring-[#C4704A]";
+                  } else {
+                    btnStyle += "bg-white/60 border-[#D4C5B0]/50 hover:bg-[#EDE5D8]/40 hover:border-[#C4704A]/30 text-[#2C1F14]";
+                  }
+                }
+
+                return (
+                  <button
+                    key={index}
+                    type="button"
+                    disabled={quizSubmitted}
+                    onClick={() => setSelectedAnswer(index)}
+                    className={btnStyle}
+                  >
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
+
+            {quizSubmitted && (
+              <div className="mb-6 animate-fadeIn">
+                {selectedAnswer === currentQuestion.correct ? (
+                  <div className="p-4 rounded-xl bg-[#7A9E7E]/10 text-[#4A6741] border border-[#7A9E7E]/30 text-center font-[family-name:var(--font-dm)] text-xs font-semibold leading-relaxed">
+                    🎉 {quizFeedbackText}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-red-50 text-red-700 border border-red-200 text-center font-[family-name:var(--font-dm)] text-xs font-semibold leading-relaxed">
+                    ❌ {quizFeedbackText}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              {!quizSubmitted ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsQuizOpen(false)}
+                    className="flex-1 bg-transparent hover:bg-sand/15 text-[#2C1F14] font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border border-sand/40 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSubmitQuiz}
+                    disabled={selectedAnswer === null}
+                    className="flex-1 bg-[#C4704A] hover:bg-[#B35E39] text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    Submit
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsQuizOpen(false)}
+                  className="w-full bg-[#C4704A] hover:bg-[#B35E39] text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border-0 cursor-pointer"
+                >
+                  Close Quiz
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {unlockedAchievement && (
+        <AchievementUnlocked
+          achievement={{
+            id: unlockedAchievement.id,
+            name: unlockedAchievement.name,
+            description: unlockedAchievement.description || "You've reached a new sustainability milestone!",
+            trigger: unlockedAchievement.trigger,
+            unlockedAt: unlockedAchievement.achievedAt || new Date().toISOString()
+          }}
+          open={showUnlockToast}
+          onOpenChange={setShowUnlockToast}
+        />
+      )}
+    </div>
+  );
+}
+

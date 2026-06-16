@@ -1,26 +1,333 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ═══════════════════════════════════════════════════════
+   TRASHIUM — EARTHY PREMIUM DESIGN SYSTEM
+   globals.css — Single source of truth for all visual tokens
+   ═══════════════════════════════════════════════════════ */
 
+/* ── STEP 1: Tailwind v4 @theme block ─────────────────── */
 @theme inline {
+  /* Brand color palette */
+  --color-terra:       #C4704A;
+  --color-terra-deep:  #A0522D;
+  --color-sage:        #7A9E7E;
+  --color-sage-deep:   #4A6741;
+  --color-moss:        #3D5C3A;
+  --color-linen:       #F4EFE6;
+  --color-parchment:   #EDE5D8;
+  --color-sand:        #D9BA8E;
+  --color-clay:        #8B5E3C;
+  --color-bark:        #2C1F14;
+  --color-smoke:       #6B5744;
+  --color-amber-warm:  #E8A44A;
+
+  /* Font families — references next/font CSS vars injected by layout.tsx */
+  --font-cormorant: var(--font-cormorant), Georgia, "Times New Roman", serif;
+  --font-syne:      var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+  --font-dm:        var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-jetbrains: var(--font-jetbrains), ui-monospace, "Courier New", monospace;
+
+  /* shadcn semantic color mappings to utility classes */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ── STEP 2: shadcn v4 CSS variable overrides ──────────── */
+:root {
+  /* ── Surface tokens ── */
+  --background:           #F4EFE6;   /* linen — page bg */
+  --foreground:           #2C1F14;   /* bark — primary text */
+
+  --card:                 #EDE5D8;   /* parchment — card bg */
+  --card-foreground:      #2C1F14;
+
+  --popover:              #F0E9DF;   /* slightly warmer linen */
+  --popover-foreground:   #2C1F14;
+
+  /* ── Brand tokens ── */
+  --primary:              #C4704A;   /* terra */
+  --primary-foreground:   #F4EFE6;   /* linen text on terra bg */
+
+  --secondary:            #EDE5D8;   /* parchment */
+  --secondary-foreground: #2C1F14;
+
+  --accent:               #7A9E7E;   /* sage */
+  --accent-foreground:    #F4EFE6;
+
+  /* ── Muted / supporting ── */
+  --muted:                #E4DDD3;
+  --muted-foreground:     #6B5744;   /* smoke */
+
+  /* ── Borders + inputs ── */
+  --border:               #D4C5B0;   /* warm sand-ish */
+  --input:                #D4C5B0;
+  --ring:                 #C4704A;   /* terra focus ring */
+
+  /* ── Feedback ── */
+  --destructive:          #C0392B;
+  --destructive-foreground: #FAFAFA;
+
+  /* ── Radius ── */
+  --radius:               0.625rem;  /* 10px — slightly softer than shadcn default */
+
+  /* ── Trashium custom tokens (non-shadcn) ── */
+  --t-glass-bg:      rgba(244, 239, 230, 0.75);
+  --t-glass-border:  rgba(196, 112, 74, 0.18);
+  --t-glass-shadow:  0 8px 32px rgba(44, 31, 20, 0.08), 0 2px 8px rgba(196, 112, 74, 0.06);
+  --t-shadow-sm:     0 1px 3px rgba(44, 31, 20, 0.06);
+  --t-shadow-md:     0 4px 16px rgba(44, 31, 20, 0.08), 0 2px 6px rgba(196, 112, 74, 0.05);
+  --t-shadow-lg:     0 12px 40px rgba(44, 31, 20, 0.12), 0 4px 12px rgba(196, 112, 74, 0.08);
+  --t-shadow-xl:     0 24px 64px rgba(44, 31, 20, 0.16), 0 8px 20px rgba(196, 112, 74, 0.10);
+  
+  --ribbon-opacity: 0.2;
+}
+
+.dark {
+  --t-linen:       #1A140E;
+  --t-parchment:   #221A12;
+  --t-cream-glass: rgba(26, 20, 14, 0.82);
+
+  --background: #1A140E;
+  --foreground: #F4EFE6;
+  --card: #221A12;
+  --card-foreground: #F4EFE6;
+  --popover: #221A12;
+  --popover-foreground: #F4EFE6;
+  --primary: #D4885E;
+  --primary-foreground: #1A140E;
+  --secondary: #2C1F14;
+  --secondary-foreground: #EDE5D8;
+  --muted: #2C1F14;
+  --muted-foreground: #A09080;
+  --accent: #2C1F14;
+  --accent-foreground: #EDE5D8;
+  --destructive: #D45050;
+  --border: rgba(196, 112, 74, 0.22);
+  --input: rgba(196, 112, 74, 0.22);
+  --ring: #D4885E;
+}
+
+/* ── STEP 3: Base layer overrides ─────────────────────── */
+@layer base {
+  * { @apply border-border; }
+
+  body {
+    @apply bg-linen text-bark antialiased;
+    font-family: var(--font-dm);
+  }
+
+  h1, h2 {
+    font-family: var(--font-cormorant);
+    @apply text-bark;
+  }
+
+  h3, h4, h5, h6 {
+    font-family: var(--font-syne);
+    @apply text-bark;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── STEP 4: Utility classes ───────────────────────────── */
+@layer utilities {
+
+  /* Glass card surface */
+  .t-glass-card {
+    background: var(--t-glass-bg);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid var(--t-glass-border);
+    box-shadow: var(--t-glass-shadow);
+    border-radius: 16px;
+  }
+
+  /* Typography scale */
+  .t-hero {
+    font-family: var(--font-cormorant);
+    font-size: clamp(3rem, 7vw, 6.5rem);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  .t-title {
+    font-family: var(--font-syne);
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+  .t-heading {
+    font-family: var(--font-syne);
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .t-body {
+    font-family: var(--font-dm);
+    font-size: 0.9375rem;
+    font-weight: 400;
+    line-height: 1.65;
+  }
+  .t-label {
+    font-family: var(--font-dm);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .t-stat {
+    font-family: var(--font-jetbrains);
+    font-size: 2rem;
+    font-weight: 500;
+  }
+
+  /* Glow utilities for icons */
+  .glow-terra {
+    filter: drop-shadow(0 0 8px rgba(196, 112, 74, 0.45));
+  }
+  .glow-sage {
+    filter: drop-shadow(0 0 8px rgba(122, 158, 126, 0.45));
+  }
+
+  /* Gradient text — earthy terracotta */
+  .text-gradient-green {
+    background: linear-gradient(135deg, var(--color-moss) 0%, var(--color-sage) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-terra {
+    background: linear-gradient(135deg, var(--color-terra) 0%, var(--color-terra-deep) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, var(--color-sand) 0%, var(--color-clay) 50%, var(--color-terra) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
+
+/* ── STEP 5: Component classes ─────────────────────────── */
+@layer components {
+
+  /* Grain texture overlay — the tactile paper layer */
+  .grain-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.38;
+  }
+
+  /* Status badges */
+  .status-pending {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border;
+    background: rgba(232, 164, 74, 0.12);
+    color: #A0522D;
+    border-color: rgba(232, 164, 74, 0.35);
+  }
+  .status-accepted {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border;
+    background: rgba(122, 158, 126, 0.12);
+    color: #3D5C3A;
+    border-color: rgba(122, 158, 126, 0.35);
+  }
+  .status-completed {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border;
+    background: rgba(61, 92, 58, 0.12);
+    color: #2D4A2A;
+    border-color: rgba(61, 92, 58, 0.30);
+  }
+
+  /* Primary CTA button */
+  .btn-terra {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-7 py-3 rounded-full;
+    @apply bg-terra text-linen;
+    font-family: var(--font-syne);
+    @apply text-sm font-semibold tracking-wide;
+    box-shadow: 0 4px 20px rgba(196, 112, 74, 0.35);
+    transition: all 0.3s ease;
+  }
+  .btn-terra:hover {
+    @apply bg-terra-deep -translate-y-0.5;
+    box-shadow: 0 6px 28px rgba(196, 112, 74, 0.48);
+  }
+  .btn-terra:active { transform: translateY(0); }
+
+  /* Ghost CTA button */
+  .btn-ghost-terra {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply px-7 py-3 rounded-full border border-terra text-terra;
+    font-family: var(--font-syne);
+    @apply text-sm font-semibold tracking-wide;
+    transition: all 0.3s ease;
+  }
+  .btn-ghost-terra:hover {
+    background: rgba(196, 112, 74, 0.08);
+    @apply -translate-y-0.5;
+  }
+}
+
+/* ── STEP 6: Keyframe animations ───────────────────────── */
+@keyframes credit-shimmer {
+  0%, 80%, 100% { background-position: -200% center; }
+  88% { background-position: 200% center; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Green Credits shimmer — applied to the credits number element */
+.credits-number {
+  background: linear-gradient(
+    105deg,
+    #2C1F14 38%,
+    #D9BA8E 48%,
+    #C4704A 54%,
+    #2C1F14 64%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: credit-shimmer 4.5s ease-in-out infinite;
+}
+
+/* Staggered page load animation helpers */
+.animate-fade-up          { animation: fade-up 0.6s ease both; }
+.animate-fade-up-delay-1  { animation: fade-up 0.6s 0.1s ease both; }
+.animate-fade-up-delay-2  { animation: fade-up 0.6s 0.2s ease both; }
+.animate-fade-up-delay-3  { animation: fade-up 0.6s 0.3s ease both; }
+.animate-fade-up-delay-4  { animation: fade-up 0.6s 0.4s ease both; }
+.animate-scale-in          { animation: scale-in 0.5s ease both; }

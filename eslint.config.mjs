@@ -9,9 +9,12 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    "**/.next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // trashium-app/ is a separate nested project with its own eslint config — don't lint it from root.
+    "trashium-app/**",
   ]),
 ]);
 

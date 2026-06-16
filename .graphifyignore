@@ -1,0 +1,7 @@
+.agents/
+.planning/
+graphify-out/
+graphify-out.zip
+.git/
+.next/
+node_modules/
