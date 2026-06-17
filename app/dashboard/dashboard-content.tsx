@@ -300,11 +300,18 @@ export default function DashboardContent({
 
     const sorted = mergedList.sort((a, b) => b.value - a.value);
 
+    // ponytail: leaderboard is ranked by kg (demo); reuse the tier ladder as podium art so
+    // neighbours show eco-level trees instead of random faces. Swap to real per-user credits
+    // when the leaderboard becomes credit-ranked.
+    const ecoArt = (v: number) =>
+      getTierIconUrl(([...TRASHIUM_EVALUATION_TIERS].reverse().find((t) => v >= t.minPoints) || TRASHIUM_EVALUATION_TIERS[0]).rank);
+
     const rankings = sorted.map((item, index) => ({
       userId: item.userId,
       userName: item.userName,
       byline: item.byline,
       value: item.value,
+      avatarUrl: ecoArt(item.value),
       rank: index + 1,
       displayed: true,
       rankChange: index === 0 ? 0 : index === 1 ? 1 : -1,
@@ -688,6 +695,7 @@ export default function DashboardContent({
               toDate={new Date()}
               podiumRankings={sectorPodium}
               rankings={sectorRankings}
+              currentUserId={profile.id}
               runOptions={[
                 { id: "Rishra", label: "Rishra Sector" },
                 { id: "Howrah", label: "Howrah Sector" },
