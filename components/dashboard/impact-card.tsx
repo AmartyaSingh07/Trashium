@@ -1,4 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Recycle, Wind, Award } from "lucide-react";
 
 interface ImpactCardProps {

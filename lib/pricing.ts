@@ -47,7 +47,7 @@ export async function getRate(sector: string, wasteType: WasteType): Promise<Rat
 }
 
 /** Compute the full per-pickup quote from a rate row and the estimated weight. */
-export function quoteFromRate(rate: RateRow, weightKg: number, minMarginPerKg = 0.5): PickupQuote {
+export function quoteFromRate(rate: RateRow, weightKg: number): PickupQuote {
   const r = rate.price_per_kg;
   const logisticsPerKg = rate.logistics_per_kg ?? 0;
   const marketPerKg = rate.market_price_per_kg ?? r; // fallback if no market data

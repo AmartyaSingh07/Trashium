@@ -279,7 +279,8 @@ export default function AdminContent({
       const dateString = scheduledDate.toISOString().split("T")[0];
       
       const [time, modifier] = endTimeStr.split(" ");
-      let [hours, minutes] = time.split(":").map(Number);
+      const [hoursRaw, minutes] = time.split(":").map(Number);
+      let hours = hoursRaw;
       if (modifier === "PM" && hours < 12) hours += 12;
       if (modifier === "AM" && hours === 12) hours = 0;
       

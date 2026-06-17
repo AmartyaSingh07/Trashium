@@ -1,5 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import {
   motion,
@@ -215,7 +216,6 @@ export const MobileNavMenu = ({
   children,
   className,
   isOpen,
-  onClose,
 }: MobileNavMenuProps) => {
   return (
     <AnimatePresence>
@@ -253,7 +253,7 @@ export const MobileNavToggle = ({
 
 export const NavbarLogo = () => {
   return (
-    <a href="/" className="flex items-center gap-2.5 group select-none cursor-pointer">
+    <Link href="/" className="flex items-center gap-2.5 group select-none cursor-pointer">
       {/* High-Contrast Brand Graphic Container Frame */}
       <div className="w-9 h-9 rounded-xl bg-[#EDE5D8]/50 border border-[rgba(196,112,74,0.15)] p-1.5 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105 shadow-sm">
         <img 
@@ -267,7 +267,7 @@ export const NavbarLogo = () => {
       <span className="font-syne font-bold text-lg text-[#2C1F14] tracking-tight group-hover:text-[#C4704A] transition-colors">
         Trashium
       </span>
-    </a>
+    </Link>
   );
 };
 

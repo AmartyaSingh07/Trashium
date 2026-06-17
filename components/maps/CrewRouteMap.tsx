@@ -59,7 +59,7 @@ export default function CrewRouteMap({ activeZones }: RouteMapProps) {
           });
         }
       },
-      (error) => {
+      () => {
         console.warn("GPS access denied, defaulting map view to centralized Hooghly region.");
         // Fallback directly to Rishra coordinates so the map doesn't freeze!
         setCrewLocation((prev) => {

@@ -22,13 +22,8 @@ function formatDateKey(date: Date): string {
 
 // Helper to check if a date falls within a streak period
 function isDateInPeriod(date: Date, period: StreakPeriod): boolean {
-  if (!period.periodStart || !period.periodEnd) return false;
-  const dStr = date.toLocaleDateString();
-  const dTime = new Date(dStr).getTime();
-  const startTime = new Date(period.periodStart).getTime();
-  const endTime = new Date(period.periodEnd).getTime();
-  if (isNaN(dTime) || isNaN(startTime) || isNaN(endTime)) return false;
-  return dTime >= startTime && dTime <= endTime;
+  const d = formatDateKey(date)
+  return d >= period.periodStart && d <= period.periodEnd
 }
 
 // Helper to check if date used a freeze

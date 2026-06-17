@@ -112,14 +112,6 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
     };
   }, []);
 
-  // Sync state helpers to format weight midpoints to human ranges
-  const getDisplayWeight = (num: number) => {
-    if (num === 7.5) return "5-10 kg";
-    if (num === 12.5) return "10-15 kg";
-    if (num === 17.5) return "15-20 kg";
-    if (num === 25.0) return "20+ kg";
-    return `${num} kg`;
-  };
 
   // Asynchronous status mutation handler pipeline
   const updatePickupStatus = async (id: string, nextStatus: "accepted" | "collected" | "completed" | "cancelled") => {

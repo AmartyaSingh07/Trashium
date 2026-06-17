@@ -89,10 +89,7 @@ const PointsBoost = React.forwardRef<HTMLDivElement, PointsBoostProps>(
               {countdownLabel}
             </span>
           ) : null}
-          <Button size="sm" render={<a href={cta.link} />}>
-            {cta.text}
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </Button>
+          <Button size="sm" render={<a href={cta.link} />} nativeButton={false}>{cta.text}<ChevronRight className="h-3.5 w-3.5" aria-hidden="true" /></Button>
         </div>
       </div>
     )
