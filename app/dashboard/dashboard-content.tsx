@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Lock, Check, ArrowRight } from "lucide-react";
+import { Lock, Check, ArrowRight, Recycle, HelpCircle, Truck, Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -453,6 +453,11 @@ export default function DashboardContent({
     .sort((a, b) => STATE_RANK[a.state] - STATE_RANK[b.state] || b.pct - a.pct)
     .slice(0, 6);
 
+  // ─── Marketplace unlock teaser (same gate as marketplace/page.tsx: 500 credits + 1 pickup) ──
+  const pickupsDone = profile.pickups_completed ?? 0;
+  const marketplaceUnlocked = greenCredits >= 500 && pickupsDone >= 1;
+  const creditGatePct = Math.min(100, Math.round((greenCredits / 500) * 100));
+
   // ─── Cancel & Reschedule Handlers ─────────────────────────────────
   const handleCancelPickup = async (targetId: string, pickup: PickupRequest) => {
     const status = pickup.status as string;
@@ -671,6 +676,65 @@ export default function DashboardContent({
               <p className="font-dm text-[11px] text-[#6B5744] tracking-normal text-left mt-1">
                 Badges unlock automatically as your real stats grow — credits, pickups, and materials recycled.
               </p>
+            </div>
+          )}
+
+          {isHousehold && (
+            <div className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/30 backdrop-blur-md flex flex-col gap-4 animate-fadeIn">
+              <h4 className="font-[family-name:var(--font-syne)] text-sm font-semibold text-bark">
+                Ways to Earn Credits
+              </h4>
+              <ul className="flex flex-col gap-2.5">
+                {[
+                  { icon: Recycle, label: "Log daily waste segregation", value: "+2 / day" },
+                  { icon: HelpCircle, label: "Eco-knowledge quiz", value: "+1 · up to 5/day" },
+                  { icon: Truck, label: "Complete a scheduled pickup", value: "credits / kg" },
+                ].map(({ icon: Icon, label, value }) => (
+                  <li key={label} className="flex items-center gap-3 rounded-lg border border-[#D4C5B0]/40 bg-[#F4EFE6]/50 p-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#7A9E7E]/15 text-[#4A6741]">
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="font-dm text-xs text-[#2C1F14] flex-1">{label}</span>
+                    <span className="font-mono text-[11px] font-bold text-[#C4704A] whitespace-nowrap">{value}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Marketplace teaser — real gate (500 credits + 1 pickup) */}
+              <div className="mt-1 rounded-xl border border-[#C4704A]/25 bg-[#C4704A]/5 p-3.5">
+                {marketplaceUnlocked ? (
+                  <Link href="/marketplace" className="flex items-center gap-3 group">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C4704A]/15 text-[#C4704A]">
+                      <Gift className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="flex-1">
+                      <span className="font-syne text-xs font-bold text-[#2C1F14] block">Rewards Marketplace unlocked</span>
+                      <span className="font-dm text-[11px] text-[#6B5744]">Redeem your {greenCredits.toLocaleString()} credits</span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-[#C4704A] transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lock className="h-3.5 w-3.5 text-[#6B5744]" aria-hidden="true" />
+                      <span className="font-syne text-xs font-bold text-[#2C1F14]">Unlock the Rewards Marketplace</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-sand/35 mb-2">
+                      <div className="h-full rounded-full bg-gradient-to-r from-terra to-sage transition-all duration-700" style={{ width: `${creditGatePct}%` }} />
+                    </div>
+                    <ul className="flex flex-col gap-1 font-dm text-[11px] text-[#6B5744]">
+                      <li className="flex items-center gap-1.5">
+                        {greenCredits >= 500 ? <Check className="h-3 w-3 text-[#4A6741]" strokeWidth={3} /> : <span className="inline-block h-3 w-3 rounded-full border border-[#D4C5B0]" />}
+                        {greenCredits >= 500 ? "500 credits reached" : `${(500 - greenCredits).toLocaleString()} more credits (${greenCredits.toLocaleString()}/500)`}
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        {pickupsDone >= 1 ? <Check className="h-3 w-3 text-[#4A6741]" strokeWidth={3} /> : <span className="inline-block h-3 w-3 rounded-full border border-[#D4C5B0]" />}
+                        {pickupsDone >= 1 ? "First pickup completed" : "Complete 1 pickup"}
+                      </li>
+                    </ul>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
