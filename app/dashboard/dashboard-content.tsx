@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { Lock, Check, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +11,7 @@ import EcoLevelBadge, { TRASHIUM_EVALUATION_TIERS, getTierIcon, getTierIconUrl }
 import SchedulePickupModal from "@/components/dashboard/schedule-pickup-modal";
 import RecentPickups from "@/components/dashboard/recent-pickups";
 
-import type { Profile, PickupRequest } from "@/lib/types";
+import type { Profile, PickupRequest, ResolvedBadge } from "@/lib/types";
 import { StreakCard } from "@/components/ui/streak-card";
 import { AchievementBadge, AchievementCard, AchievementUnlocked, type UserAchievement } from 'ui.trophy';
 import type { StreakPeriod } from "@/components/ui/streak-calendar";
@@ -43,9 +45,11 @@ function getStreakPeriods(dates: string[]): StreakPeriod[] {
 interface DashboardContentProps {
   profile: Profile;
   initialPickups: PickupRequest[];
+  badges: ResolvedBadge[];
 }
 
 const OPERATIONAL_SECTORS = ['Rishra', 'Howrah', 'Shyamnagar', 'Tarakeswar', 'Hugli-Chinsura'];
+const BADGE_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/gamification-badges`;
 
 const normalizeSectorName = (zone: string) => {
   if (zone === 'Bally' || zone === 'Belur') return 'Howrah';
@@ -60,6 +64,7 @@ const normalizePickup = (p: any): PickupRequest => ({
 export default function DashboardContent({
   profile,
   initialPickups,
+  badges,
 }: DashboardContentProps) {
   const [pickups, setPickups] = useState<PickupRequest[]>(() => initialPickups.map(normalizePickup));
   const supabase = createClient();
@@ -433,6 +438,14 @@ export default function DashboardContent({
     });
   }, [profile.pickups_completed, profile.kg_recycled, greenCredits]);
 
+  // ─── Badge slice for the dashboard (earned first, then most-progressed) ──
+  // Full grid + detail lives on /profile. Same evaluateBadges() data source.
+  const STATE_RANK: Record<string, number> = { earned: 0, "in-progress": 1, locked: 2 };
+  const earnedCount = badges.filter((b) => b.unlocked).length;
+  const badgeSlice = [...badges]
+    .sort((a, b) => STATE_RANK[a.state] - STATE_RANK[b.state] || b.pct - a.pct)
+    .slice(0, 6);
+
   // ─── Cancel & Reschedule Handlers ─────────────────────────────────
   const handleCancelPickup = async (targetId: string, pickup: PickupRequest) => {
     const status = pickup.status as string;
@@ -586,72 +599,69 @@ export default function DashboardContent({
 
           {isHousehold && (
             <div className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/30 backdrop-blur-md flex flex-col gap-4 animate-fadeIn">
-              <h4 className="font-[family-name:var(--font-syne)] text-sm font-semibold text-bark">
-                My Earned Badges
-              </h4>
-              <div className="grid grid-cols-3 sm:grid-cols-3 gap-4 mt-2">
-                {/* Badge 1: First Sorter */}
-                {(() => {
-                  const isUnlocked = profile.pickups_completed >= 1;
-                  return (
-                    <div className="flex flex-col items-center">
-                      <div className={cn(
-                        "h-16 w-16 rounded-full flex items-center justify-center border-2 text-2xl transition-all select-none",
-                        isUnlocked 
-                          ? "bg-[#7A9E7E]/10 border-[#7A9E7E]/40 text-[#4A6741]" 
-                          : "bg-[#E4DDD3]/50 border-[#D4C5B0] text-[#6B5744] opacity-50"
-                      )}>
-                        🌱
-                      </div>
-                      <span className="font-syne text-xs font-bold text-center text-[#2C1F14] mt-2 block">
-                        First Sorter
-                      </span>
-                    </div>
-                  );
-                })()}
-
-                {/* Badge 2: 10KG Recycler */}
-                {(() => {
-                  const isUnlocked = profile.kg_recycled >= 10;
-                  return (
-                    <div className="flex flex-col items-center">
-                      <div className={cn(
-                        "h-16 w-16 rounded-full flex items-center justify-center border-2 text-2xl transition-all select-none",
-                        isUnlocked 
-                          ? "bg-gradient-to-br from-[#EDE5D8] to-[#C4704A]/20 border-[#C4704A]/40 text-clay" 
-                          : "bg-[#E4DDD3]/50 border-[#D4C5B0] text-[#6B5744] opacity-50"
-                      )}>
-                        ⚖️
-                      </div>
-                      <span className="font-syne text-xs font-bold text-center text-[#2C1F14] mt-2 block">
-                        10KG Recycler
-                      </span>
-                    </div>
-                  );
-                })()}
-
-                {/* Badge 3: Green Champion */}
-                {(() => {
-                  const isUnlocked = greenCredits >= 100;
-                  return (
-                    <div className="flex flex-col items-center">
-                      <div className={cn(
-                        "h-16 w-16 rounded-full flex items-center justify-center border-2 text-2xl transition-all select-none",
-                        isUnlocked 
-                          ? "bg-[#C4704A]/10 border-[#D4885E] text-clay" 
-                          : "bg-[#E4DDD3]/50 border-[#D4C5B0] text-[#6B5744] opacity-50"
-                      )}>
-                        🏆
-                      </div>
-                      <span className="font-syne text-xs font-bold text-center text-[#2C1F14] mt-2 block">
-                        Green Champion
-                      </span>
-                    </div>
-                  );
-                })()}
+              <div className="flex items-center justify-between">
+                <h4 className="font-[family-name:var(--font-syne)] text-sm font-semibold text-bark">
+                  My Badges <span className="font-mono text-xs font-normal text-[#6B5744]">· {earnedCount}/{badges.length} earned</span>
+                </h4>
+                <Link href="/profile" className="text-[11px] font-syne font-bold uppercase tracking-wider text-[#C4704A] hover:text-[#A0522D] inline-flex items-center gap-1 transition-colors">
+                  View all <ArrowRight className="w-3 h-3" />
+                </Link>
               </div>
+              {badgeSlice.length === 0 ? (
+                <p className="font-dm text-xs text-[#6B5744] py-4 text-center">No badges yet — schedule your first pickup to start earning.</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-4 mt-1">
+                  {badgeSlice.map((badge) => {
+                    const earned = badge.state === "earned";
+                    const inProgress = badge.state === "in-progress";
+                    return (
+                      <div key={badge.id} className="flex flex-col items-center" title={badge.title}>
+                        <div className="relative">
+                          {inProgress && (
+                            <div
+                              className="absolute -inset-1 rounded-full"
+                              style={{ background: `conic-gradient(#7A9E7E ${badge.pct}%, rgba(196,112,74,0.12) 0)` }}
+                              aria-hidden
+                            />
+                          )}
+                          <div className="h-16 w-16 rounded-full bg-[#F4EFE6]/90 p-2 flex items-center justify-center border border-[#D4C5B0]/40 relative">
+                            {badge.image_filename ? (
+                              <img
+                                src={`${BADGE_BUCKET_BASE}/${badge.image_filename}`}
+                                alt=""
+                                className={cn(
+                                  "w-full h-full object-contain",
+                                  earned ? "drop-shadow-[0_2px_4px_rgba(74,103,65,0.15)]" : inProgress ? "opacity-90" : "grayscale opacity-40"
+                                )}
+                              />
+                            ) : (
+                              <span className="font-syne font-bold text-base text-[#6B5744]">{badge.title.charAt(0)}</span>
+                            )}
+                          </div>
+                          {earned && (
+                            <span className="absolute -bottom-0.5 -right-0.5 bg-[#4A6741] rounded-full p-0.5 border-2 border-[#F4EFE6]">
+                              <Check className="w-3 h-3 text-[#F4EFE6]" strokeWidth={3} />
+                            </span>
+                          )}
+                          {badge.state === "locked" && (
+                            <span className="absolute -bottom-0.5 -right-0.5 bg-[#6B5744] rounded-full p-1 border-2 border-[#F4EFE6]">
+                              <Lock className="w-2.5 h-2.5 text-[#F4EFE6]" />
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-syne text-[11px] font-bold text-center text-[#2C1F14] mt-2 line-clamp-1 w-full">
+                          {badge.title}
+                        </span>
+                        {inProgress && Number.isFinite(badge.target) && (
+                          <span className="font-mono text-[9px] text-[#6B5744]">{badge.pct}%</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               <p className="font-dm text-[11px] text-[#6B5744] tracking-normal text-left mt-1">
-                Badges update dynamically following municipal collection scale completions.
+                Badges unlock automatically as your real stats grow — credits, pickups, and materials recycled.
               </p>
             </div>
           )}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Lock, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { OPERATIONAL_SECTORS } from "@/lib/constants";
 import { getTier, getLevelNumber, getTierIconFilename } from "@/lib/gamification";
@@ -313,25 +314,83 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
             <p className="text-xs text-[#6B5744] mt-0.5 mb-6">Track your environmental benchmarks and unlocked milestone badges.</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {badges.map((badge) => (
-              <div key={badge.id} className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center text-center relative group min-h-[160px] ${badge.unlocked ? "bg-[#EDE5D8]/50 border-[#7A9E7E]/40 shadow-sm" : "bg-[#EDE5D8]/10 border-[#D4C5B0]/20 opacity-40"}`}>
-                <div className="w-14 h-14 rounded-full bg-[#F4EFE6]/90 p-2 flex items-center justify-center border border-[#D4C5B0]/40 relative mb-3">
-                  {badge.image_filename ? (
-                    <img src={`${BADGE_BUCKET_BASE}/${badge.image_filename}`} alt="" className={`w-full h-full object-contain ${badge.unlocked ? "filter drop-shadow-[0_2px_4px_rgba(74,103,65,0.15)]" : "filter grayscale opacity-30"}`} />
-                  ) : (
-                    <span className={`font-syne font-bold text-lg ${badge.unlocked ? "text-[#4A6741]" : "text-[#6B5744] opacity-40"}`}>
-                      {badge.title.charAt(0)}
+            {badges.map((badge) => {
+              const earned = badge.state === "earned";
+              const inProgress = badge.state === "in-progress";
+              const hasTarget = Number.isFinite(badge.target);
+              const remaining = hasTarget ? Math.max(0, badge.target - badge.current) : null;
+              const cardStyle = earned
+                ? "bg-[#EDE5D8]/50 border-[#7A9E7E]/40 shadow-sm"
+                : inProgress
+                ? "bg-[#EDE5D8]/30 border-[#C4704A]/25"
+                : "bg-[#EDE5D8]/10 border-[#D4C5B0]/25";
+              return (
+                <div
+                  key={badge.id}
+                  tabIndex={0}
+                  aria-label={`${badge.title} — ${earned ? "earned" : inProgress ? `${badge.pct}% complete` : "locked"}`}
+                  className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center text-center relative group min-h-[160px] outline-none focus-visible:ring-2 focus-visible:ring-[#7A9E7E] ${cardStyle}`}
+                >
+                  <div className="relative mb-3">
+                    {/* in-progress ring (conic-gradient, native CSS — no SVG math) */}
+                    {inProgress && (
+                      <div
+                        className="absolute -inset-1 rounded-full"
+                        style={{ background: `conic-gradient(#7A9E7E ${badge.pct}%, rgba(196,112,74,0.12) 0)` }}
+                        aria-hidden
+                      />
+                    )}
+                    <div className="w-14 h-14 rounded-full bg-[#F4EFE6]/90 p-2 flex items-center justify-center border border-[#D4C5B0]/40 relative">
+                      {badge.image_filename ? (
+                        <img
+                          src={`${BADGE_BUCKET_BASE}/${badge.image_filename}`}
+                          alt=""
+                          className={`w-full h-full object-contain ${
+                            earned
+                              ? "filter drop-shadow-[0_2px_4px_rgba(74,103,65,0.15)]"
+                              : inProgress
+                              ? "opacity-90"
+                              : "filter grayscale opacity-40"
+                          }`}
+                        />
+                      ) : (
+                        <span className={`font-syne font-bold text-lg ${earned ? "text-[#4A6741]" : "text-[#6B5744] opacity-50"}`}>
+                          {badge.title.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+                    {/* state marker — not color-only (icon distinguishes earned vs locked) */}
+                    {earned && (
+                      <span className="absolute -bottom-0.5 -right-0.5 bg-[#4A6741] rounded-full p-0.5 border-2 border-[#F4EFE6]">
+                        <Check className="w-3 h-3 text-[#F4EFE6]" strokeWidth={3} />
+                      </span>
+                    )}
+                    {badge.state === "locked" && (
+                      <span className="absolute -bottom-0.5 -right-0.5 bg-[#6B5744] rounded-full p-1 border-2 border-[#F4EFE6]">
+                        <Lock className="w-2.5 h-2.5 text-[#F4EFE6]" />
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-syne font-bold text-xs text-[#2C1F14] line-clamp-1">{badge.title}</span>
+                  {inProgress && hasTarget && (
+                    <span className="mt-1 font-mono text-[10px] text-[#6B5744]">
+                      {badge.current.toLocaleString()} / {badge.target.toLocaleString()} · {remaining!.toLocaleString()} to go
                     </span>
                   )}
+                  {earned && (
+                    <span className="mt-1 font-syne text-[10px] font-bold uppercase tracking-wider text-[#4A6741]">Earned</span>
+                  )}
+                  {/* detail on hover / focus (tap focuses on mobile) */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-2.5 bg-[#2C1F14] text-[#F4EFE6] text-[10px] rounded-xl shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200 z-50 text-center font-dm border border-[#C4704A]/20">
+                    <span className="font-syne font-bold block mb-1 uppercase tracking-wider text-[#7A9E7E]">
+                      {earned ? "Earned" : inProgress ? `In progress · ${badge.pct}%` : "Locked"}
+                    </span>
+                    {badge.description}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-[#2C1F14]"></div>
+                  </div>
                 </div>
-                <span className="font-syne font-bold text-xs text-[#2C1F14] line-clamp-1">{badge.title}</span>
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 p-2.5 bg-[#2C1F14] text-[#F4EFE6] text-[10px] rounded-xl shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 text-center font-dm border border-[#C4704A]/20">
-                  <span className="font-syne font-bold block mb-1 uppercase tracking-wider text-[#7A9E7E]">{badge.unlocked ? "✓ Unlocked" : "🔒 Locked"}</span>
-                  {badge.description}
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-[#2C1F14]"></div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

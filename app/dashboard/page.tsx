@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import DashboardContent from "./dashboard-content";
-import type { Profile, PickupRequest } from "@/lib/types";
+import { evaluateBadges } from "@/lib/badges";
+import type { Profile, PickupRequest, Badge, ResolvedBadge } from "@/lib/types";
 
 export const metadata = {
   title: "Dashboard",
@@ -50,13 +51,36 @@ export default async function DashboardPage() {
     updated_at: profileData?.updated_at ?? new Date().toISOString(),
   };
 
-  // Fetch recent pickups
-  const { data: pickups } = await supabase
-    .from("pickup_requests")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(5);
+  // Fetch recent pickups (for the Recent Pickups panel) + badge data, in parallel.
+  const DONE_STATUSES = ["collected", "processed", "completed"];
+  const [{ data: pickups }, { data: badgeCatalog }, { data: userBadges }, { data: allPickups }] =
+    await Promise.all([
+      supabase
+        .from("pickup_requests")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(5),
+      supabase.from("badges").select("*").order("sort_order", { ascending: true }),
+      supabase.from("user_badges").select("badge_id").eq("user_id", user.id),
+      supabase.from("pickup_requests").select("waste_type, estimated_weight, status").eq("user_id", user.id),
+    ]);
+
+  // Badge signals derived from completed pickups (same shape as profile/page.tsx).
+  const manualBadgeIds = (userBadges ?? []).map((r) => r.badge_id as string);
+  const kgByMaterial: Record<string, number> = {};
+  const categorySet = new Set<string>();
+  for (const p of allPickups ?? []) {
+    if (!DONE_STATUSES.includes(p.status as string)) continue;
+    const wt = p.waste_type as string;
+    kgByMaterial[wt] = (kgByMaterial[wt] ?? 0) + Number(p.estimated_weight ?? 0);
+    categorySet.add(wt);
+  }
+  const badges: ResolvedBadge[] = evaluateBadges(
+    (badgeCatalog ?? []) as Badge[],
+    profile,
+    { manualBadgeIds, distinctCategories: categorySet.size, kgByMaterial }
+  );
 
   return (
     <>
@@ -65,6 +89,7 @@ export default async function DashboardPage() {
         <DashboardContent
           profile={profile}
           initialPickups={(pickups as PickupRequest[]) ?? []}
+          badges={badges}
         />
       </main>
       <Footer />
