@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import ProfileContent from "./profile-content";
-import { isBadgeUnlocked } from "@/lib/badges";
+import { evaluateBadges } from "@/lib/badges";
 import type { Profile, Badge, ResolvedBadge } from "@/lib/types";
 
 export const metadata = {
@@ -77,13 +77,7 @@ export default async function ProfilePage() {
   }
   const signals = { manualBadgeIds, distinctCategories: categorySet.size, kgByMaterial };
 
-  const badges: ResolvedBadge[] = (badgeCatalog ?? []).map((b) => ({
-    id: b.id,
-    title: b.title,
-    description: b.description,
-    image_filename: b.image_filename,
-    unlocked: isBadgeUnlocked(b as Badge, profile, signals),
-  }));
+  const badges: ResolvedBadge[] = evaluateBadges((badgeCatalog ?? []) as Badge[], profile, signals);
 
   return (
     <>

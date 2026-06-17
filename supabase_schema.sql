@@ -247,22 +247,22 @@ CREATE TABLE IF NOT EXISTS public.user_badges (
   UNIQUE (user_id, badge_id)
 );
 
-INSERT INTO public.badges (id, title, description, category, unlock_type, unlock_threshold, sort_order) VALUES
-  ('b1',  'Trash-to-Treasure',    'Completed your first Trashium pickup.',                     'milestone', 'pickups',    1,    1),
-  ('b2',  'Sprouting Value',      'Established the foundation of your rewards journey.',        'milestone', 'credits',    250,  2),
-  ('b3',  'Eco Rookie',           'Maintained your recycling habit for 7 consecutive days.',   'streak',    'streak',     7,    3),
-  ('b4',  'Green Momentum',       'Stayed committed to sustainable actions for 30 days.',      'milestone', 'credits',    1500, 4),
-  ('b5',  'Unstoppable Recycler', 'Achieved a 100-day eco streak.',                            'streak',    'streak',     100,  5),
-  ('b6',  'Waste Warrior',        'Demonstrated year-round dedication with a 250-day streak.', 'streak',    'streak',     250,  6),
-  ('b7',  'Paper Protector',      'Recycled 50 kg of paper.',                                  'material',  'kg',         50,   7),
-  ('b8',  'Plastic Patrol',       'Successfully recycled 30 kg of plastic.',                   'material',  'kg',         30,   8),
-  ('b9',  'Metal Maverick',       'Recycled 100 kg of metal.',                                 'material',  'kg',         100,  9),
-  ('b10', 'Eco Influencer',       'Inspired 5 friends to join.',                               'social',    'referral',   5,    10),
-  ('b11', 'Eco Brainiac',         'Completed 100 sustainability quizzes.',                     'special',   'quiz',       100,  11),
-  ('b12', 'Circular Citizen',     'Recycled across every available waste category.',           'material',  'categories', 7,    12),
-  ('b13', 'Trashium Veteran',     'Stayed active on Trashium for one full year.',              'special',   'manual',     NULL, 13),
-  ('b14', 'Forest Elder',         'Awarded to the top 1% of users.',                           'milestone', 'credits',    2500, 14),
-  ('b15', 'Planet Partner',       'Participated in a special sustainability campaign.',        'special',   'manual',     NULL, 15)
+INSERT INTO public.badges (id, title, description, category, unlock_type, unlock_threshold, sort_order, image_filename) VALUES
+  ('b1',  'Trash-to-Treasure',    'Completed your first Trashium pickup.',                     'milestone', 'pickups',    1,    1,  'trash_2_treasure.png'),
+  ('b2',  'Sprouting Value',      'Established the foundation of your rewards journey.',        'milestone', 'credits',    250,  2,  'sprouting_value.png'),
+  ('b3',  'Eco Rookie',           'Maintained your recycling habit for 7 consecutive days.',   'streak',    'streak',     7,    3,  'eco_rookie.png'),
+  ('b4',  'Green Momentum',       'Stayed committed to sustainable actions for 30 days.',      'milestone', 'credits',    1500, 4,  'green_momentum.png'),
+  ('b5',  'Unstoppable Recycler', 'Achieved a 100-day eco streak.',                            'streak',    'streak',     100,  5,  'unstoppable_recycler.png'),
+  ('b6',  'Waste Warrior',        'Demonstrated year-round dedication with a 250-day streak.', 'streak',    'streak',     250,  6,  'waste_warrior.png'),
+  ('b7',  'Paper Protector',      'Recycled 50 kg of paper.',                                  'material',  'kg',         50,   7,  'paper_protector.png'),
+  ('b8',  'Plastic Patrol',       'Successfully recycled 30 kg of plastic.',                   'material',  'kg',         30,   8,  'plastic_patrol.png'),
+  ('b9',  'Metal Maverick',       'Recycled 100 kg of metal.',                                 'material',  'kg',         100,  9,  'metal_maverick.png'),
+  ('b10', 'Eco Influencer',       'Inspired 5 friends to join.',                               'social',    'referral',   5,    10, 'eco_influencer.png'),
+  ('b11', 'Eco Brainiac',         'Completed 100 sustainability quizzes.',                     'special',   'quiz',       100,  11, 'eco_brainiac.png'),
+  ('b12', 'Circular Citizen',     'Recycled across every available waste category.',           'material',  'categories', 7,    12, 'circular_citizen.png'),
+  ('b13', 'Trashium Veteran',     'Stayed active on Trashium for one full year.',              'special',   'manual',     NULL, 13, 'trashium_veteran.png'),
+  ('b14', 'Forest Elder',         'Reach Level 19 — 2,500 lifetime Green Credits.',            'milestone', 'credits',    2500, 14, 'forest_elder.png'),
+  ('b15', 'Planet Partner',       'Participated in a special sustainability campaign.',        'special',   'manual',     NULL, 15, 'planet_partner.png')
 ON CONFLICT (id) DO NOTHING;
 
 -- 7c. MARKETPLACE_ITEMS (redeemable catalog)

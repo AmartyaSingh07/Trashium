@@ -105,6 +105,8 @@ export interface UserBadge {
   awarded_at: string;
 }
 
+export type BadgeState = "earned" | "in-progress" | "locked";
+
 /** A badge resolved against a user's data for rendering. */
 export interface ResolvedBadge {
   id: string;
@@ -112,6 +114,14 @@ export interface ResolvedBadge {
   description: string;
   image_filename: string | null;
   unlocked: boolean;
+  /** earned = unlocked; in-progress = measurable signal, not yet met; locked = no signal/criterion unmet. */
+  state: BadgeState;
+  /** User's current value on this badge's axis (credits/pickups/kg/categories). */
+  current: number;
+  /** Threshold to earn (Infinity for badges with no numeric target, e.g. manual grants). */
+  target: number;
+  /** 0–100 progress toward target. */
+  pct: number;
 }
 
 export type MarketplaceTier = "seedling" | "sapling" | "forest" | "perk" | "legendary";
