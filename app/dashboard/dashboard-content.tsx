@@ -528,7 +528,7 @@ export default function DashboardContent({
   return (
     <div className="mx-auto max-w-7xl px-6 py-10 relative z-10 font-[family-name:var(--font-dm)]">
       {/* Welcome Header */}
-      <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-6 pb-4 relative z-10 min-h-[auto]">
+      <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-6 pb-4 relative z-10 min-h-[auto] animate-fade-up">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-950 leading-tight block py-1">
             Welcome back,{" "}
@@ -555,7 +555,7 @@ export default function DashboardContent({
       </div>
 
       {/* Impact Cards */}
-      <div className="grid gap-5 sm:grid-cols-3 mb-8">
+      <div className="grid gap-5 sm:grid-cols-3 mb-8 animate-fade-up-delay-1">
         <ImpactCard
           title="Green Credits"
           value={credits}
@@ -577,7 +577,7 @@ export default function DashboardContent({
       </div>
 
       {/* Eco Level + Recent Pickups */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 animate-fade-up-delay-2">
         <div className="lg:col-span-1 flex flex-col gap-6">
           <EcoLevelBadge greenCredits={credits} />
           
@@ -751,7 +751,7 @@ export default function DashboardContent({
 
       {/* Leaderboard segment (Household role gate) */}
       {isHousehold && (
-        <div className="mt-8 grid gap-6 lg:grid-cols-3 animate-fadeIn">
+        <div className="mt-8 grid gap-6 lg:grid-cols-3 animate-fade-up-delay-3">
           <div className="lg:col-span-3">
             <LeaderboardCard
               title="Regional Sector Leaderboard"

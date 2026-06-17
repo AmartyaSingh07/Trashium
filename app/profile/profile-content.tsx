@@ -313,6 +313,9 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
             <h2 className="font-syne font-bold text-xl text-[#2C1F14] tracking-tight">🏆 Environmental Achievements & Badge Log</h2>
             <p className="text-xs text-[#6B5744] mt-0.5 mb-6">Track your environmental benchmarks and unlocked milestone badges.</p>
           </div>
+          {badges.length === 0 ? (
+            <p className="font-dm text-xs text-[#6B5744] py-8 text-center">Badges are unavailable right now — please refresh in a moment.</p>
+          ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {badges.map((badge) => {
               const earned = badge.state === "earned";
@@ -392,6 +395,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
               );
             })}
           </div>
+          )}
         </div>
 
       </div>
