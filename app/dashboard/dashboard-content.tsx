@@ -593,6 +593,7 @@ export default function DashboardContent({
                 hasPickupToday={hasPickupToday}
                 isWasteSegregated={isWasteSegregated}
                 onLogWasteSegregation={handleLogWasteSegregation}
+                activityDoneToday={hasDailyActionToday}
               />
             </div>
           )}

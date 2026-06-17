@@ -48,6 +48,8 @@ interface StreakCardProps extends React.HTMLAttributes<HTMLDivElement> {
   hasPickupToday?: boolean
   isWasteSegregated?: boolean
   onLogWasteSegregation?: () => void
+  /** True if any streak-eligible activity is already done today (pickup/segregation/quiz). Drives the at-risk vs secured banner. */
+  activityDoneToday?: boolean
 }
 
 const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
@@ -77,6 +79,7 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
       hasPickupToday = false,
       isWasteSegregated = false,
       onLogWasteSegregation,
+      activityDoneToday,
       ...props
     },
     ref
@@ -86,6 +89,17 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
     )
     const [isStreakDetailOpen, setIsStreakDetailOpen] = React.useState(false)
     const howItWorksContentId = React.useId()
+
+    // ── Streak intensity + milestones (flame grows from leaf-green → ember as the streak climbs) ──
+    const MILESTONES = [7, 30, 100]
+    const intensity =
+      currentStreak >= 100 ? 3 : currentStreak >= 30 ? 2 : currentStreak >= 7 ? 1 : 0
+    const flameColor = ["#9A8C7A", "#7A9E7E", "#C4704A", "#B35E39"][intensity]
+    const nextMilestone = MILESTONES.find((m) => currentStreak < m) ?? null
+    const reachedMilestone =
+      [...MILESTONES].reverse().find((m) => currentStreak >= m) ?? null
+    // Fall back to the existing pickup/segregation signals if the parent didn't pass an explicit flag.
+    const doneToday = activityDoneToday ?? (hasPickupToday || isWasteSegregated)
 
     return (
       <>
@@ -102,7 +116,14 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
       >
         <header className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Flame className="text-primary h-6 w-6" aria-hidden="true" />
+            <Flame
+              className="h-6 w-6 transition-all"
+              style={{
+                color: flameColor,
+                filter: intensity >= 2 ? `drop-shadow(0 0 6px ${flameColor}80)` : undefined,
+              }}
+              aria-hidden="true"
+            />
             <h3 className="text-2xl leading-none font-semibold">{title}</h3>
           </div>
           <Button
@@ -116,12 +137,48 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
           </Button>
         </header>
 
-        <p className="mb-4 text-5xl leading-none font-semibold tracking-tight">
+        <p className="text-5xl leading-none font-semibold tracking-tight">
           {currentStreak}
           <span className="text-muted-foreground ml-2 text-2xl font-medium">
             days
           </span>
         </p>
+
+        {/* milestone progress */}
+        {reachedMilestone && (
+          <p className="mt-2 inline-flex items-center gap-1 text-xs font-syne font-bold uppercase tracking-wider" style={{ color: flameColor }}>
+            <Flame className="h-3.5 w-3.5" aria-hidden="true" /> {reachedMilestone}-day milestone reached
+          </p>
+        )}
+        {nextMilestone && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            {nextMilestone - currentStreak} day{nextMilestone - currentStreak === 1 ? "" : "s"} to your {nextMilestone}-day milestone
+          </p>
+        )}
+
+        {/* streak status: at-risk before midnight vs secured for today */}
+        {currentStreak > 0 && !doneToday && (
+          <div className="mt-3 mb-1 flex items-start gap-2 rounded-lg border border-[#C4704A]/30 bg-[#C4704A]/5 p-3" role="status">
+            <Flame className="mt-0.5 h-4 w-4 shrink-0 text-[#C4704A]" aria-hidden="true" />
+            <p className="text-xs text-[#6B5744]">
+              Your {currentStreak}-day streak is at risk — log segregation or take the quiz before midnight to keep it.
+            </p>
+          </div>
+        )}
+        {currentStreak > 0 && doneToday && (
+          <div className="mt-3 mb-1 flex items-center gap-2 rounded-lg border border-[#7A9E7E]/30 bg-[#7A9E7E]/10 p-3" role="status">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-[#4A6741]" aria-hidden="true" />
+            <p className="text-xs text-[#4A6741]">Streak secured for today — nice work!</p>
+          </div>
+        )}
+        {currentStreak === 0 && (
+          <div className="mt-3 mb-1 flex items-start gap-2 rounded-lg border border-[#D4C5B0]/50 bg-[#EDE5D8]/40 p-3" role="status">
+            <Flame className="mt-0.5 h-4 w-4 shrink-0 text-[#9A8C7A]" aria-hidden="true" />
+            <p className="text-xs text-[#6B5744]">Start your streak today — complete any activity below.</p>
+          </div>
+        )}
+
+        <div className="mt-4" />
 
         <StreakCalendar
           streak={streak}
