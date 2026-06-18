@@ -206,3 +206,38 @@ export interface LeaderboardEntry {
   green_credits: number | string;
   kg_recycled: number | string;
 }
+
+/** Hydration payload from the `get_daily_status()` RPC (today's row + streak state). */
+export interface DailyStatus {
+  ok: boolean;
+  activity_date: string;
+  logged_in: boolean;
+  segregated: boolean;
+  quizzes_correct: number;
+  quiz_strikes: number;
+  perfect_day: boolean;
+  credits_earned: number;
+  current_streak: number;
+  longest_streak: number;
+  streak_freezes: number;
+  weekly_active_days: number;
+  claimed_milestones: number[];
+}
+
+/** Return shape from the `log_daily_action(p_action)` RPC — the authoritative result of one action. */
+export interface DailyActionResult {
+  ok: boolean;
+  reason?: string;
+  awarded?: number;
+  base?: number;
+  multiplier?: number;
+  current_streak?: number;
+  longest_streak?: number;
+  perfect_day?: boolean;
+  freezes?: number;
+  freeze_used?: boolean;
+  chest?: { milestone: number; reward: number; freeze: number } | null;
+  green_credits?: number;
+  caps?: { quizzes_correct: number; quiz_strikes: number; segregated: boolean; logged_in: boolean };
+  weekly_active_days?: number;
+}

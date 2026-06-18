@@ -51,6 +51,8 @@ interface StreakCardProps extends React.HTMLAttributes<HTMLDivElement> {
   onLogWasteSegregation?: () => void
   /** True if any streak-eligible activity is already done today (pickup/segregation/quiz). Drives the at-risk vs secured banner. */
   activityDoneToday?: boolean
+  /** Show the "Today's Eligible Activities" action tiles (default true). DailyRitual hides them and supplies its own combo row. */
+  showActivities?: boolean
 }
 
 const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
@@ -81,6 +83,7 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
       isWasteSegregated = false,
       onLogWasteSegregation,
       activityDoneToday,
+      showActivities = true,
       ...props
     },
     ref
@@ -263,6 +266,7 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
           </div>
         )}
 
+        {showActivities && (<>
         {/* Today's Eligible Activities */}
         <span className="font-syne font-bold text-xs uppercase tracking-wider text-[#2C1F14] mt-4 mb-2 block">
           Today&apos;s Eligible Activities
@@ -342,6 +346,7 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
             </div>
           </div>
         </div>
+        </>)}
       </section>
 
       {isStreakDetailOpen && (
