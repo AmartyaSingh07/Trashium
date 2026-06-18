@@ -185,7 +185,7 @@ export function DailyRitual({
           <span className="font-[family-name:var(--font-jetbrains)] text-xs font-bold text-[#C2703D]">{comboCount}/3 combo</span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-sand/35">
-          <div className="h-full rounded-full bg-gradient-to-r from-sage to-terra transition-all duration-500" style={{ width: `${(comboCount / 3) * 100}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-amber-warm to-terra transition-all duration-500" style={{ width: `${(comboCount / 3) * 100}%` }} />
         </div>
 
         <div className="grid grid-cols-3 gap-2">
