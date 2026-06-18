@@ -1,0 +1,13 @@
+{
+  "out": "./bones",
+  "animate": "shimmer",
+  "color": "#DDD5C5",
+  "darkColor": "#3A3028",
+  "shimmerColor": "#EDE5D8",
+  "darkShimmerColor": "#4A3D30",
+  "speed": "1.6s",
+  "shimmerAngle": 110,
+  "stagger": 40,
+  "transition": 200,
+  "wait": 1000
+}
