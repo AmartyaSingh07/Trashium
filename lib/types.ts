@@ -192,3 +192,17 @@ export function getNextEcoLevel(credits: number): EcoLevel | null {
   }
   return null;
 }
+
+/**
+ * One row from the `get_household_leaderboard()` RPC (households only, no email).
+ * `sector` is the raw most-frequent pickup location (e.g. "Rishra, Kolkata") or null
+ * when the household has no completed pickup; the UI normalizes it to an operational sector.
+ * Numeric columns arrive as strings from PostgREST — coerce with Number() at use sites.
+ */
+export interface LeaderboardEntry {
+  user_id: string;
+  display_name: string;
+  sector: string | null;
+  green_credits: number | string;
+  kg_recycled: number | string;
+}
