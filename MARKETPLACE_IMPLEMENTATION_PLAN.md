@@ -1,8 +1,17 @@
-# Trashium — Marketplace + Badge System Implementation Plan
+# Trashium — Marketplace + Badge System Implementation Plan [COMPLETED]
 
-> **Paste this whole file into a fresh agent chat.** It is written to be executed autonomously,
-> in order, with no further questions for the common path. Stop and ask the user only where a
-> step is explicitly marked **[ASK USER]**.
+> **Status:** All Modules (A through G) have been fully implemented, verified, and integrated into the main branch.
+
+---
+
+### Implementation Summary
+- **Module A (Eco-Levels Truth):** Canonical 20-tier system in `lib/gamification.ts` is fully wired to both the household dashboard and profile pages.
+- **Module B (Badges):** DB-driven badges seed successfully and unlock states are computed live via `lib/badges.ts`. The daily quiz credits bug has been fixed.
+- **Module C (Marketplace Backend):** `marketplace_items` and `redemption_orders` tables are live, and the `redeem_marketplace_item` atomic transaction RPC is deployed.
+- **Module D (Marketplace Frontend):** A modern, earth-toned `/marketplace` interface features access gating (500 credits + 1 pickup), redeem flows, and "My Redemptions" history tracking.
+- **Module E (Admin Management):** Admin panel supports manual badge awarding, live catalog editing, and dispatch status transitions.
+- **Module F (Payout Booster Perk):** One-time +10% next-pickup payout boosts are fully functional, integrating into `lib/pricing.ts` and clearing on schedule.
+- **Module G (Sync & Verification):** Unified `supabase_schema.sql` and mapped assets in `IMAGE_MANIFEST.md`. All type checks and builds pass.
 
 ---
 

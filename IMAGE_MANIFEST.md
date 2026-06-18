@@ -57,3 +57,9 @@ Suggested filenames (you can use any name; just match the `image_filename` you s
 
 > Eco-level tier icons (Seed → Tree of Life) already live in the `gamification-levels` bucket
 > (`Level01Seed.png` … `Level20TreeOfLife.png`) and are referenced by `lib/gamification.ts`.
+
+---
+
+## Daily Grove Ritual & Streaks — Vector Assets
+The new **Daily Grove Ritual** widget (combos, streak flame, Weekly Canopy ring, milestone chests) is fully built using vector graphics (SVGs) and system-rendered icons. **No external image uploads or storage assets are needed** for the daily activity features, milestone chest displays, or streak calendars.
+

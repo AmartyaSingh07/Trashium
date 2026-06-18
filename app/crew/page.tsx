@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import CrewDashboardContent from "./crew-content";
+import { resolveHubSectors } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export default async function CrewDashboardPage() {
   const { data: pickups } = await supabase
     .from("pickup_requests")
     .select("*")
-    .in("location", profile.operating_zone ? [profile.operating_zone] : ["Rishra", "Howrah", "Shyamnagar", "Tarakeswar", "Hugli-Chinsura"])
+    .in("location", resolveHubSectors(profile.operating_zone) as string[])
     .not("status", "eq", "cancelled")
     .order("scheduled_date", { ascending: true });
 
@@ -42,7 +43,9 @@ export default async function CrewDashboardPage() {
     weight: Number(p.estimated_weight || 0),
     status: p.status === "processed" ? "completed" : (p.status as any),
     material_type: p.waste_type,
-    user_address: p.address
+    user_address: p.address,
+    latitude: p.latitude ?? undefined,
+    longitude: p.longitude ?? undefined
   }));
 
   return <CrewDashboardContent profile={profile} initialPickups={mappedPickups} />;

@@ -66,6 +66,9 @@ python publish_to_supabase.py  # upsert to Supabase price_estimates table
 │
 ├── components/
 │   ├── ui/                     # Primitive UI (shadcn + custom)
+│   │   ├── daily-ritual.tsx    # Daily check-in, quiz combo, milestone chest widget
+│   │   ├── count-up.tsx        # Reduced-motion safe number count-up animator
+│   │   └── ...                 # Button, Card, Badge, Dialog, Input, Label, Textarea, Separator
 │   ├── dashboard/              # Domain components for household dashboard
 │   │   ├── schedule-pickup-modal.tsx
 │   │   ├── recent-pickups.tsx
@@ -157,7 +160,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>
 
 ## Database Schema (Supabase Postgres)
 
-All tables have **Row Level Security (RLS)** enabled.
+All tables have **Row Level Security (RLS)** enabled (except for the gamification/marketplace tables which are disabled for now, pending policy setup).
 
 ### `profiles`
 Auto-created on signup. Tracks eco gamification state.
@@ -165,6 +168,10 @@ Auto-created on signup. Tracks eco gamification state.
 - `role` — `'household' | 'collector' | 'admin'`
 - `eco_level` — `'Seedling' | 'Sapling' | 'Young Tree' | 'Urban Forest' | 'Earth Guardian'`
 - `green_credits`, `kg_recycled`, `co2_saved`, `pickups_completed`
+- `current_streak` (integer, default 0) — current consecutive active days
+- `longest_streak` (integer, default 0) — all-time streak high
+- `last_activity_date` (date) — date of the last logged action
+- `streak_freezes` (integer, default 0) — available freeze/shield count
 
 ### `pickup_requests`
 - `status` lifecycle: `pending → confirmed → collected → processed` (or `cancelled`)
@@ -197,6 +204,23 @@ ML-generated pricing table. Unique on `(waste_type, area)`. Readable by all.
   one transaction that validates active/stock/level/badge/credits, deducts `green_credits`, decrements
   stock, writes the order, and sets the pending boost. Call via
   `supabase.rpc('redeem_marketplace_item', { p_item_id })`.
+
+### `daily_activity` / `streak_milestone_claims` *(daily streaks & rituals)*
+- `daily_activity` — tracks a household's actions for each day.
+  - `user_id` (UUID, FK → profiles)
+  - `activity_date` (date, default current_date)
+  - `logged_in` (boolean) — true if user logged in today
+  - `segregated` (boolean) — true if user sorted waste today
+  - `quizzes_correct` (integer, max 5) — quiz answers correct today
+  - `quiz_strikes` (integer, max 2) — quiz strikes today
+  - `weekly_active_days` (integer) — consecutive active days this week
+- `streak_milestone_claims` — ledger of claimed milestone rewards.
+  - `user_id` (UUID, FK → profiles)
+  - `milestone_days` (integer) — 3, 7, 14, or 30 days
+- **Daily logging and status run through RPC functions** (SECURITY DEFINER, public search path):
+  - `log_daily_action(p_action TEXT)` — processes the daily action (`login`, `segregate`, `quiz_correct`, `quiz_wrong`), increments credits (multiplied by current streak multiplier), claims milestone chests, awards shields, and updates the user streak. Call via `supabase.rpc('log_daily_action', { p_action })`.
+  - `get_daily_status()` — returns today's activity state, streak statistics, and freezes count. Call via `supabase.rpc('get_daily_status')`.
+  - `get_household_leaderboard()` — retrieves public leaderboard rows filtered to households and ranked by Green Credits. Call via `supabase.rpc('get_household_leaderboard')`.
 
 > **Credits tradeoff (D1):** `green_credits` is both the spend balance AND the lifetime score driving
 > eco-levels/badges, so spending can re-lock levels/badges/marketplace access. Accepted for now; the
@@ -315,3 +339,7 @@ rather than arbitrary color values. Base palette uses warm earth tones (`linen`,
 
 10. **Keep the schema SQL in sync.** If you add/modify DB columns, update
     `supabase_schema.sql` to reflect the change.
+
+11. **Daily activities and streaks must be logged via log_daily_action RPC.** Never write directly to `profiles` streak columns or manually write daily credits updates from client components. The `log_daily_action` RPC is the sole authority for daily action logic, streak multipliers, freezes, and milestone chest claims.
+
+12. **Micro-animations must respect reduced-motion settings.** Ensure that custom widgets (e.g., flames, leaderboards, count-ups, and ring fills) respect the `prefers-reduced-motion` media query to maintain accessibility and prevent hardware-based render lag.

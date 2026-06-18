@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   co2_saved NUMERIC NOT NULL DEFAULT 0,
   pickups_completed INTEGER NOT NULL DEFAULT 0,
   avatar_url TEXT,
+  operating_zone TEXT, -- crew/collector home sector (one of OPERATIONAL_SECTORS); NULL for households/admin
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -57,6 +58,8 @@ CREATE TABLE IF NOT EXISTS public.pickup_requests (
   scheduled_date DATE NOT NULL,
   notes TEXT,
   estimated_price NUMERIC,
+  latitude  NUMERIC, -- pickup geocoordinates (route optimization); nullable
+  longitude NUMERIC,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -647,6 +650,45 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_daily_status() TO authenticated;
+
+-- 8f. set_crew_zone — admin-only write of a crew member's operating_zone.
+-- profiles has no client UPDATE policy, so privileged writes go through this RPC.
+CREATE OR REPLACE FUNCTION public.set_crew_zone(p_user_id uuid, p_zone text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_is_admin boolean;
+BEGIN
+  IF v_uid IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'not_authenticated');
+  END IF;
+
+  SELECT role = 'admin' INTO v_is_admin FROM public.profiles WHERE id = v_uid;
+  IF NOT coalesce(v_is_admin, false) THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'not_admin');
+  END IF;
+
+  IF p_zone NOT IN ('Rishra', 'Howrah', 'Shyamnagar', 'Tarakeswar', 'Hugli-Chinsura') THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'invalid_zone');
+  END IF;
+
+  UPDATE public.profiles
+  SET operating_zone = p_zone, updated_at = now()
+  WHERE id = p_user_id AND role IN ('crew', 'collector');
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'crew_not_found');
+  END IF;
+
+  RETURN jsonb_build_object('ok', true, 'user_id', p_user_id, 'operating_zone', p_zone);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.set_crew_zone(uuid, text) TO authenticated;
 
 -- ==========================================
 -- TODO(RLS, later): the user will enable RLS + policies on the gamification/marketplace tables.

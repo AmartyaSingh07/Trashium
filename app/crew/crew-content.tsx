@@ -8,7 +8,10 @@ import Footer from "@/components/layout/footer";
 import { toast } from "sonner";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
-const CrewRouteMap = dynamic(() => import("@/components/maps/CrewRouteMap"), { ssr: false });
+const OptimizedRouteMap = dynamic(() => import("@/components/maps/OptimizedRouteMap"), { ssr: false });
+
+import { optimizeRoute } from "@/lib/route-optimizer";
+import { DEFAULT_TRUCK, SECTOR_DEPOTS } from "@/lib/constants";
 
 interface PickupRequest {
   id: string;
@@ -19,6 +22,8 @@ interface PickupRequest {
   status: "pending" | "accepted" | "collected" | "completed" | "processed" | "cancelled";
   material_type?: string;
   user_address?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface CrewDashboardProps {
@@ -156,6 +161,21 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
   const pendingCount = pickups.filter(p => p.status === "pending" || p.status === "accepted").length;
   const completedCount = pickups.filter(p => p.status === "completed" || p.status === "collected").length;
 
+  // Client-side optimized collection route (NN + 2-opt, capacity-aware).
+  const stops = pickups
+    .filter(p => p.latitude != null && p.longitude != null)
+    .map(p => ({
+      id: p.id,
+      latitude: p.latitude!,
+      longitude: p.longitude!,
+      weight: p.weight,
+      time_slot: p.time_slot,
+      address: p.user_address,
+      material_type: p.material_type,
+    }));
+  const depot = SECTOR_DEPOTS[pickups[0]?.operating_zone] ?? undefined;
+  const route = optimizeRoute(stops, DEFAULT_TRUCK, depot);
+
   return (
     <div className="flex flex-col min-h-screen bg-[#F4EFE3]">
       <Navbar />
@@ -222,17 +242,23 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
               Live Optimized Collection Sequence Map
             </h2>
             <div className="relative w-full h-[320px] rounded-2xl overflow-hidden shadow-md border border-[rgba(194,112,61,0.15)] bg-[#EDE5D8]/20">
-              {/* Collect active list zones strings array to plot polyline map targets */}
-              <CrewRouteMap activeZones={pickups.map(p => p.operating_zone)} />
+              {/* Optimized visiting order (NN + 2-opt) plotted with an OSRM road polyline. */}
+              <OptimizedRouteMap stops={route.sequence} depot={depot} />
 
-              <button
-                type="button"
-                onClick={() => alert("🗺️ Trashium Fleet Telemetry Vector: Routing path tracking sequence synchronized successfully with live West Bengal operational hubs.")}
-                className="absolute top-3 right-3 z-[1000] font-syne font-bold text-[11px] uppercase tracking-wider text-[#F4EFE3] bg-[#2A2218]/90 hover:bg-black backdrop-blur-md px-4 py-2.5 rounded-xl border border-[#C2703D]/30 shadow-xl transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] min-h-[38px] flex items-center gap-1.5 cursor-pointer select-none"
-              >
-                Verify Route 🗺️
-              </button>
+              <div className="absolute top-3 right-3 z-[1000] font-mono font-bold text-[11px] text-[#F4EFE3] bg-[#2A2218]/90 backdrop-blur-md px-4 py-2.5 rounded-xl border border-[#C2703D]/30 shadow-xl flex items-center gap-2 select-none">
+                <span>{route.sequence.length} stops</span>
+                <span className="text-[#C2703D]">·</span>
+                <span>{route.totalKm.toFixed(1)} km</span>
+                <span className="text-[#C2703D]">·</span>
+                <span>{route.totalWeight.toFixed(0)} kg</span>
+              </div>
             </div>
+
+            {route.deferred.length > 0 && (
+              <p className="mt-3 text-[11px] font-mono text-amber-700">
+                ⚠️ {route.deferred.length} pickup(s) deferred to next run (over truck capacity / stop limit).
+              </p>
+            )}
           </div>
 
             {/* Pickup Requests Ledger Table */}

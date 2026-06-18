@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import MarketplaceAdmin from "@/components/admin/marketplace-admin";
+import CrewHubAssignment from "@/components/admin/crew-hub-assignment";
 import type {
   PickupRequest,
   PriceEstimate,
@@ -715,6 +716,9 @@ export default function AdminContent({
           </div>
         </div>
       )}
+
+      {/* Crew hub assignment (admin only) */}
+      {userRole === "admin" && <CrewHubAssignment />}
 
       {/* Marketplace management (admin only) */}
       {userRole === "admin" && (
