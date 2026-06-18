@@ -436,6 +436,219 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_household_leaderboard() TO anon, authenticated;
 
 -- ==========================================
+-- 8. DAILY GROVE RITUAL — authoritative daily-action + streak engine
+-- Daily-action credits move ONLY through log_daily_action() (SECURITY DEFINER, auth.uid()).
+-- Caps/streaks/chests are server-tracked, not client. RLS disabled for now (TODO(RLS)).
+-- ==========================================
+
+-- 8a. One row per user per day.
+CREATE TABLE IF NOT EXISTS public.daily_activity (
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  activity_date date NOT NULL DEFAULT current_date,
+  logged_in boolean NOT NULL DEFAULT false,
+  segregated boolean NOT NULL DEFAULT false,
+  quizzes_correct int NOT NULL DEFAULT 0,
+  quiz_strikes int NOT NULL DEFAULT 0,
+  perfect_day boolean NOT NULL DEFAULT false,
+  credits_earned numeric NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, activity_date)
+);
+ALTER TABLE public.daily_activity DISABLE ROW LEVEL SECURITY;
+
+-- 8b. Additive streak columns on profiles.
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS current_streak int NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS longest_streak int NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS last_activity_date date,
+  ADD COLUMN IF NOT EXISTS streak_freezes int NOT NULL DEFAULT 1;  -- everyone starts with 1 shield
+
+-- 8c. Milestone chest claim ledger (each chest claimed once).
+CREATE TABLE IF NOT EXISTS public.streak_milestone_claims (
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  milestone int NOT NULL,                 -- 3 / 7 / 14 / 30
+  claimed_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, milestone)
+);
+ALTER TABLE public.streak_milestone_claims DISABLE ROW LEVEL SECURITY;
+
+-- 8d. log_daily_action — single source of truth for daily-action credits.
+-- Actions: login(+1) / segregate(+2) / quiz_correct(+1, ≤5/day) / quiz_strike(0, ≤2/day).
+-- Streak advances once/day (first earning action); shield covers exactly one missed day.
+-- Multiplier = least(2.0, 1 + 0.05*streak). Perfect Day = login+segregate+quiz (capstone round(5*mult)).
+-- Milestone chests at 3/7/14/30 (claim-once): +10 / +20 & shield / +40 / +100 & shield.
+CREATE OR REPLACE FUNCTION public.log_daily_action(p_action text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid    uuid := auth.uid();
+  v_today  date := current_date;
+  v_row    public.daily_activity%ROWTYPE;
+  v_prof   public.profiles%ROWTYPE;
+  v_logged boolean; v_segr boolean; v_qc int; v_qs int; v_perfect boolean;
+  v_base int := 0; v_mult numeric := 1.0; v_award numeric := 0; v_total numeric := 0;
+  v_perfect_fired boolean := false;
+  v_freeze_used boolean := false;
+  v_chest jsonb := null; v_chest_reward int := 0; v_chest_freeze int := 0;
+  v_streak int; v_longest int; v_freezes int;
+  v_weekly int;
+BEGIN
+  IF v_uid IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'not_authenticated');
+  END IF;
+  IF p_action NOT IN ('login','segregate','quiz_correct','quiz_strike') THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'bad_action');
+  END IF;
+
+  SELECT * INTO v_prof FROM public.profiles WHERE id = v_uid FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'no_profile');
+  END IF;
+
+  INSERT INTO public.daily_activity (user_id, activity_date) VALUES (v_uid, v_today)
+  ON CONFLICT (user_id, activity_date) DO NOTHING;
+  SELECT * INTO v_row FROM public.daily_activity WHERE user_id = v_uid AND activity_date = v_today FOR UPDATE;
+
+  IF p_action = 'segregate' AND v_row.segregated THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'already_segregated');
+  ELSIF p_action = 'quiz_correct' AND v_row.quizzes_correct >= 5 THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'quiz_cap');
+  ELSIF p_action = 'quiz_strike' AND v_row.quiz_strikes >= 2 THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'strike_cap');
+  END IF;
+
+  v_streak  := v_prof.current_streak;
+  v_longest := v_prof.longest_streak;
+  v_freezes := v_prof.streak_freezes;
+
+  IF p_action IN ('login','segregate','quiz_correct')
+     AND (v_prof.last_activity_date IS DISTINCT FROM v_today)
+     AND NOT (p_action = 'login' AND v_row.logged_in) THEN
+    IF v_prof.last_activity_date = v_today - 1 THEN
+      v_streak := v_streak + 1;
+    ELSIF v_prof.last_activity_date = v_today - 2 AND v_freezes > 0 THEN
+      v_freezes := v_freezes - 1; v_streak := v_streak + 1; v_freeze_used := true;
+    ELSE
+      v_streak := 1;
+    END IF;
+    v_longest := greatest(v_longest, v_streak);
+    v_prof.last_activity_date := v_today;
+  END IF;
+
+  v_mult := least(2.0, 1 + 0.05 * v_streak);
+
+  IF p_action = 'login' AND NOT v_row.logged_in THEN v_base := 1;
+  ELSIF p_action = 'segregate' THEN v_base := 2;
+  ELSIF p_action = 'quiz_correct' THEN v_base := 1;
+  ELSE v_base := 0;
+  END IF;
+  v_award := round(v_base * v_mult);
+  v_total := v_award;
+
+  v_logged := v_row.logged_in OR p_action = 'login';
+  v_segr   := v_row.segregated OR p_action = 'segregate';
+  v_qc     := v_row.quizzes_correct + (CASE WHEN p_action = 'quiz_correct' THEN 1 ELSE 0 END);
+  v_qs     := v_row.quiz_strikes + (CASE WHEN p_action = 'quiz_strike' THEN 1 ELSE 0 END);
+  v_perfect := v_row.perfect_day;
+
+  IF NOT v_perfect AND v_logged AND v_segr AND v_qc >= 1 THEN
+    v_perfect := true; v_perfect_fired := true;
+    v_total := v_total + round(5 * v_mult);
+  END IF;
+
+  IF p_action IN ('login','segregate','quiz_correct') AND v_streak IN (3,7,14,30)
+     AND NOT EXISTS (SELECT 1 FROM public.streak_milestone_claims WHERE user_id = v_uid AND milestone = v_streak) THEN
+    v_chest_reward := CASE v_streak WHEN 3 THEN 10 WHEN 7 THEN 20 WHEN 14 THEN 40 WHEN 30 THEN 100 END;
+    v_chest_freeze := CASE WHEN v_streak IN (7,30) THEN 1 ELSE 0 END;
+    INSERT INTO public.streak_milestone_claims (user_id, milestone) VALUES (v_uid, v_streak);
+    v_total := v_total + v_chest_reward;
+    v_freezes := v_freezes + v_chest_freeze;
+    v_chest := jsonb_build_object('milestone', v_streak, 'reward', v_chest_reward, 'freeze', v_chest_freeze);
+  END IF;
+
+  UPDATE public.daily_activity SET
+    logged_in = v_logged, segregated = v_segr, quizzes_correct = v_qc,
+    quiz_strikes = v_qs, perfect_day = v_perfect, credits_earned = credits_earned + v_total
+  WHERE user_id = v_uid AND activity_date = v_today;
+
+  UPDATE public.profiles SET
+    green_credits = green_credits + v_total,
+    current_streak = v_streak, longest_streak = v_longest,
+    last_activity_date = v_prof.last_activity_date, streak_freezes = v_freezes,
+    updated_at = now()
+  WHERE id = v_uid
+  RETURNING green_credits INTO v_prof.green_credits;
+
+  SELECT count(DISTINCT activity_date) INTO v_weekly
+  FROM public.daily_activity
+  WHERE user_id = v_uid AND activity_date > v_today - 7
+    AND (logged_in OR segregated OR quizzes_correct > 0);
+
+  RETURN jsonb_build_object(
+    'ok', true, 'awarded', v_total, 'base', v_base, 'multiplier', v_mult,
+    'current_streak', v_streak, 'longest_streak', v_longest,
+    'perfect_day', v_perfect_fired, 'freezes', v_freezes, 'freeze_used', v_freeze_used,
+    'chest', v_chest, 'green_credits', v_prof.green_credits,
+    'caps', jsonb_build_object('quizzes_correct', v_qc, 'quiz_strikes', v_qs, 'segregated', v_segr, 'logged_in', v_logged),
+    'weekly_active_days', v_weekly
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.log_daily_action(text) TO authenticated;
+
+-- 8e. get_daily_status — read-only hydration for the ritual widget.
+CREATE OR REPLACE FUNCTION public.get_daily_status()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_today date := current_date;
+  v_row public.daily_activity%ROWTYPE;
+  v_prof public.profiles%ROWTYPE;
+  v_weekly int;
+  v_claims int[];
+BEGIN
+  IF v_uid IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'not_authenticated');
+  END IF;
+
+  SELECT * INTO v_prof FROM public.profiles WHERE id = v_uid;
+  SELECT * INTO v_row FROM public.daily_activity WHERE user_id = v_uid AND activity_date = v_today;
+
+  SELECT count(DISTINCT activity_date) INTO v_weekly
+  FROM public.daily_activity
+  WHERE user_id = v_uid AND activity_date > v_today - 7
+    AND (logged_in OR segregated OR quizzes_correct > 0);
+
+  SELECT coalesce(array_agg(milestone ORDER BY milestone), '{}') INTO v_claims
+  FROM public.streak_milestone_claims WHERE user_id = v_uid;
+
+  RETURN jsonb_build_object(
+    'ok', true, 'activity_date', v_today,
+    'logged_in', coalesce(v_row.logged_in, false),
+    'segregated', coalesce(v_row.segregated, false),
+    'quizzes_correct', coalesce(v_row.quizzes_correct, 0),
+    'quiz_strikes', coalesce(v_row.quiz_strikes, 0),
+    'perfect_day', coalesce(v_row.perfect_day, false),
+    'credits_earned', coalesce(v_row.credits_earned, 0),
+    'current_streak', coalesce(v_prof.current_streak, 0),
+    'longest_streak', coalesce(v_prof.longest_streak, 0),
+    'streak_freezes', coalesce(v_prof.streak_freezes, 0),
+    'weekly_active_days', coalesce(v_weekly, 0),
+    'claimed_milestones', to_jsonb(v_claims)
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_daily_status() TO authenticated;
+
+-- ==========================================
 -- TODO(RLS, later): the user will enable RLS + policies on the gamification/marketplace tables.
 -- Staged here but INERT (commented out). Do NOT uncomment until policies are reviewed.
 -- ==========================================
