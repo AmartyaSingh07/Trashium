@@ -5,6 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Crown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { CountUp } from "@/components/ui/count-up"
 
 // Types (inlined)
 interface LeaderboardRanking {
@@ -142,7 +143,7 @@ const LeaderboardPodium = React.forwardRef<
         } as React.CSSProperties}
         {...props}
       >
-        {podiumOrder.map((ranking) => {
+        {podiumOrder.map((ranking, displayIndex) => {
           const config = PODIUM_CONFIG[ranking.rank as 1 | 2 | 3]
           if (!config) return null
 
@@ -164,7 +165,8 @@ const LeaderboardPodium = React.forwardRef<
               key={ranking.userId}
               role="listitem"
               aria-label={itemLabel}
-              className="flex flex-col items-center"
+              className="t-rise flex flex-col items-center"
+              style={{ animationDelay: `${displayIndex * 130}ms` }}
             >
               {/* Avatar with crown */}
               <div className="relative mb-2" aria-hidden="true">
@@ -225,14 +227,13 @@ const LeaderboardPodium = React.forwardRef<
 
               {/* Value */}
               {showValue && (
-                <span
+                <CountUp
+                  value={ranking.value}
                   className={cn(
-                    "text-muted-foreground tabular-nums",
+                    "t-countup text-muted-foreground",
                     size === "sm" ? "text-xs" : "text-sm"
                   )}
-                >
-                  {ranking.value.toLocaleString()}
-                </span>
+                />
               )}
 
               {/* Podium block */}

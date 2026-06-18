@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Lock, Check, ArrowRight, Recycle, HelpCircle, Truck, Gift } from "lucide-react";
+import { Lock, Check, ArrowRight, Recycle, HelpCircle, Truck, Gift, TrendingUp, Trophy, Sprout } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import EcoLevelBadge, { TRASHIUM_EVALUATION_TIERS, getTierIcon, getTierIconUrl }
 import SchedulePickupModal from "@/components/dashboard/schedule-pickup-modal";
 import RecentPickups from "@/components/dashboard/recent-pickups";
 
-import type { Profile, PickupRequest, ResolvedBadge } from "@/lib/types";
+import type { Profile, PickupRequest, ResolvedBadge, LeaderboardEntry } from "@/lib/types";
 import { StreakCard } from "@/components/ui/streak-card";
 import { AchievementBadge, AchievementCard, AchievementUnlocked, type UserAchievement } from 'ui.trophy';
 import type { StreakPeriod } from "@/components/ui/streak-calendar";
@@ -46,9 +46,23 @@ interface DashboardContentProps {
   profile: Profile;
   initialPickups: PickupRequest[];
   badges: ResolvedBadge[];
+  leaderboard: LeaderboardEntry[];
 }
 
 const OPERATIONAL_SECTORS = ['Rishra', 'Howrah', 'Shyamnagar', 'Tarakeswar', 'Hugli-Chinsura'];
+const UNASSIGNED_SECTOR = 'Unassigned';
+
+// RPC returns the raw pickup location (e.g. "Rishra, Kolkata"); fold it onto an operational sector.
+// No completed pickup → null → "Unassigned" bucket.
+const matchSector = (raw: string | null | undefined): string => {
+  if (!raw) return UNASSIGNED_SECTOR;
+  const hit = OPERATIONAL_SECTORS.find((s) => raw.toLowerCase().includes(s.toLowerCase()));
+  return hit ?? UNASSIGNED_SECTOR;
+};
+
+// Eco-tier for a credit balance — reused for podium/row tree art and the level byline.
+const tierForCredits = (credits: number) =>
+  [...TRASHIUM_EVALUATION_TIERS].reverse().find((t) => credits >= t.minPoints) || TRASHIUM_EVALUATION_TIERS[0];
 const BADGE_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/gamification-badges`;
 
 const normalizeSectorName = (zone: string) => {
@@ -65,10 +79,13 @@ export default function DashboardContent({
   profile,
   initialPickups,
   badges,
+  leaderboard,
 }: DashboardContentProps) {
   const [pickups, setPickups] = useState<PickupRequest[]>(() => initialPickups.map(normalizePickup));
   const supabase = createClient();
-  const [selectedSector, setSelectedSector] = useState("Rishra");
+  // Default the sector toggle to the signed-in household's own sector.
+  const myLeaderboardRow = leaderboard.find((r) => r.user_id === profile.id);
+  const [selectedSector, setSelectedSector] = useState(() => matchSector(myLeaderboardRow?.sector));
 
   // Core local states for credits & sorting verification
   const [greenCredits, setGreenCredits] = useState(profile?.green_credits ?? 0);
@@ -222,107 +239,46 @@ export default function DashboardContent({
     }
   };
 
-  const getSectorRankings = (sector: string) => {
-    const sectorMocks: { [key: string]: Array<{ name: string; email: string; value: number }> } = {
-      Rishra: [
-        { name: "Amartya Singh", email: "amartya.singh@gmail.com", value: 145 },
-        { name: "Sam Sulek", email: "sam.sulek@gmail.com", value: 120 },
-        { name: "Priya Das", email: "priya.das@outlook.com", value: 95 },
-        { name: "Rahul Sen", email: "rahul.sen@gmail.com", value: 80 },
-        { name: "Ananya Roy", email: "ananya.roy@yahoo.com", value: 65 },
-      ],
-      Howrah: [
-        { name: "Vikram Malhotra", email: "vikram.m@gmail.com", value: 180 },
-        { name: "Sneha Chatterjee", email: "sneha.c@gmail.com", value: 110 },
-        { name: "Amit Ghosh", email: "amit.ghosh@hotmail.com", value: 85 },
-        { name: "Riya Paul", email: "riya.p@gmail.com", value: 75 },
-      ],
-      Shyamnagar: [
-        { name: "Debabrata Dey", email: "debabrata.d@gmail.com", value: 210 },
-        { name: "Tanmoy Bose", email: "tanmoy.bose@gmail.com", value: 150 },
-        { name: "Soma Mukherjee", email: "soma.m@gmail.com", value: 130 },
-        { name: "Kushal Mitra", email: "kushal.mitra@gmail.com", value: 90 },
-      ],
-      Tarakeswar: [
-        { name: "Ayan Saha", email: "ayan.saha@gmail.com", value: 115 },
-        { name: "Payel Sen", email: "payel.sen@gmail.com", value: 90 },
-        { name: "Subhadip Roy", email: "subhadip.roy@gmail.com", value: 70 },
-      ],
-      "Hugli-Chinsura": [
-        { name: "Pritha Dey", email: "pritha.dey@gmail.com", value: 125 },
-        { name: "Sourav Kar", email: "sourav.kar@gmail.com", value: 105 },
-        { name: "Mimi Das", email: "mimi.das@gmail.com", value: 85 },
-      ],
-    };
+  // Live, households-only rankings for a sector, ranked by Green Credits (desc). Built from the
+  // get_household_leaderboard RPC — real registered households only, no mocks, admin/crew excluded.
+  const buildSectorRankings = (sector: string) => {
+    const ranked = leaderboard
+      .filter((r) => matchSector(r.sector) === sector)
+      .map((r) => ({ ...r, credits: Number(r.green_credits) || 0 }))
+      .sort((a, b) => b.credits - a.credits);
 
-    const mocks = sectorMocks[sector] || [];
-    const userTotals: { [userId: string]: { name: string; email: string; totalWeight: number } } = {};
-    
-    pickups.forEach((p) => {
-      const isCompleted = (p.status as string) === "completed" || (p.status as string) === "processed" || (p.status as string) === "collected";
-      const matchesSector = p.location.toLowerCase().includes(sector.toLowerCase()) || 
-                            p.address.toLowerCase().includes(sector.toLowerCase());
-      
-      if (isCompleted && matchesSector) {
-        const userId = p.user_id;
-        const name = (p as any).profiles?.full_name || p.full_name || "User";
-        const email = (p as any).profiles?.email || "User";
-        const weight = Number(p.estimated_weight || 0);
-
-        if (!userTotals[userId]) {
-          userTotals[userId] = { name, email, totalWeight: 0 };
-        }
-        userTotals[userId].totalWeight += weight;
-      }
+    const rankings = ranked.map((r, index) => {
+      const tier = tierForCredits(r.credits);
+      return {
+        userId: r.user_id,
+        userName: r.display_name,
+        byline: `Lvl ${tier.level} · ${tier.rank}`,
+        value: r.credits,
+        avatarUrl: getTierIconUrl(tier.rank), // eco-tier tree art, by real credits
+        rank: index + 1,
+        displayed: true,
+      };
     });
 
-    const mergedList: Array<{ userId: string; userName: string; byline: string; value: number }> = [];
-    
-    Object.entries(userTotals).forEach(([userId, info]) => {
-      mergedList.push({
-        userId,
-        userName: info.name,
-        byline: info.email,
-        value: Math.round(info.totalWeight),
-      });
-    });
-
-    mocks.forEach((mock, idx) => {
-      if (!mergedList.some(item => item.userName.toLowerCase() === mock.name.toLowerCase())) {
-        mergedList.push({
-          userId: `mock-user-${sector}-${idx}`,
-          userName: mock.name,
-          byline: mock.email,
-          value: mock.value,
-        });
-      }
-    });
-
-    const sorted = mergedList.sort((a, b) => b.value - a.value);
-
-    // ponytail: leaderboard is ranked by kg (demo); reuse the tier ladder as podium art so
-    // neighbours show eco-level trees instead of random faces. Swap to real per-user credits
-    // when the leaderboard becomes credit-ranked.
-    const ecoArt = (v: number) =>
-      getTierIconUrl(([...TRASHIUM_EVALUATION_TIERS].reverse().find((t) => v >= t.minPoints) || TRASHIUM_EVALUATION_TIERS[0]).rank);
-
-    const rankings = sorted.map((item, index) => ({
-      userId: item.userId,
-      userName: item.userName,
-      byline: item.byline,
-      value: item.value,
-      avatarUrl: ecoArt(item.value),
-      rank: index + 1,
-      displayed: true,
-      rankChange: index === 0 ? 0 : index === 1 ? 1 : -1,
-    }));
-
-    const podiumRankings = rankings.slice(0, 3);
-
-    return { rankings, podiumRankings };
+    return { rankings, podiumRankings: rankings.slice(0, 3) };
   };
 
-  const { rankings: sectorRankings, podiumRankings: sectorPodium } = getSectorRankings(selectedSector);
+  const { rankings: sectorRankings, podiumRankings: sectorPodium } = buildSectorRankings(selectedSector);
+
+  // "N credits to overtake the household above you" — computed from the real sorted list.
+  const myRank = sectorRankings.find((r) => r.userId === profile.id);
+  const rivalAbove = myRank && myRank.rank > 1 ? sectorRankings[myRank.rank - 2] : null;
+  const creditsToOvertake = rivalAbove ? Math.max(1, rivalAbove.value - (myRank?.value ?? 0) + 1) : 0;
+
+  // Sector toggle options: operational sectors + an "All Sectors" bucket when any household has
+  // no completed pickup yet (null sector from the RPC).
+  const hasUnassigned = leaderboard.some((r) => matchSector(r.sector) === UNASSIGNED_SECTOR);
+  const sectorRunOptions = [
+    ...OPERATIONAL_SECTORS.map((s) => ({ id: s, label: `${s} Sector` })),
+    ...(hasUnassigned ? [{ id: UNASSIGNED_SECTOR, label: "All Sectors" }] : []),
+  ];
+  const selectedSectorLabel =
+    sectorRunOptions.find((o) => o.id === selectedSector)?.label ?? selectedSector;
 
   // ─── Client-side pickup fetcher ────────────────────────────────────
   const refreshPickups = useCallback(async () => {
@@ -579,13 +535,24 @@ export default function DashboardContent({
       {/* Eco Level + Recent Pickups */}
       <div className="grid gap-6 lg:grid-cols-3 animate-fade-up-delay-2">
         <div className="lg:col-span-1 flex flex-col gap-6">
-          <EcoLevelBadge greenCredits={credits} />
-          
+          {/* "Your Grove" — one cohesive gamification cluster: eco-level, streak, badges, ways-to-earn */}
+          <div className="flex items-center gap-2.5 animate-fade-up-delay-1">
+            <Sprout className="h-6 w-6 shrink-0 text-[#7A9E7E]" aria-hidden="true" />
+            <div>
+              <h2 className="font-[family-name:var(--font-syne)] text-xl font-bold leading-none text-bark">Your Grove</h2>
+              <p className="mt-1 font-[family-name:var(--font-dm)] text-[11px] text-smoke">Your eco-level, streak &amp; accolades in one place</p>
+            </div>
+          </div>
+
+          <div className="animate-fade-up-delay-1">
+            <EcoLevelBadge greenCredits={credits} />
+          </div>
+
           {isHousehold && (
-            <div className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] transition-all duration-300 hover:shadow-md flex flex-col gap-6">
+            <div className="animate-fade-up-delay-2 t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] transition-all duration-300 hover:shadow-md flex flex-col gap-6">
               <div className="space-y-1">
                 <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark">
-                  Gamification & Streaks
+                  Streak &amp; Daily Actions
                 </h3>
                 <p className="text-xs text-smoke">Track your green activities and accolades</p>
               </div>
@@ -611,7 +578,7 @@ export default function DashboardContent({
           )}
 
           {isHousehold && (
-            <div className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/30 backdrop-blur-md flex flex-col gap-4 animate-fadeIn">
+            <div className="animate-fade-up-delay-3 t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/30 backdrop-blur-md flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-[family-name:var(--font-syne)] text-sm font-semibold text-bark">
                   My Badges <span className="font-mono text-xs font-normal text-[#6B5744]">· {earnedCount}/{badges.length} earned</span>
@@ -680,7 +647,7 @@ export default function DashboardContent({
           )}
 
           {isHousehold && (
-            <div className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/30 backdrop-blur-md flex flex-col gap-4 animate-fadeIn">
+            <div className="animate-fade-up-delay-4 t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/30 backdrop-blur-md flex flex-col gap-4">
               <h4 className="font-[family-name:var(--font-syne)] text-sm font-semibold text-bark">
                 Ways to Earn Credits
               </h4>
@@ -749,24 +716,59 @@ export default function DashboardContent({
 
 
 
-      {/* Leaderboard segment (Household role gate) */}
+      {/* Leaderboard segment (Household role gate) — real households only, ranked by Green Credits */}
       {isHousehold && (
-        <div className="mt-8 grid gap-6 lg:grid-cols-3 animate-fade-up-delay-3">
-          <div className="lg:col-span-3">
+        <div className="mt-8 animate-fade-up-delay-3">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark inline-flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-[#C4704A]" aria-hidden="true" /> Sector Leaderboard
+              </h3>
+              <p className="text-xs text-smoke font-[family-name:var(--font-dm)]">
+                Real households in your region, ranked by Green Credits.
+              </p>
+            </div>
+            {myRank && rivalAbove ? (
+              <p className="font-[family-name:var(--font-dm)] text-xs text-[#6B5744] inline-flex items-center gap-1.5 rounded-full border border-[#C4704A]/25 bg-[#C4704A]/5 px-3 py-1.5">
+                <TrendingUp className="h-3.5 w-3.5 shrink-0 text-[#C4704A]" aria-hidden="true" />
+                <span>
+                  <span className="font-mono font-bold text-[#C4704A]">{creditsToOvertake.toLocaleString()}</span> credits to overtake{" "}
+                  <span className="font-semibold text-bark">{rivalAbove.userName}</span>
+                </span>
+              </p>
+            ) : myRank && myRank.rank === 1 ? (
+              <p className="font-[family-name:var(--font-dm)] text-xs text-[#4A6741] inline-flex items-center gap-1.5 rounded-full border border-[#7A9E7E]/30 bg-[#7A9E7E]/10 px-3 py-1.5">
+                <Trophy className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> You&apos;re leading {selectedSectorLabel} — keep it growing!
+              </p>
+            ) : null}
+          </div>
+
+          {sectorRankings.length === 0 ? (
+            <div className="t-glass-card rounded-xl p-8 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/40 backdrop-blur-md flex flex-col items-center gap-3 text-center">
+              <Trophy className="h-8 w-8 text-[#C4704A]/40" aria-hidden="true" />
+              <p className="font-[family-name:var(--font-dm)] text-sm text-[#6B5744]">
+                No households ranked in {selectedSectorLabel} yet.
+              </p>
+              <select
+                aria-label="Select leaderboard sector"
+                value={selectedSector}
+                onChange={(e) => setSelectedSector(e.target.value)}
+                className="bg-background text-foreground rounded-md border px-3 py-1.5 text-sm"
+              >
+                {sectorRunOptions.map((o) => (
+                  <option key={o.id} value={o.id}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
             <LeaderboardCard
-              title="Regional Sector Leaderboard"
+              title={`${selectedSectorLabel} · Green Credits`}
               fromDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
               toDate={new Date()}
               podiumRankings={sectorPodium}
               rankings={sectorRankings}
               currentUserId={profile.id}
-              runOptions={[
-                { id: "Rishra", label: "Rishra Sector" },
-                { id: "Howrah", label: "Howrah Sector" },
-                { id: "Shyamnagar", label: "Shyamnagar Sector" },
-                { id: "Tarakeswar", label: "Tarakeswar Sector" },
-                { id: "Hugli-Chinsura", label: "Hugli-Chinsura Sector" },
-              ]}
+              runOptions={sectorRunOptions}
               selectedRunId={selectedSector}
               onRunChange={(runId) => setSelectedSector(runId)}
               primaryColor="#C4704A"
@@ -775,7 +777,7 @@ export default function DashboardContent({
               theme="light"
               className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/40 backdrop-blur-md"
             />
-          </div>
+          )}
         </div>
       )}
 
