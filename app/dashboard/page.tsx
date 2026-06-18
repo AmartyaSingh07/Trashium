@@ -4,7 +4,7 @@ import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import DashboardContent from "./dashboard-content";
 import { evaluateBadges } from "@/lib/badges";
-import type { Profile, PickupRequest, Badge, ResolvedBadge, LeaderboardEntry } from "@/lib/types";
+import type { Profile, PickupRequest, Badge, ResolvedBadge, LeaderboardEntry, DailyStatus } from "@/lib/types";
 
 export const metadata = {
   title: "Dashboard",
@@ -53,7 +53,7 @@ export default async function DashboardPage() {
 
   // Fetch recent pickups (for the Recent Pickups panel) + badge data, in parallel.
   const DONE_STATUSES = ["collected", "processed", "completed"];
-  const [{ data: pickups }, { data: badgeCatalog }, { data: userBadges }, { data: allPickups }, { data: leaderboard }] =
+  const [{ data: pickups }, { data: badgeCatalog }, { data: userBadges }, { data: allPickups }, { data: leaderboard }, { data: dailyStatus }] =
     await Promise.all([
       supabase
         .from("pickup_requests")
@@ -66,6 +66,8 @@ export default async function DashboardPage() {
       supabase.from("pickup_requests").select("waste_type, estimated_weight, status").eq("user_id", user.id),
       // Households-only leaderboard (SECURITY DEFINER RPC; excludes admin/crew). Real registered users only.
       supabase.rpc("get_household_leaderboard"),
+      // Authoritative daily-ritual state (today's actions + streak/freezes/weekly), SECURITY DEFINER.
+      supabase.rpc("get_daily_status"),
     ]);
 
   // Badge signals derived from completed pickups (same shape as profile/page.tsx).
@@ -93,6 +95,7 @@ export default async function DashboardPage() {
           initialPickups={(pickups as PickupRequest[]) ?? []}
           badges={badges}
           leaderboard={(leaderboard as LeaderboardEntry[]) ?? []}
+          dailyStatus={(dailyStatus as DailyStatus) ?? null}
         />
       </main>
       <Footer />

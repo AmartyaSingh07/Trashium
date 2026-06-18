@@ -11,42 +11,25 @@ import EcoLevelBadge, { TRASHIUM_EVALUATION_TIERS, getTierIcon, getTierIconUrl }
 import SchedulePickupModal from "@/components/dashboard/schedule-pickup-modal";
 import RecentPickups from "@/components/dashboard/recent-pickups";
 
-import type { Profile, PickupRequest, ResolvedBadge, LeaderboardEntry } from "@/lib/types";
-import { StreakCard } from "@/components/ui/streak-card";
+import type { Profile, PickupRequest, ResolvedBadge, LeaderboardEntry, DailyStatus, DailyActionResult } from "@/lib/types";
+import { DailyRitual } from "@/components/ui/daily-ritual";
 import { AchievementBadge, AchievementCard, AchievementUnlocked, type UserAchievement } from 'ui.trophy';
-import type { StreakPeriod } from "@/components/ui/streak-calendar";
 import { LeaderboardCard } from "@/components/ui/leaderboard-card";
 import { toast } from "sonner";
 
-function getStreakPeriods(dates: string[]): StreakPeriod[] {
-  if (dates.length === 0) return [];
-  const periods: StreakPeriod[] = [];
-  let start = dates[0];
-  let end = dates[0];
-
-  for (let i = 1; i < dates.length; i++) {
-    const prevDate = new Date(dates[i - 1]);
-    const currDate = new Date(dates[i]);
-    const diffTime = Math.abs(currDate.getTime() - prevDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 1) {
-      end = dates[i];
-    } else {
-      periods.push({ periodStart: start, periodEnd: end });
-      start = dates[i];
-      end = dates[i];
-    }
-  }
-  periods.push({ periodStart: start, periodEnd: end });
-  return periods;
-}
+const DEFAULT_DAILY: DailyStatus = {
+  ok: true, activity_date: "", logged_in: false, segregated: false,
+  quizzes_correct: 0, quiz_strikes: 0, perfect_day: false, credits_earned: 0,
+  current_streak: 0, longest_streak: 0, streak_freezes: 0, weekly_active_days: 0,
+  claimed_milestones: [],
+};
 
 interface DashboardContentProps {
   profile: Profile;
   initialPickups: PickupRequest[];
   badges: ResolvedBadge[];
   leaderboard: LeaderboardEntry[];
+  dailyStatus: DailyStatus | null;
 }
 
 const OPERATIONAL_SECTORS = ['Rishra', 'Howrah', 'Shyamnagar', 'Tarakeswar', 'Hugli-Chinsura'];
@@ -80,16 +63,25 @@ export default function DashboardContent({
   initialPickups,
   badges,
   leaderboard,
+  dailyStatus,
 }: DashboardContentProps) {
   const [pickups, setPickups] = useState<PickupRequest[]>(() => initialPickups.map(normalizePickup));
   const supabase = createClient();
+  const isHousehold = profile?.role === "household";
+
+  // Authoritative daily-ritual state (server-tracked). Seeded from the SSR get_daily_status fetch;
+  // every log_daily_action result is the source of truth and overwrites it. No client credit math.
+  const [daily, setDaily] = useState<DailyStatus>(() => dailyStatus ?? DEFAULT_DAILY);
   // Default the sector toggle to the signed-in household's own sector.
   const myLeaderboardRow = leaderboard.find((r) => r.user_id === profile.id);
   const [selectedSector, setSelectedSector] = useState(() => matchSector(myLeaderboardRow?.sector));
 
-  // Core local states for credits & sorting verification
+  // Authoritative credit balance — the new total always comes back from the RPC, never computed here.
   const [greenCredits, setGreenCredits] = useState(profile?.green_credits ?? 0);
-  const [isWasteSegregated, setIsWasteSegregated] = useState(false);
+  // Daily-action flags/caps derived from the authoritative `daily` state.
+  const isWasteSegregated = daily.segregated;
+  const quizzesCorrectToday = daily.quizzes_correct;
+  const quizStrikesUsed = daily.quiz_strikes;
 
   // DYNAMIC PICKUP STREAK DETECTION (Task 1)
   const hasPickupToday = pickups.some(p => {
@@ -98,27 +90,50 @@ export default function DashboardContent({
     return pickupDate === todayDate;
   });
 
-  // WASTE SEGREGATION HANDLER PIPELINE (Task 2)
+  // Apply a log_daily_action result: authoritative state + special-event toasts (perfect/chest/shield).
+  const applyActionResult = (res: DailyActionResult | null | undefined) => {
+    if (!res?.ok) return;
+    setDaily((prev) => ({
+      ...prev,
+      logged_in: res.caps?.logged_in ?? prev.logged_in,
+      segregated: res.caps?.segregated ?? prev.segregated,
+      quizzes_correct: res.caps?.quizzes_correct ?? prev.quizzes_correct,
+      quiz_strikes: res.caps?.quiz_strikes ?? prev.quiz_strikes,
+      current_streak: res.current_streak ?? prev.current_streak,
+      longest_streak: res.longest_streak ?? prev.longest_streak,
+      streak_freezes: res.freezes ?? prev.streak_freezes,
+      weekly_active_days: res.weekly_active_days ?? prev.weekly_active_days,
+    }));
+    if (typeof res.green_credits === "number") setGreenCredits(res.green_credits);
+    if (res.freeze_used) toast("Streak shield used — your streak survived a missed day.");
+    if (res.perfect_day) toast.success(`Perfect Day! Full ritual complete — capstone bonus at ×${res.multiplier?.toFixed(2)}.`);
+    if (res.chest) toast.success(`Chest unlocked at ${res.chest.milestone} days: +${res.chest.reward} credits${res.chest.freeze ? " & +1 shield" : ""}!`);
+  };
+
+  // WASTE SEGREGATION — authoritative server RPC (no client credit math).
   const handleLogWasteSegregation = async () => {
     if (isWasteSegregated) return;
-    setIsWasteSegregated(true);
-    
-    setGreenCredits(prev => {
-      const nextCredits = prev + 2;
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user) {
-          supabase
-            .from("profiles")
-            .update({ green_credits: nextCredits })
-            .eq("id", user.id)
-            .then(({ error }) => {
-              if (error) console.error("Error updating credits in db:", error);
-            });
-        }
-      });
-      return nextCredits;
-    });
+    const { data, error } = await supabase.rpc("log_daily_action", { p_action: "segregate" });
+    const res = data as DailyActionResult;
+    if (error || !res?.ok) { toast.error("Couldn't log segregation. Try again."); return; }
+    applyActionResult(res);
+    toast.success(`Segregation logged — +${res.awarded} credits (×${res.multiplier?.toFixed(2)}).`);
   };
+
+  // Once/day check-in. The RPC is idempotent (repeat logins award 0), so firing on every mount is safe.
+  useEffect(() => {
+    if (!isHousehold) return;
+    let cancelled = false;
+    supabase.rpc("log_daily_action", { p_action: "login" }).then(({ data }) => {
+      if (cancelled) return;
+      const res = data as DailyActionResult;
+      if (!res?.ok) return;
+      applyActionResult(res);
+      if (res.awarded && res.awarded > 0) toast.success(`Daily check-in — +${res.awarded} credits. Streak: ${res.current_streak} days.`);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHousehold]);
 
   // Trivia Quiz States
   const [isQuizOpen, setIsQuizOpen] = useState(false);
@@ -126,8 +141,6 @@ export default function DashboardContent({
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizFeedbackText, setQuizFeedbackText] = useState("");
-  const [quizzesCorrectToday, setQuizzesCorrectToday] = useState(0); // Progress tracker (Max 5 successful completions)
-  const [quizStrikesUsed, setQuizStrikesUsed] = useState(0); // Lives tracker (Max 2 incorrect strikes allowed)
 
   // Achievements real-time unlocking states
   const [unlockedAchievement, setUnlockedAchievement] = useState<UserAchievement | null>(null);
@@ -140,44 +153,7 @@ export default function DashboardContent({
     return initialUnlocked;
   });
 
-  // Load from localStorage on mount and check daily reset
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedDate = localStorage.getItem("quizDate");
-      const today = new Date().toDateString();
-      if (savedDate !== today) {
-        localStorage.setItem("quizDate", today);
-        localStorage.setItem("quizzesCorrectToday", "0");
-        localStorage.setItem("quizStrikesUsed", "0");
-      } else {
-        const completed = localStorage.getItem("quizzesCorrectToday");
-        const strikes = localStorage.getItem("quizStrikesUsed");
-        if (completed) setQuizzesCorrectToday(parseInt(completed, 10));
-        if (strikes) setQuizStrikesUsed(parseInt(strikes, 10));
-      }
-    }
-  }, []);
-
-  // Write to localStorage on change
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const today = new Date().toDateString();
-      const savedDate = localStorage.getItem("quizDate");
-      if (savedDate === today) {
-        localStorage.setItem("quizzesCorrectToday", quizzesCorrectToday.toString());
-      }
-    }
-  }, [quizzesCorrectToday]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const today = new Date().toDateString();
-      const savedDate = localStorage.getItem("quizDate");
-      if (savedDate === today) {
-        localStorage.setItem("quizStrikesUsed", quizStrikesUsed.toString());
-      }
-    }
-  }, [quizStrikesUsed]);
+  // Daily caps are now server-authoritative (daily_activity via log_daily_action) — no localStorage.
 
   const ecoTriviaPool = [
     { q: "Which type of waste plastic degrades slowest in landfills?", a: ["PET Bottles", "PVC Pipes", "Styrofoam Cups", "HDPE Jugs"], correct: 2 },
@@ -210,32 +186,38 @@ export default function DashboardContent({
     }
     setQuizSubmitted(true);
 
-    if (selectedAnswer === currentQuestion.correct) {
-      if (quizzesCorrectToday < 5) {
-        setGreenCredits(prev => prev + 1);
-        setQuizzesCorrectToday(prev => prev + 1);
+    const correct = selectedAnswer === currentQuestion.correct;
+    const { data, error } = await supabase.rpc("log_daily_action", {
+      p_action: correct ? "quiz_correct" : "quiz_strike",
+    });
+    const res = data as DailyActionResult;
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          // Fix: previously wrote a non-existent `total_points` column. Credits live in green_credits.
-          await supabase.from('profiles').update({ green_credits: greenCredits + 1 }).eq('id', user.id);
-        }
+    if (error || !res?.ok) {
+      // Cap hit (5 correct / 2 strikes) or transient error — surface the server reason.
+      const msg = res?.reason === "quiz_cap"
+        ? "Daily limit reached — 5/5 quizzes done."
+        : res?.reason === "strike_cap"
+          ? "No chances left — 2/2 strikes committed today."
+          : "Couldn't submit. Try again.";
+      setQuizFeedbackText(msg);
+      toast.error(msg);
+      return;
+    }
 
-        setQuizFeedbackText(`Correct! +1 Green Credit earned. Current progress: ${quizzesCorrectToday + 1}/5.`);
-        toast.success(`Correct! +1 Green Credit earned. Current progress: ${quizzesCorrectToday + 1}/5.`);
-      }
+    applyActionResult(res);
+    if (correct) {
+      const done = res.caps?.quizzes_correct ?? 0;
+      setQuizFeedbackText(`Correct! +${res.awarded} credits (×${res.multiplier?.toFixed(2)}). Progress: ${done}/5.`);
+      toast.success(`Correct! +${res.awarded} credits. Progress: ${done}/5.`);
     } else {
-      setQuizStrikesUsed(prev => {
-        const newStrikes = prev + 1;
-        if (newStrikes === 1) {
-          setQuizFeedbackText("Incorrect answer. Strike 1/2 committed! Be careful on your final chance.");
-          toast.warning("Incorrect answer. Strike 1/2 committed! Be careful on your final chance.");
-        } else if (newStrikes === 2) {
-          setQuizFeedbackText("Incorrect answer. Strike 2/2 committed. Your quiz engine is now locked until tomorrow.");
-          toast.error("Incorrect answer. Strike 2/2 committed. Your quiz engine is now locked until tomorrow.");
-        }
-        return newStrikes;
-      });
+      const strikes = res.caps?.quiz_strikes ?? 0;
+      if (strikes >= 2) {
+        setQuizFeedbackText("Strike 2/2 — quiz locked until tomorrow.");
+        toast.error("Strike 2/2 committed. Quiz locked until tomorrow.");
+      } else {
+        setQuizFeedbackText(`Incorrect. Strike ${strikes}/2 — be careful on your final chance.`);
+        toast.warning(`Incorrect. Strike ${strikes}/2 committed.`);
+      }
     }
   };
 
@@ -313,48 +295,9 @@ export default function DashboardContent({
   const activeTierIcon = getTierIcon(activeTier.rank);
   const activeTierIconUrl = getTierIconUrl(activeTier.rank);
 
-  // Compute completed pickup dates for streaks (only for household role)
-  const isHousehold = profile?.role === "household";
-  const todayStrLocal = new Date().toLocaleDateString();
-  const hasDailyActionToday = hasPickupToday || isWasteSegregated || quizzesCorrectToday > 0;
-  
-  const completedDates = isHousehold
-    ? Array.from(
-        new Set([
-          ...pickups
-            .filter((p) => (p.status as string) === "completed" || (p.status as string) === "collected" || (p.status as string) === "processed")
-            .map((p) => new Date(p.scheduled_date).toLocaleDateString()),
-          ...(hasDailyActionToday ? [todayStrLocal] : [])
-        ])
-      ).sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
-    : [];
-
-  const computedPeriods = getStreakPeriods(completedDates);
-
-  let currentStreak = 0;
-  let longestStreak = 0;
-
-  if (completedDates.length > 0) {
-    computedPeriods.forEach((p) => {
-      const s = new Date(p.periodStart);
-      const e = new Date(p.periodEnd);
-      const diff = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      if (diff > longestStreak) {
-        longestStreak = diff;
-      }
-    });
-
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStrLocal = yesterday.toLocaleDateString();
-
-    const lastPeriod = computedPeriods[computedPeriods.length - 1];
-    if (lastPeriod.periodEnd === todayStrLocal || lastPeriod.periodEnd === yesterdayStrLocal) {
-      const s = new Date(lastPeriod.periodStart);
-      const e = new Date(lastPeriod.periodEnd);
-      currentStreak = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    }
-  }
+  // Streak + daily-action state are now authoritative from the server (`daily`), not client-computed.
+  const currentStreak = daily.current_streak;
+  const longestStreak = daily.longest_streak;
 
   // Define achievements dynamically
   const achievements: UserAchievement[] = [
@@ -549,32 +492,20 @@ export default function DashboardContent({
           </div>
 
           {isHousehold && (
-            <div className="animate-fade-up-delay-2 t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] transition-all duration-300 hover:shadow-md flex flex-col gap-6">
-              <div className="space-y-1">
-                <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark">
-                  Streak &amp; Daily Actions
-                </h3>
-                <p className="text-xs text-smoke">Track your green activities and accolades</p>
-              </div>
-
-              <StreakCard
-                streak={computedPeriods}
-                currentStreak={currentStreak}
-                longestStreak={longestStreak}
-                total={profile.pickups_completed}
-                title="Pickups Streak"
-                primaryColor="#C4704A"
-                accentColor="#7A9E7E"
-                textColor="#2C1F14"
-                theme="light"
-                showHowItWorks={true}
-                onLaunchQuiz={handleLaunchQuiz}
-                hasPickupToday={hasPickupToday}
-                isWasteSegregated={isWasteSegregated}
-                onLogWasteSegregation={handleLogWasteSegregation}
-                activityDoneToday={hasDailyActionToday}
-              />
-            </div>
+            <DailyRitual
+              currentStreak={currentStreak}
+              longestStreak={longestStreak}
+              totalPickups={profile.pickups_completed}
+              loggedIn={daily.logged_in}
+              segregated={daily.segregated}
+              quizzesCorrect={daily.quizzes_correct}
+              quizStrikes={daily.quiz_strikes}
+              freezes={daily.streak_freezes}
+              weeklyActiveDays={daily.weekly_active_days}
+              hasPickupToday={hasPickupToday}
+              onLaunchQuiz={handleLaunchQuiz}
+              onLogSegregation={handleLogWasteSegregation}
+            />
           )}
 
           {isHousehold && (
