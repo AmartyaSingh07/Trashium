@@ -87,7 +87,7 @@ export default function CrewRouteMap({ activeZones }: RouteMapProps) {
     : (targetPoints.length > 0 ? targetPoints[0] : [22.75, 88.25]);
 
   return (
-    <div className="w-full h-full min-h-[300px] rounded-xl overflow-hidden border border-[rgba(196,112,74,0.15)] z-10">
+    <div className="w-full h-full min-h-[300px] rounded-xl overflow-hidden border border-[rgba(194,112,61,0.15)] z-10">
       <MapContainer 
         center={mapCenter} 
         zoom={10} 
@@ -107,7 +107,7 @@ export default function CrewRouteMap({ activeZones }: RouteMapProps) {
         {crewLocation && (
           <Marker position={crewLocation} icon={vehicleIcon}>
             <Popup>
-              <span className="font-dm text-xs font-bold text-[#2C1F14]">Your Active Position</span>
+              <span className="font-dm text-xs font-bold text-[#2A2218]">Your Active Position</span>
             </Popup>
           </Marker>
         )}
@@ -120,8 +120,8 @@ export default function CrewRouteMap({ activeZones }: RouteMapProps) {
             <Marker key={idx} position={coords} icon={defaultIcon}>
               <Popup>
                 <div className="font-dm p-1 text-center">
-                  <span className="font-syne font-bold text-[#C4704A] block text-sm">{zone} Sector</span>
-                  <span className="font-mono text-[10px] text-[#6B5744] bg-[#F4EFE6] px-1.5 py-0.5 rounded mt-1 block">
+                  <span className="font-syne font-bold text-[#C2703D] block text-sm">{zone} Sector</span>
+                  <span className="font-mono text-[10px] text-[#6B5744] bg-[#F4EFE3] px-1.5 py-0.5 rounded mt-1 block">
                     Lat: {coords[0]} | Long: {coords[1]}
                   </span>
                 </div>
@@ -132,7 +132,7 @@ export default function CrewRouteMap({ activeZones }: RouteMapProps) {
 
         {/* Optimized Route Vector Polyline connector thread string overlay */}
         {activePathWaypoints.length > 1 && (
-          <Polyline positions={activePathWaypoints} color="#C4704A" weight={4} dashArray="5, 10" />
+          <Polyline positions={activePathWaypoints} color="#C2703D" weight={4} dashArray="5, 10" />
         )}
       </MapContainer>
     </div>

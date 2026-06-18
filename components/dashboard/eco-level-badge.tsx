@@ -63,7 +63,7 @@ export default function EcoLevelBadge({ greenCredits }: EcoLevelBadgeProps) {
             src={iconUrl} 
             alt={activeTier.rank} 
             crossOrigin="anonymous"
-            className="w-full h-full object-contain p-2 filter drop-shadow-[0_2px_4px_rgba(44,31,20,0.15)]"
+            className="w-full h-full object-contain p-2 filter drop-shadow-[0_2px_4px_rgba(42,34,24,0.15)]"
           />
         </div>
         <div>

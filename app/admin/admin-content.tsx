@@ -497,9 +497,9 @@ export default function AdminContent({
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 relative z-10 font-[family-name:var(--font-dm)]">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[rgba(196,112,74,0.15)] pb-2 mb-4 w-full">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[rgba(194,112,61,0.15)] pb-2 mb-4 w-full">
         <div className="flex items-center gap-3 mb-4 select-none">
-          <div className="w-10 h-10 rounded-xl bg-[#EDE5D8]/80 border border-[rgba(196,112,74,0.18)] p-2 flex items-center justify-center shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-[#EDE5D8]/80 border border-[rgba(194,112,61,0.18)] p-2 flex items-center justify-center shadow-sm">
             <img 
               src="https://fqbjjcbrxrokvdwkydze.supabase.co/storage/v1/object/public/gamification-levels/logo.png" 
               className="w-full h-full object-contain" 
@@ -507,8 +507,8 @@ export default function AdminContent({
             />
           </div>
           <div>
-            <span className="text-[10px] font-mono tracking-widest uppercase text-[#7A9E7E] font-bold block leading-none">Ecosystem Console</span>
-            <span className="font-syne font-bold text-xl text-[#2C1F14] tracking-tight mt-0.5 block">Trashium Terminal</span>
+            <span className="text-[10px] font-mono tracking-widest uppercase text-[#8FA37E] font-bold block leading-none">Ecosystem Console</span>
+            <span className="font-syne font-bold text-xl text-[#2A2218] tracking-tight mt-0.5 block">Trashium Terminal</span>
           </div>
         </div>
       </div>
@@ -556,8 +556,8 @@ export default function AdminContent({
       {userRole === "admin" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 w-full max-w-7xl mx-auto mb-10">
           {/* MOUNT THE ECOSYSTEM OVERVIEW DECK (Left Block) */}
-          <div className="w-full t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(196,112,74,0.15)] backdrop-blur-md shadow-sm">
-            <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2C1F14] mb-4">
+          <div className="w-full t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.15)] backdrop-blur-md shadow-sm">
+            <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-4">
               Ecosystem Overview Analysis
             </h2>
             
@@ -615,7 +615,7 @@ export default function AdminContent({
             </div>
 
             {/* Sector processing throughput */}
-            <div className="border-t border-[rgba(196,112,74,0.12)] pt-5">
+            <div className="border-t border-[rgba(194,112,61,0.12)] pt-5">
               <h3 className="font-syne font-bold text-xs uppercase tracking-wider text-[#6B5744] mb-3">
                 Sector-wise Processing Throughput & Minting Summary
               </h3>
@@ -632,7 +632,7 @@ export default function AdminContent({
                       {item.sector}
                     </p>
                     <div className="flex flex-col gap-0.5 text-[#6B5744]">
-                      <p className="text-[11px]">Throughput: <span className="font-mono font-bold text-[#2C1F14]">{item.throughput}</span></p>
+                      <p className="text-[11px]">Throughput: <span className="font-mono font-bold text-[#2A2218]">{item.throughput}</span></p>
                       <p className="text-[11px]">Minted: <span className="font-mono font-semibold text-clay">{item.minted}</span></p>
                     </div>
                   </div>
@@ -642,14 +642,14 @@ export default function AdminContent({
           </div>
 
           {/* MOUNT THE REAL-TIME OPERATIONS MONITORING TERMINAL (Right Block) */}
-          <div className="w-full t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/40 border border-[rgba(196,112,74,0.18)] backdrop-blur-md shadow-sm">
+          <div className="w-full t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.18)] backdrop-blur-md shadow-sm">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-              <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2C1F14]">
+              <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218]">
                 Operations Live Monitoring Stream
               </h2>
               <button
                 onClick={handleExportSectorSummary}
-                className="bg-[#C4704A] hover:bg-[#A0522D] text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 flex items-center gap-1 shadow-sm"
+                className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 flex items-center gap-1 shadow-sm"
               >
                 📥 Export Summary
               </button>

@@ -10,16 +10,16 @@
 /* ── STEP 1: Tailwind v4 @theme block ─────────────────── */
 @theme inline {
   /* Brand color palette */
-  --color-terra:       #C4704A;
+  --color-terra:       #C2703D;
   --color-terra-deep:  #A0522D;
-  --color-sage:        #7A9E7E;
+  --color-sage:        #8FA37E;
   --color-sage-deep:   #4A6741;
   --color-moss:        #3D5C3A;
-  --color-linen:       #F4EFE6;
+  --color-linen:       #F4EFE3;
   --color-parchment:   #EDE5D8;
   --color-sand:        #D9BA8E;
   --color-clay:        #8B5E3C;
-  --color-bark:        #2C1F14;
+  --color-bark:        #2A2218;
   --color-smoke:       #6B5744;
   --color-amber-warm:  #E8A44A;
 
@@ -54,24 +54,24 @@
 /* ── STEP 2: shadcn v4 CSS variable overrides ──────────── */
 :root {
   /* ── Surface tokens ── */
-  --background:           #F4EFE6;   /* linen — page bg */
-  --foreground:           #2C1F14;   /* bark — primary text */
+  --background:           #F4EFE3;   /* linen — page bg */
+  --foreground:           #2A2218;   /* bark — primary text */
 
   --card:                 #EDE5D8;   /* parchment — card bg */
-  --card-foreground:      #2C1F14;
+  --card-foreground:      #2A2218;
 
   --popover:              #F0E9DF;   /* slightly warmer linen */
-  --popover-foreground:   #2C1F14;
+  --popover-foreground:   #2A2218;
 
   /* ── Brand tokens ── */
-  --primary:              #C4704A;   /* terra */
-  --primary-foreground:   #F4EFE6;   /* linen text on terra bg */
+  --primary:              #C2703D;   /* terra */
+  --primary-foreground:   #F4EFE3;   /* linen text on terra bg */
 
   --secondary:            #EDE5D8;   /* parchment */
-  --secondary-foreground: #2C1F14;
+  --secondary-foreground: #2A2218;
 
-  --accent:               #7A9E7E;   /* sage */
-  --accent-foreground:    #F4EFE6;
+  --accent:               #8FA37E;   /* sage */
+  --accent-foreground:    #F4EFE3;
 
   /* ── Muted / supporting ── */
   --muted:                #E4DDD3;
@@ -80,7 +80,7 @@
   /* ── Borders + inputs ── */
   --border:               #D4C5B0;   /* warm sand-ish */
   --input:                #D4C5B0;
-  --ring:                 #C4704A;   /* terra focus ring */
+  --ring:                 #C2703D;   /* terra focus ring */
 
   /* ── Feedback ── */
   --destructive:          #C0392B;
@@ -90,13 +90,13 @@
   --radius:               0.625rem;  /* 10px — slightly softer than shadcn default */
 
   /* ── Trashium custom tokens (non-shadcn) ── */
-  --t-glass-bg:      rgba(244, 239, 230, 0.75);
-  --t-glass-border:  rgba(196, 112, 74, 0.18);
-  --t-glass-shadow:  0 8px 32px rgba(44, 31, 20, 0.08), 0 2px 8px rgba(196, 112, 74, 0.06);
-  --t-shadow-sm:     0 1px 3px rgba(44, 31, 20, 0.06);
-  --t-shadow-md:     0 4px 16px rgba(44, 31, 20, 0.08), 0 2px 6px rgba(196, 112, 74, 0.05);
-  --t-shadow-lg:     0 12px 40px rgba(44, 31, 20, 0.12), 0 4px 12px rgba(196, 112, 74, 0.08);
-  --t-shadow-xl:     0 24px 64px rgba(44, 31, 20, 0.16), 0 8px 20px rgba(196, 112, 74, 0.10);
+  --t-glass-bg:      rgba(244,239,227, 0.75);
+  --t-glass-border:  rgba(194,112,61, 0.18);
+  --t-glass-shadow:  0 8px 32px rgba(42,34,24, 0.08), 0 2px 8px rgba(194,112,61, 0.06);
+  --t-shadow-sm:     0 1px 3px rgba(42,34,24, 0.06);
+  --t-shadow-md:     0 4px 16px rgba(42,34,24, 0.08), 0 2px 6px rgba(194,112,61, 0.05);
+  --t-shadow-lg:     0 12px 40px rgba(42,34,24, 0.12), 0 4px 12px rgba(194,112,61, 0.08);
+  --t-shadow-xl:     0 24px 64px rgba(42,34,24, 0.16), 0 8px 20px rgba(194,112,61, 0.10);
   
   --ribbon-opacity: 0.2;
 }
@@ -107,22 +107,22 @@
   --t-cream-glass: rgba(26, 20, 14, 0.82);
 
   --background: #1A140E;
-  --foreground: #F4EFE6;
+  --foreground: #F4EFE3;
   --card: #221A12;
-  --card-foreground: #F4EFE6;
+  --card-foreground: #F4EFE3;
   --popover: #221A12;
-  --popover-foreground: #F4EFE6;
+  --popover-foreground: #F4EFE3;
   --primary: #D4885E;
   --primary-foreground: #1A140E;
-  --secondary: #2C1F14;
+  --secondary: #2A2218;
   --secondary-foreground: #EDE5D8;
-  --muted: #2C1F14;
+  --muted: #2A2218;
   --muted-foreground: #A09080;
-  --accent: #2C1F14;
+  --accent: #2A2218;
   --accent-foreground: #EDE5D8;
   --destructive: #D45050;
-  --border: rgba(196, 112, 74, 0.22);
-  --input: rgba(196, 112, 74, 0.22);
+  --border: rgba(194,112,61, 0.22);
+  --input: rgba(194,112,61, 0.22);
   --ring: #D4885E;
 }
 
@@ -200,10 +200,10 @@
 
   /* Glow utilities for icons */
   .glow-terra {
-    filter: drop-shadow(0 0 8px rgba(196, 112, 74, 0.45));
+    filter: drop-shadow(0 0 8px rgba(194,112,61, 0.45));
   }
   .glow-sage {
-    filter: drop-shadow(0 0 8px rgba(122, 158, 126, 0.45));
+    filter: drop-shadow(0 0 8px rgba(143,163,126, 0.45));
   }
 
   /* Gradient text — earthy terracotta */
@@ -251,9 +251,9 @@
   }
   .status-accepted {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border;
-    background: rgba(122, 158, 126, 0.12);
+    background: rgba(143,163,126, 0.12);
     color: #3D5C3A;
-    border-color: rgba(122, 158, 126, 0.35);
+    border-color: rgba(143,163,126, 0.35);
   }
   .status-completed {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border;
@@ -269,12 +269,12 @@
     @apply bg-terra text-linen;
     font-family: var(--font-syne);
     @apply text-sm font-semibold tracking-wide;
-    box-shadow: 0 4px 20px rgba(196, 112, 74, 0.35);
+    box-shadow: 0 4px 20px rgba(194,112,61, 0.35);
     transition: all 0.3s ease;
   }
   .btn-terra:hover {
     @apply bg-terra-deep -translate-y-0.5;
-    box-shadow: 0 6px 28px rgba(196, 112, 74, 0.48);
+    box-shadow: 0 6px 28px rgba(194,112,61, 0.48);
   }
   .btn-terra:active { transform: translateY(0); }
 
@@ -287,7 +287,7 @@
     transition: all 0.3s ease;
   }
   .btn-ghost-terra:hover {
-    background: rgba(196, 112, 74, 0.08);
+    background: rgba(194,112,61, 0.08);
     @apply -translate-y-0.5;
   }
 }
@@ -312,10 +312,10 @@
 .credits-number {
   background: linear-gradient(
     105deg,
-    #2C1F14 38%,
+    #2A2218 38%,
     #D9BA8E 48%,
-    #C4704A 54%,
-    #2C1F14 64%
+    #C2703D 54%,
+    #2A2218 64%
   );
   background-size: 300% auto;
   -webkit-background-clip: text;
@@ -348,7 +348,7 @@
 .t-flame {
   display: inline-flex;
   transform-origin: 50% 85%;
-  filter: drop-shadow(0 0 calc(2px + 7px * var(--t-flame-intensity, 0)) var(--t-flame-color, #C4704A));
+  filter: drop-shadow(0 0 calc(2px + 7px * var(--t-flame-intensity, 0)) var(--t-flame-color, #C2703D));
   animation: t-flame-flicker 1.5s ease-in-out infinite;
 }
 .t-flame-dormant { animation: none; opacity: 0.5; filter: grayscale(0.35) brightness(0.95); }
@@ -360,8 +360,8 @@
 .t-rise { animation: t-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 @keyframes t-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(196, 112, 74, 0); }
-  50%      { box-shadow: 0 0 0 4px rgba(196, 112, 74, 0.12); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(194,112,61, 0); }
+  50%      { box-shadow: 0 0 0 4px rgba(194,112,61, 0.12); }
 }
 .t-pulse { animation: t-pulse 2.1s ease-in-out infinite; }
 

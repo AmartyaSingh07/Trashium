@@ -185,14 +185,14 @@ export default function MarketplaceAdmin({ initialItems, initialOrders, users, b
   return (
     <div className="w-full max-w-7xl mx-auto mb-10 flex flex-col gap-8">
       {/* ─── Catalog management ─── */}
-      <div className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(196,112,74,0.15)]">
+      <div className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.15)]">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2C1F14]">
+          <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218]">
             Marketplace Catalog
           </h2>
           <button
             onClick={openNew}
-            className="bg-[#C4704A] hover:bg-[#A0522D] text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 flex items-center gap-1 shadow-sm"
+            className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 flex items-center gap-1 shadow-sm"
           >
             <Plus className="h-3 w-3" /> Add Item
           </button>
@@ -248,8 +248,8 @@ export default function MarketplaceAdmin({ initialItems, initialOrders, users, b
       </div>
 
       {/* ─── Redemption orders ─── */}
-      <div className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/40 border border-[rgba(196,112,74,0.18)]">
-        <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2C1F14] mb-4">
+      <div className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.18)]">
+        <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-4">
           Redemption Orders
         </h2>
         <div className="rounded-xl border border-sand/25 overflow-x-auto max-h-[360px] overflow-y-auto">
@@ -303,8 +303,8 @@ export default function MarketplaceAdmin({ initialItems, initialOrders, users, b
       </div>
 
       {/* ─── Award manual badge ─── */}
-      <div className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(196,112,74,0.15)]">
-        <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2C1F14] mb-4 flex items-center gap-2">
+      <div className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.15)]">
+        <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-4 flex items-center gap-2">
           <Award className="h-4 w-4" /> Award Badge
         </h2>
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
@@ -334,7 +334,7 @@ export default function MarketplaceAdmin({ initialItems, initialOrders, users, b
           </div>
           <button
             onClick={award}
-            className="bg-[#C4704A] hover:bg-[#A0522D] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 shadow-sm"
+            className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 shadow-sm"
           >
             Award
           </button>

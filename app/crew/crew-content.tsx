@@ -157,7 +157,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
   const completedCount = pickups.filter(p => p.status === "completed" || p.status === "collected").length;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F4EFE6]">
+    <div className="flex flex-col min-h-screen bg-[#F4EFE3]">
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -171,7 +171,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
 
         {/* Live Broadcast Telemetry Status Indicator */}
         {isBroadcasting && !isOffline && (
-          <div className="mb-6 w-full p-2.5 bg-[#7A9E7E]/15 border border-[#7A9E7E]/30 text-[#4A6741] rounded-xl font-mono text-[11px] font-bold text-center flex items-center justify-center gap-2">
+          <div className="mb-6 w-full p-2.5 bg-[#8FA37E]/15 border border-[#8FA37E]/30 text-[#4A6741] rounded-xl font-mono text-[11px] font-bold text-center flex items-center justify-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4A6741] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#4A6741]"></span>
@@ -181,17 +181,17 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
         )}
 
         {/* Landing Layout Section: CrewHub Title */}
-        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[rgba(196,112,74,0.15)] pb-6">
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[rgba(194,112,61,0.15)] pb-6">
           <div>
-            <h1 className="font-syne font-bold text-xl text-[#2C1F14] tracking-tight">
+            <h1 className="font-syne font-bold text-xl text-[#2A2218] tracking-tight">
               CrewHub
             </h1>
             <p className="text-xs text-[#6B5744] mt-1">
-              Active Hub Operations Sector: <span className="font-bold text-[#C4704A]">{activeZone}</span>
+              Active Hub Operations Sector: <span className="font-bold text-[#C2703D]">{activeZone}</span>
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs bg-[#7A9E7E]/10 text-[#4A6741] font-bold border border-[#7A9E7E]/30 rounded-full px-3 py-1.5 uppercase">
+            <span className="font-mono text-xs bg-[#8FA37E]/10 text-[#4A6741] font-bold border border-[#8FA37E]/30 rounded-full px-3 py-1.5 uppercase">
               🛡️ {profile.role} terminal
             </span>
           </div>
@@ -199,15 +199,15 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
 
         {/* Quick Analytical Overview Row */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="t-glass-card rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(196,112,74,0.12)] backdrop-blur-md shadow-sm">
+          <div className="t-glass-card rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
             <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Assigned Runs</span>
-            <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 text-[#C4704A]">{totalCount}</span>
+            <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 text-[#C2703D]">{totalCount}</span>
           </div>
-          <div className="t-glass-card rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(196,112,74,0.12)] backdrop-blur-md shadow-sm">
+          <div className="t-glass-card rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
             <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Remaining Pickups</span>
             <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 text-amber-700">{pendingCount}</span>
           </div>
-          <div className="t-glass-card rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(196,112,74,0.12)] backdrop-blur-md shadow-sm">
+          <div className="t-glass-card rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
             <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Cleared runs</span>
             <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 text-[#4A6741]">{completedCount}</span>
           </div>
@@ -217,18 +217,18 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
         <div className="w-full flex flex-col gap-6">
           
           {/* Live Sequence Map */}
-          <div className="t-glass-card rounded-2xl p-4 bg-[#EDE5D8]/30 border border-[rgba(196,112,74,0.18)] shadow-sm">
-            <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2C1F14] mb-3">
+          <div className="t-glass-card rounded-2xl p-4 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.18)] shadow-sm">
+            <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-3">
               Live Optimized Collection Sequence Map
             </h2>
-            <div className="relative w-full h-[320px] rounded-2xl overflow-hidden shadow-md border border-[rgba(196,112,74,0.15)] bg-[#EDE5D8]/20">
+            <div className="relative w-full h-[320px] rounded-2xl overflow-hidden shadow-md border border-[rgba(194,112,61,0.15)] bg-[#EDE5D8]/20">
               {/* Collect active list zones strings array to plot polyline map targets */}
               <CrewRouteMap activeZones={pickups.map(p => p.operating_zone)} />
 
               <button
                 type="button"
                 onClick={() => alert("🗺️ Trashium Fleet Telemetry Vector: Routing path tracking sequence synchronized successfully with live West Bengal operational hubs.")}
-                className="absolute top-3 right-3 z-[1000] font-syne font-bold text-[11px] uppercase tracking-wider text-[#F4EFE6] bg-[#2C1F14]/90 hover:bg-black backdrop-blur-md px-4 py-2.5 rounded-xl border border-[#C4704A]/30 shadow-xl transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] min-h-[38px] flex items-center gap-1.5 cursor-pointer select-none"
+                className="absolute top-3 right-3 z-[1000] font-syne font-bold text-[11px] uppercase tracking-wider text-[#F4EFE3] bg-[#2A2218]/90 hover:bg-black backdrop-blur-md px-4 py-2.5 rounded-xl border border-[#C2703D]/30 shadow-xl transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] min-h-[38px] flex items-center gap-1.5 cursor-pointer select-none"
               >
                 Verify Route 🗺️
               </button>
@@ -236,14 +236,14 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
           </div>
 
             {/* Pickup Requests Ledger Table */}
-            <div className="w-full mt-6 t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/40 border border-[rgba(196,112,74,0.15)] shadow-sm animate-fadeIn">
-              <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2C1F14] mb-4 flex items-center gap-2">
+            <div className="w-full mt-6 t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.15)] shadow-sm animate-fadeIn">
+              <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-4 flex items-center gap-2">
                 📋 Pickup Requests
               </h2>
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left text-sm border-collapse">
                   <thead>
-                    <tr className="border-b border-[rgba(196,112,74,0.15)] font-syne text-xs uppercase tracking-wider text-[#6B5744]">
+                    <tr className="border-b border-[rgba(194,112,61,0.15)] font-syne text-xs uppercase tracking-wider text-[#6B5744]">
                       <th className="py-3 px-3">Address & Destination</th>
                       <th className="py-3 px-3">Schedule Timeline</th>
                       <th className="py-3 px-3">Weight Vector</th>
@@ -251,26 +251,26 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                       <th className="py-3 px-3 text-right">Operational Flow</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[rgba(196,112,74,0.08)]">
+                  <tbody className="divide-y divide-[rgba(194,112,61,0.08)]">
                     {pickups.map((p) => (
                       <tr key={p.id} className="hover:bg-[#EDE5D8]/20 transition-colors">
                         <td className="py-3.5 px-3">
-                          <div className="font-bold text-[#2C1F14] text-sm">{p.operating_zone}</div>
+                          <div className="font-bold text-[#2A2218] text-sm">{p.operating_zone}</div>
                           <div className="text-xs text-[#6B5744] mt-0.5 max-w-[200px] truncate">{p.user_address || "SKFGI Aggregation Drop Point"}</div>
                         </td>
                         <td className="py-3.5 px-3">
-                          <div className="text-xs font-semibold text-[#2C1F14]">{p.scheduled_date}</div>
-                          <div className="font-mono text-[11px] text-[#C4704A] mt-0.5 font-medium">{p.time_slot}</div>
+                          <div className="text-xs font-semibold text-[#2A2218]">{p.scheduled_date}</div>
+                          <div className="font-mono text-[11px] text-[#C2703D] mt-0.5 font-medium">{p.time_slot}</div>
                         </td>
                         <td className="py-3.5 px-3">
-                          <span className="font-mono text-xs font-bold text-[#4A6741] bg-[#7A9E7E]/10 px-2.5 py-0.5 rounded">
+                          <span className="font-mono text-xs font-bold text-[#4A6741] bg-[#8FA37E]/10 px-2.5 py-0.5 rounded">
                             {p.weight === 7.5 ? "5-10 kg" : p.weight === 12.5 ? "10-15 kg" : p.weight === 17.5 ? "15-20 kg" : p.weight === 25 ? "20+ kg" : `${p.weight} kg`}
                           </span>
                         </td>
                         <td className="py-3.5 px-3">
                           <span className={`text-[10px] font-mono uppercase font-bold tracking-tight px-2 py-1 rounded border ${
                             p.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                            p.status === 'collected' ? 'bg-[#7A9E7E]/10 text-[#4A6741] border-[#7A9E7E]/30' :
+                            p.status === 'collected' ? 'bg-[#8FA37E]/10 text-[#4A6741] border-[#8FA37E]/30' :
                             p.status === 'accepted' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                             p.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
                             'bg-amber-50 text-amber-700 border-amber-200'
@@ -281,7 +281,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                         <td className="py-3.5 px-3 text-right">
                           <button
                             onClick={() => { setSelectedPickup(p); setIsActionModalOpen(true); }}
-                            className="bg-[#C4704A] hover:bg-[#A0522D] text-white text-xs font-bold px-3 py-1.5 rounded-lg font-syne uppercase tracking-wider min-h-[36px]"
+                            className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-xs font-bold px-3 py-1.5 rounded-lg font-syne uppercase tracking-wider min-h-[36px]"
                           >
                             Report Impurities ⚠️
                           </button>
@@ -294,19 +294,19 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
             </div>
 
             {/* 2. MOUNT THE MIGRATE ON-SITE PRICE ESTIMATOR */}
-            <div className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(196,112,74,0.18)] shadow-sm mt-6">
-              <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2C1F14] mb-3">
+            <div className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.18)] shadow-sm mt-6">
+              <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-3">
                 🧮 Price Estimator
               </h2>
               <p className="text-xs text-[#6B5744] mb-4">Verify weights and calculate real-time custom Indian Rupee (₹) payouts directly at the doorstep if load discrepancies occur.</p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold uppercase text-[#2C1F14]">Material stream type</label>
+                  <label className="text-[11px] font-bold uppercase text-[#2A2218]">Material stream type</label>
                   <select 
                     value={estimatorMaterial}
                     onChange={(e) => setEstimatorMaterial(e.target.value)}
-                    className="p-2.5 bg-[#F4EFE6] border border-[#D4C5B0] rounded-lg text-xs text-[#2C1F14]"
+                    className="p-2.5 bg-[#F4EFE3] border border-[#D4C5B0] rounded-lg text-xs text-[#2A2218]"
                   >
                     <option>PET Bottles (Plastic)</option>
                     <option>Cardboard / Paper</option>
@@ -314,21 +314,21 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold uppercase text-[#2C1F14]">Doorstep Weight Class</label>
+                  <label className="text-[11px] font-bold uppercase text-[#2A2218]">Doorstep Weight Class</label>
                   <input 
                     type="text" 
                     placeholder="e.g. 12.5" 
                     value={estimatorWeight}
                     onChange={(e) => setEstimatorWeight(e.target.value)}
-                    className="p-2.5 bg-[#F4EFE6] border border-[#D4C5B0] rounded-lg text-xs text-[#2C1F14]" 
+                    className="p-2.5 bg-[#F4EFE3] border border-[#D4C5B0] rounded-lg text-xs text-[#2A2218]" 
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold uppercase text-[#2C1F14]">Quality Impurity Penalty (AI Risk)</label>
+                  <label className="text-[11px] font-bold uppercase text-[#2A2218]">Quality Impurity Penalty (AI Risk)</label>
                   <select 
                     value={estimatorPenalty}
                     onChange={(e) => setEstimatorPenalty(e.target.value)}
-                    className="p-2.5 bg-[#F4EFE6] border border-[#D4C5B0] rounded-lg text-xs text-[#2C1F14]"
+                    className="p-2.5 bg-[#F4EFE3] border border-[#D4C5B0] rounded-lg text-xs text-[#2A2218]"
                   >
                     <option value="0.0">0% Clean Load (No Defect)</option>
                     <option value="0.2">20% Minor Contamination</option>
@@ -338,9 +338,9 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                 </div>
               </div>
               
-              <div className="mt-4 pt-3 border-t border-[rgba(196,112,74,0.08)] flex justify-between items-center">
+              <div className="mt-4 pt-3 border-t border-[rgba(194,112,61,0.08)] flex justify-between items-center">
                 <span className="text-xs font-semibold text-[#6B5744]">Calculated Payout Estimation:</span>
-                <span className="font-mono text-sm font-bold text-[#4A6741] bg-[#7A9E7E]/10 px-3 py-1 rounded">
+                <span className="font-mono text-sm font-bold text-[#4A6741] bg-[#8FA37E]/10 px-3 py-1 rounded">
                   {getCalculatedPayout() === "Dynamic Sync" ? "₹ Dynamic Sync" : `₹ ${getCalculatedPayout()}`}
                 </span>
               </div>
@@ -352,14 +352,14 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
 
       {/* Reactive Overlay Modal for Reporting Impurities */}
       {isActionModalOpen && selectedPickup && (
-        <div className="fixed inset-0 bg-[#2C1F14]/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fadeIn">
-          <div className="bg-[#F4EFE6] border border-[#D4C5B0] w-full max-w-md p-6 rounded-2xl shadow-2xl flex flex-col gap-5">
+        <div className="fixed inset-0 bg-[#2A2218]/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fadeIn">
+          <div className="bg-[#F4EFE3] border border-[#D4C5B0] w-full max-w-md p-6 rounded-2xl shadow-2xl flex flex-col gap-5">
             
             {/* Modal Header Row */}
-            <div className="flex justify-between items-start border-b border-[rgba(196,112,74,0.15)] pb-3">
+            <div className="flex justify-between items-start border-b border-[rgba(194,112,61,0.15)] pb-3">
               <div>
-                <h3 className="font-syne font-bold text-base text-[#2C1F14]">Manifest Operations: Run #{selectedPickup.id.substring(0, 8)}</h3>
-                <p className="text-xs text-[#6B5744] mt-0.5 font-mono">Current Operational State: <span className="uppercase font-bold text-[#C4704A]">{selectedPickup.status}</span></p>
+                <h3 className="font-syne font-bold text-base text-[#2A2218]">Manifest Operations: Run #{selectedPickup.id.substring(0, 8)}</h3>
+                <p className="text-xs text-[#6B5744] mt-0.5 font-mono">Current Operational State: <span className="uppercase font-bold text-[#C2703D]">{selectedPickup.status}</span></p>
               </div>
               <button onClick={() => { setIsActionModalOpen(false); setSelectedPickup(null); }} className="text-sm font-bold text-[#6B5744] hover:text-red-600 transition-colors">✕</button>
             </div>
@@ -377,7 +377,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
               
               <button
                 onClick={() => updatePickupStatus(selectedPickup.id, "collected")}
-                className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-[#7A9E7E] text-white rounded-xl transition-all hover:bg-[#4A6741] min-h-[44px]"
+                className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-[#8FA37E] text-white rounded-xl transition-all hover:bg-[#4A6741] min-h-[44px]"
               >
                 2. Mark Load Collected ✓
               </button>
@@ -398,7 +398,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
             </div>
 
             {/* Embedded Quality Impurities Dropdown Panel Section */}
-            <div className="border-t border-[rgba(196,112,74,0.12)] pt-4">
+            <div className="border-t border-[rgba(194,112,61,0.12)] pt-4">
               <label className="font-syne font-bold text-[10px] uppercase tracking-wider text-[#6B5744] block mb-1.5">
                 Log Quality Anomaly & AI Penalty Risk
               </label>
@@ -407,11 +407,11 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                 value={issueText}
                 onChange={(e) => setIssueText(e.target.value)}
                 placeholder="e.g., Load rejected due to high industrial dust contamination"
-                className="w-full p-2.5 bg-[#EDE5D8]/50 border border-[#D4C5B0] rounded-xl text-xs text-[#2C1F14] focus:outline-none focus:border-[#C4704A]"
+                className="w-full p-2.5 bg-[#EDE5D8]/50 border border-[#D4C5B0] rounded-xl text-xs text-[#2A2218] focus:outline-none focus:border-[#C2703D]"
               />
               <button
                 onClick={handleReportIssue}
-                className="w-full mt-2 font-syne font-bold text-xs uppercase tracking-wider p-2 bg-[#2C1F14] text-white rounded-lg transition-colors hover:bg-black border-0 cursor-pointer min-h-[36px]"
+                className="w-full mt-2 font-syne font-bold text-xs uppercase tracking-wider p-2 bg-[#2A2218] text-white rounded-lg transition-colors hover:bg-black border-0 cursor-pointer min-h-[36px]"
               >
                 Dispatch Incident Report Alert
               </button>

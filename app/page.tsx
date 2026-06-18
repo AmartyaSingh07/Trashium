@@ -36,7 +36,7 @@ export default async function HomePage() {
 
         {isHouseholdUser && (
           <div className="w-full max-w-5xl mx-auto py-12 px-4 text-center animate-fadeIn">
-            <h2 className="font-syne font-bold text-xs uppercase tracking-widest text-[#2C1F14] mb-8">
+            <h2 className="font-syne font-bold text-xs uppercase tracking-widest text-[#2A2218] mb-8">
               ♻️ Operational Material Categories & Rates Matrix
             </h2>
             
@@ -51,22 +51,22 @@ export default async function HomePage() {
                   <div className="relative w-full h-full transition-all duration-500 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
                     
                     {/* FRONT SIDE FRAME */}
-                    <div className="absolute inset-0 w-full h-full rounded-2xl p-6 [backface-visibility:hidden] bg-[#EDE5D8]/40 border border-[rgba(196,112,74,0.18)] backdrop-blur-md flex flex-col justify-between shadow-sm">
+                    <div className="absolute inset-0 w-full h-full rounded-2xl p-6 [backface-visibility:hidden] bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.18)] backdrop-blur-md flex flex-col justify-between shadow-sm">
                       <div className="flex justify-between items-start">
                         <span className="font-dm text-xs font-bold text-[#6B5744] uppercase tracking-wider">{item.type}</span>
-                        <div className="w-8 h-8 rounded-full bg-[#7A9E7E]/10 flex items-center justify-center text-base">{item.badge}</div>
+                        <div className="w-8 h-8 rounded-full bg-[#8FA37E]/10 flex items-center justify-center text-base">{item.badge}</div>
                       </div>
                       <div className="text-left">
-                        <h3 className="font-syne font-bold text-lg text-[#2C1F14]">{item.name}</h3>
-                        <span className="font-mono text-xs font-semibold text-[#4A6741] bg-[#7A9E7E]/10 px-2 py-0.5 rounded w-fit mt-1 block">Est. Payout: {item.rate}</span>
+                        <h3 className="font-syne font-bold text-lg text-[#2A2218]">{item.name}</h3>
+                        <span className="font-mono text-xs font-semibold text-[#4A6741] bg-[#8FA37E]/10 px-2 py-0.5 rounded w-fit mt-1 block">Est. Payout: {item.rate}</span>
                       </div>
                     </div>
 
                     {/* BACK SIDE FRAME (Witty Message) */}
-                    <div className="absolute inset-0 w-full h-full rounded-2xl p-6 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#2C1F14] border border-[#C4704A]/30 flex flex-col justify-between shadow-xl">
-                      <span className="font-syne text-[10px] uppercase font-bold tracking-widest text-[#7A9E7E] text-left">Ecosystem Insight</span>
-                      <p className="font-dm text-xs leading-relaxed text-[#F4EFE6] font-medium italic mt-2 text-left">{item.wit}</p>
-                      <span className="font-syne font-bold text-[10px] uppercase tracking-wider text-[#C4704A] mt-auto text-left">Process Point ↗</span>
+                    <div className="absolute inset-0 w-full h-full rounded-2xl p-6 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#2A2218] border border-[#C2703D]/30 flex flex-col justify-between shadow-xl">
+                      <span className="font-syne text-[10px] uppercase font-bold tracking-widest text-[#8FA37E] text-left">Ecosystem Insight</span>
+                      <p className="font-dm text-xs leading-relaxed text-[#F4EFE3] font-medium italic mt-2 text-left">{item.wit}</p>
+                      <span className="font-syne font-bold text-[10px] uppercase tracking-wider text-[#C2703D] mt-auto text-left">Process Point ↗</span>
                     </div>
 
                   </div>

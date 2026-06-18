@@ -53,7 +53,7 @@ export default function LoginPage() {
             <div className="relative z-10">
               <Link
                 href="/"
-                className="mb-6 inline-flex items-center gap-2 text-sm text-[#C4704A] hover:text-terra-deep transition-colors"
+                className="mb-6 inline-flex items-center gap-2 text-sm text-[#C2703D] hover:text-terra-deep transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back to Home

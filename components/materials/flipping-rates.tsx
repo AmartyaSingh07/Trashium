@@ -12,7 +12,7 @@ export default function FlippingRates() {
   return (
     <div className="w-full max-w-5xl mx-auto py-8 px-4 text-center">
       {/* Section Subheading matching Syne specifications */}
-      <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2C1F14] mb-6">
+      <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-6">
         Operational Material Categories & Rates
       </h2>
 
@@ -28,44 +28,44 @@ export default function FlippingRates() {
             <div className="relative w-full h-full transition-all duration-500 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
               
               {/* FRONT SIDE */}
-              <div className="absolute inset-0 w-full h-full rounded-2xl p-6 [backface-visibility:hidden] bg-[#EDE5D8]/40 border border-[rgba(196,112,74,0.18)] backdrop-blur-md flex flex-col justify-between shadow-sm">
+              <div className="absolute inset-0 w-full h-full rounded-2xl p-6 [backface-visibility:hidden] bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.18)] backdrop-blur-md flex flex-col justify-between shadow-sm">
                 {/* Top layout row */}
                 <div className="flex justify-between items-start w-full">
                   <span className="font-dm text-xs font-bold text-[#6B5744] uppercase tracking-wider">
                     {item.type}
                   </span>
-                  <div className="w-8 h-8 rounded-full bg-[#7A9E7E]/10 flex items-center justify-center text-base">
+                  <div className="w-8 h-8 rounded-full bg-[#8FA37E]/10 flex items-center justify-center text-base">
                     {item.badge}
                   </div>
                 </div>
 
                 {/* Bottom row typography layout */}
                 <div className="text-left w-full mt-auto">
-                  <h3 className="font-syne text-lg font-bold text-[#2C1F14]">
+                  <h3 className="font-syne text-lg font-bold text-[#2A2218]">
                     {item.name}
                   </h3>
-                  <div className="font-mono text-xs font-semibold text-[#4A6741] bg-[#7A9E7E]/10 px-2 py-0.5 rounded w-fit mt-1">
+                  <div className="font-mono text-xs font-semibold text-[#4A6741] bg-[#8FA37E]/10 px-2 py-0.5 rounded w-fit mt-1">
                     {item.rate}
                   </div>
                 </div>
               </div>
 
               {/* BACK SIDE */}
-              <div className="absolute inset-0 w-full h-full rounded-2xl p-6 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#2C1F14] border border-[#C4704A]/30 flex flex-col justify-between shadow-xl">
+              <div className="absolute inset-0 w-full h-full rounded-2xl p-6 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#2A2218] border border-[#C2703D]/30 flex flex-col justify-between shadow-xl">
                 {/* Top layout row header */}
                 <div className="text-left w-full">
-                  <span className="font-syne text-[10px] uppercase font-bold tracking-widest text-[#7A9E7E]">
+                  <span className="font-syne text-[10px] uppercase font-bold tracking-widest text-[#8FA37E]">
                     Ecosystem Insight
                   </span>
                 </div>
 
                 {/* Center Copy block */}
-                <p className="font-dm text-sm leading-relaxed text-[#F4EFE6] font-medium italic mt-2 text-left">
+                <p className="font-dm text-sm leading-relaxed text-[#F4EFE3] font-medium italic mt-2 text-left">
                   {item.wit}
                 </p>
 
                 {/* Bottom action tracker row */}
-                <div className="font-syne font-bold text-[11px] uppercase tracking-wider text-[#C4704A] mt-auto flex items-center gap-1 text-left">
+                <div className="font-syne font-bold text-[11px] uppercase tracking-wider text-[#C2703D] mt-auto flex items-center gap-1 text-left">
                   Book Payout Vector ↗
                 </div>
               </div>

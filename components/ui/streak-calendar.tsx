@@ -378,9 +378,9 @@ const StreakCalendar = React.forwardRef<HTMLDivElement, StreakCalendarProps>(
                           ? // ponytail: sage→terra ramp for active days (inline overrides bg-primary)
                             {
                               background:
-                                "linear-gradient(135deg, #7A9E7E 0%, #C4704A 100%)",
-                              borderColor: "#C4704A",
-                              color: "#F4EFE6",
+                                "linear-gradient(135deg, #8FA37E 0%, #C2703D 100%)",
+                              borderColor: "#C2703D",
+                              color: "#F4EFE3",
                             }
                           : undefined
                     }

@@ -82,11 +82,11 @@ export default function RecentPickups({ pickups, onCancel, onReschedule }: Recen
 
             <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-sand/15 pt-2.5 sm:pt-0">
               <div className="flex flex-col gap-1 text-left">
-                <span className="font-dm text-sm font-semibold text-[#2C1F14]">
+                <span className="font-dm text-sm font-semibold text-[#2A2218]">
                   {new Date(pickup.scheduled_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
                 {pickup.time_slot ? (
-                  <span className="font-mono text-xs font-medium text-[#7A9E7E] bg-[#7A9E7E]/10 px-2 py-0.5 rounded w-fit">
+                  <span className="font-mono text-xs font-medium text-[#8FA37E] bg-[#8FA37E]/10 px-2 py-0.5 rounded w-fit">
                     ⏰ {pickup.time_slot}
                   </span>
                 ) : (
@@ -108,7 +108,7 @@ export default function RecentPickups({ pickups, onCancel, onReschedule }: Recen
                     setRescheduleDate("");
                     setRescheduleTimeSlot("");
                   }}
-                  className="text-xs font-semibold text-[#C4704A] hover:text-[#B35E39] transition-colors cursor-pointer bg-transparent border-0 px-0"
+                  className="text-xs font-semibold text-[#C2703D] hover:text-[#B35E39] transition-colors cursor-pointer bg-transparent border-0 px-0"
                 >
                   Reschedule
                 </button>
@@ -205,7 +205,7 @@ export default function RecentPickups({ pickups, onCancel, onReschedule }: Recen
                     value={rescheduleTimeSlot}
                     onChange={(e) => setRescheduleTimeSlot(e.target.value)}
                     required
-                    className="w-full p-2.5 mt-2 bg-[#EDE5D8]/60 border border-[#D4C5B0] rounded-lg font-dm text-sm text-[#2C1F14]"
+                    className="w-full p-2.5 mt-2 bg-[#EDE5D8]/60 border border-[#D4C5B0] rounded-lg font-dm text-sm text-[#2A2218]"
                   >
                     <option value="" disabled>Select an available transit slot</option>
                     {TRASHIUM_PICKUP_SLOTS.map((slot) => (
@@ -239,7 +239,7 @@ export default function RecentPickups({ pickups, onCancel, onReschedule }: Recen
                     setRescheduleTimeSlot("");
                   }
                 }}
-                className="flex-1 px-4 py-3 rounded-xl bg-[#C4704A] hover:bg-[#B35E39] text-white font-semibold transition-colors text-sm border-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="flex-1 px-4 py-3 rounded-xl bg-[#C2703D] hover:bg-[#B35E39] text-white font-semibold transition-colors text-sm border-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 Confirm
               </button>

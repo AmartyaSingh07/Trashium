@@ -438,7 +438,7 @@ export default function DashboardContent({
                 src={activeTierIconUrl} 
                 alt={activeTier.rank} 
                 crossOrigin="anonymous"
-                className="w-full h-full object-contain filter drop-shadow-[0_2px_4px_rgba(44,31,20,0.15)]"
+                className="w-full h-full object-contain filter drop-shadow-[0_2px_4px_rgba(42,34,24,0.15)]"
               />
             </span>
           </h1>
@@ -480,7 +480,7 @@ export default function DashboardContent({
         <div className="lg:col-span-1 flex flex-col gap-6">
           {/* "Your Grove" — one cohesive gamification cluster: eco-level, streak, badges, ways-to-earn */}
           <div className="flex items-center gap-2.5 animate-fade-up-delay-1">
-            <Sprout className="h-6 w-6 shrink-0 text-[#7A9E7E]" aria-hidden="true" />
+            <Sprout className="h-6 w-6 shrink-0 text-[#8FA37E]" aria-hidden="true" />
             <div>
               <h2 className="font-[family-name:var(--font-syne)] text-xl font-bold leading-none text-bark">Your Grove</h2>
               <p className="mt-1 font-[family-name:var(--font-dm)] text-[11px] text-smoke">Your eco-level, streak &amp; accolades in one place</p>
@@ -509,12 +509,12 @@ export default function DashboardContent({
           )}
 
           {isHousehold && (
-            <div className="animate-fade-up-delay-3 t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/30 backdrop-blur-md flex flex-col gap-4">
+            <div className="animate-fade-up-delay-3 t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(194,112,61,0.18)] bg-[#EDE5D8]/30 backdrop-blur-md flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-[family-name:var(--font-syne)] text-sm font-semibold text-bark">
                   My Badges <span className="font-mono text-xs font-normal text-[#6B5744]">· {earnedCount}/{badges.length} earned</span>
                 </h4>
-                <Link href="/profile" className="text-[11px] font-syne font-bold uppercase tracking-wider text-[#C4704A] hover:text-[#A0522D] inline-flex items-center gap-1 transition-colors">
+                <Link href="/profile" className="text-[11px] font-syne font-bold uppercase tracking-wider text-[#C2703D] hover:text-[#A0522D] inline-flex items-center gap-1 transition-colors">
                   View all <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
@@ -531,11 +531,11 @@ export default function DashboardContent({
                           {inProgress && (
                             <div
                               className="absolute -inset-1 rounded-full"
-                              style={{ background: `conic-gradient(#7A9E7E ${badge.pct}%, rgba(196,112,74,0.12) 0)` }}
+                              style={{ background: `conic-gradient(#8FA37E ${badge.pct}%, rgba(194,112,61,0.12) 0)` }}
                               aria-hidden
                             />
                           )}
-                          <div className="h-16 w-16 rounded-full bg-[#F4EFE6]/90 p-2 flex items-center justify-center border border-[#D4C5B0]/40 relative">
+                          <div className="h-16 w-16 rounded-full bg-[#F4EFE3]/90 p-2 flex items-center justify-center border border-[#D4C5B0]/40 relative">
                             {badge.image_filename ? (
                               <img
                                 src={`${BADGE_BUCKET_BASE}/${badge.image_filename}`}
@@ -550,17 +550,17 @@ export default function DashboardContent({
                             )}
                           </div>
                           {earned && (
-                            <span className="absolute -bottom-0.5 -right-0.5 bg-[#4A6741] rounded-full p-0.5 border-2 border-[#F4EFE6]">
-                              <Check className="w-3 h-3 text-[#F4EFE6]" strokeWidth={3} />
+                            <span className="absolute -bottom-0.5 -right-0.5 bg-[#4A6741] rounded-full p-0.5 border-2 border-[#F4EFE3]">
+                              <Check className="w-3 h-3 text-[#F4EFE3]" strokeWidth={3} />
                             </span>
                           )}
                           {badge.state === "locked" && (
-                            <span className="absolute -bottom-0.5 -right-0.5 bg-[#6B5744] rounded-full p-1 border-2 border-[#F4EFE6]">
-                              <Lock className="w-2.5 h-2.5 text-[#F4EFE6]" />
+                            <span className="absolute -bottom-0.5 -right-0.5 bg-[#6B5744] rounded-full p-1 border-2 border-[#F4EFE3]">
+                              <Lock className="w-2.5 h-2.5 text-[#F4EFE3]" />
                             </span>
                           )}
                         </div>
-                        <span className="font-syne text-[11px] font-bold text-center text-[#2C1F14] mt-2 line-clamp-1 w-full">
+                        <span className="font-syne text-[11px] font-bold text-center text-[#2A2218] mt-2 line-clamp-1 w-full">
                           {badge.title}
                         </span>
                         {inProgress && Number.isFinite(badge.target) && (
@@ -578,7 +578,7 @@ export default function DashboardContent({
           )}
 
           {isHousehold && (
-            <div className="animate-fade-up-delay-4 t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/30 backdrop-blur-md flex flex-col gap-4">
+            <div className="animate-fade-up-delay-4 t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(194,112,61,0.18)] bg-[#EDE5D8]/30 backdrop-blur-md flex flex-col gap-4">
               <h4 className="font-[family-name:var(--font-syne)] text-sm font-semibold text-bark">
                 Ways to Earn Credits
               </h4>
@@ -588,34 +588,34 @@ export default function DashboardContent({
                   { icon: HelpCircle, label: "Eco-knowledge quiz", value: "+1 · up to 5/day" },
                   { icon: Truck, label: "Complete a scheduled pickup", value: "credits / kg" },
                 ].map(({ icon: Icon, label, value }) => (
-                  <li key={label} className="flex items-center gap-3 rounded-lg border border-[#D4C5B0]/40 bg-[#F4EFE6]/50 p-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#7A9E7E]/15 text-[#4A6741]">
+                  <li key={label} className="flex items-center gap-3 rounded-lg border border-[#D4C5B0]/40 bg-[#F4EFE3]/50 p-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#8FA37E]/15 text-[#4A6741]">
                       <Icon className="h-4 w-4" aria-hidden="true" />
                     </span>
-                    <span className="font-dm text-xs text-[#2C1F14] flex-1">{label}</span>
-                    <span className="font-mono text-[11px] font-bold text-[#C4704A] whitespace-nowrap">{value}</span>
+                    <span className="font-dm text-xs text-[#2A2218] flex-1">{label}</span>
+                    <span className="font-mono text-[11px] font-bold text-[#C2703D] whitespace-nowrap">{value}</span>
                   </li>
                 ))}
               </ul>
 
               {/* Marketplace teaser — real gate (500 credits + 1 pickup) */}
-              <div className="mt-1 rounded-xl border border-[#C4704A]/25 bg-[#C4704A]/5 p-3.5">
+              <div className="mt-1 rounded-xl border border-[#C2703D]/25 bg-[#C2703D]/5 p-3.5">
                 {marketplaceUnlocked ? (
                   <Link href="/marketplace" className="flex items-center gap-3 group">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C4704A]/15 text-[#C4704A]">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C2703D]/15 text-[#C2703D]">
                       <Gift className="h-4 w-4" aria-hidden="true" />
                     </span>
                     <span className="flex-1">
-                      <span className="font-syne text-xs font-bold text-[#2C1F14] block">Rewards Marketplace unlocked</span>
+                      <span className="font-syne text-xs font-bold text-[#2A2218] block">Rewards Marketplace unlocked</span>
                       <span className="font-dm text-[11px] text-[#6B5744]">Redeem your {greenCredits.toLocaleString()} credits</span>
                     </span>
-                    <ArrowRight className="h-4 w-4 text-[#C4704A] transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                    <ArrowRight className="h-4 w-4 text-[#C2703D] transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                   </Link>
                 ) : (
                   <>
                     <div className="flex items-center gap-2 mb-2">
                       <Lock className="h-3.5 w-3.5 text-[#6B5744]" aria-hidden="true" />
-                      <span className="font-syne text-xs font-bold text-[#2C1F14]">Unlock the Rewards Marketplace</span>
+                      <span className="font-syne text-xs font-bold text-[#2A2218]">Unlock the Rewards Marketplace</span>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-sand/35 mb-2">
                       <div className="h-full rounded-full bg-gradient-to-r from-terra to-sage transition-all duration-700" style={{ width: `${creditGatePct}%` }} />
@@ -653,30 +653,30 @@ export default function DashboardContent({
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark inline-flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-[#C4704A]" aria-hidden="true" /> Sector Leaderboard
+                <Trophy className="h-5 w-5 text-[#C2703D]" aria-hidden="true" /> Sector Leaderboard
               </h3>
               <p className="text-xs text-smoke font-[family-name:var(--font-dm)]">
                 Real households in your region, ranked by Green Credits.
               </p>
             </div>
             {myRank && rivalAbove ? (
-              <p className="font-[family-name:var(--font-dm)] text-xs text-[#6B5744] inline-flex items-center gap-1.5 rounded-full border border-[#C4704A]/25 bg-[#C4704A]/5 px-3 py-1.5">
-                <TrendingUp className="h-3.5 w-3.5 shrink-0 text-[#C4704A]" aria-hidden="true" />
+              <p className="font-[family-name:var(--font-dm)] text-xs text-[#6B5744] inline-flex items-center gap-1.5 rounded-full border border-[#C2703D]/25 bg-[#C2703D]/5 px-3 py-1.5">
+                <TrendingUp className="h-3.5 w-3.5 shrink-0 text-[#C2703D]" aria-hidden="true" />
                 <span>
-                  <span className="font-mono font-bold text-[#C4704A]">{creditsToOvertake.toLocaleString()}</span> credits to overtake{" "}
+                  <span className="font-mono font-bold text-[#C2703D]">{creditsToOvertake.toLocaleString()}</span> credits to overtake{" "}
                   <span className="font-semibold text-bark">{rivalAbove.userName}</span>
                 </span>
               </p>
             ) : myRank && myRank.rank === 1 ? (
-              <p className="font-[family-name:var(--font-dm)] text-xs text-[#4A6741] inline-flex items-center gap-1.5 rounded-full border border-[#7A9E7E]/30 bg-[#7A9E7E]/10 px-3 py-1.5">
+              <p className="font-[family-name:var(--font-dm)] text-xs text-[#4A6741] inline-flex items-center gap-1.5 rounded-full border border-[#8FA37E]/30 bg-[#8FA37E]/10 px-3 py-1.5">
                 <Trophy className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> You&apos;re leading {selectedSectorLabel} — keep it growing!
               </p>
             ) : null}
           </div>
 
           {sectorRankings.length === 0 ? (
-            <div className="t-glass-card rounded-xl p-8 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/40 backdrop-blur-md flex flex-col items-center gap-3 text-center">
-              <Trophy className="h-8 w-8 text-[#C4704A]/40" aria-hidden="true" />
+            <div className="t-glass-card rounded-xl p-8 shadow-sm border border-[rgba(194,112,61,0.18)] bg-[#EDE5D8]/40 backdrop-blur-md flex flex-col items-center gap-3 text-center">
+              <Trophy className="h-8 w-8 text-[#C2703D]/40" aria-hidden="true" />
               <p className="font-[family-name:var(--font-dm)] text-sm text-[#6B5744]">
                 No households ranked in {selectedSectorLabel} yet.
               </p>
@@ -702,11 +702,11 @@ export default function DashboardContent({
               runOptions={sectorRunOptions}
               selectedRunId={selectedSector}
               onRunChange={(runId) => setSelectedSector(runId)}
-              primaryColor="#C4704A"
-              accentColor="#7A9E7E"
-              textColor="#2C1F14"
+              primaryColor="#C2703D"
+              accentColor="#8FA37E"
+              textColor="#2A2218"
               theme="light"
-              className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(196,112,74,0.18)] bg-[#EDE5D8]/40 backdrop-blur-md"
+              className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(194,112,61,0.18)] bg-[#EDE5D8]/40 backdrop-blur-md"
             />
           )}
         </div>
@@ -714,14 +714,14 @@ export default function DashboardContent({
 
       {/* Eco-Knowledge Quiz Modal Overlay */}
       {isQuizOpen && currentQuestion && (
-        <div className="fixed inset-0 bg-[#2C1F14]/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn" style={{ margin: 0 }}>
-          <div className="bg-[#F4EFE6] border border-[#D4C5B0] w-full max-w-md p-6 rounded-xl shadow-xl mx-4 text-bark relative">
-            <h3 className="font-syne font-bold text-lg text-[#2C1F14] mb-2">Eco-Knowledge Micro-Quiz</h3>
+        <div className="fixed inset-0 bg-[#2A2218]/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn" style={{ margin: 0 }}>
+          <div className="bg-[#F4EFE3] border border-[#D4C5B0] w-full max-w-md p-6 rounded-xl shadow-xl mx-4 text-bark relative">
+            <h3 className="font-syne font-bold text-lg text-[#2A2218] mb-2">Eco-Knowledge Micro-Quiz</h3>
             <p className="text-xs text-smoke font-[family-name:var(--font-dm)] mb-5">Test your waste recycling awareness and earn bonus credits</p>
             
             <div className="mb-5 bg-[#EDE5D8]/30 rounded-xl p-4 border border-[#D4C5B0]/30">
               <span className="text-xs font-semibold uppercase tracking-wider text-smoke block mb-1 font-[family-name:var(--font-syne)]">Trivia Question</span>
-              <p className="text-sm font-semibold text-[#2C1F14] font-[family-name:var(--font-dm)] leading-relaxed">
+              <p className="text-sm font-semibold text-[#2A2218] font-[family-name:var(--font-dm)] leading-relaxed">
                 {currentQuestion.q}
               </p>
             </div>
@@ -735,7 +735,7 @@ export default function DashboardContent({
                 let btnStyle = "w-full text-left p-3.5 rounded-xl border transition-all text-sm font-medium font-[family-name:var(--font-dm)] cursor-pointer ";
                 if (showResult) {
                   if (isCorrect) {
-                    btnStyle += "bg-[#7A9E7E]/15 border-[#7A9E7E] text-[#4A6741]";
+                    btnStyle += "bg-[#8FA37E]/15 border-[#8FA37E] text-[#4A6741]";
                   } else if (isSelected) {
                     btnStyle += "bg-red-50 border-red-300 text-red-800";
                   } else {
@@ -743,9 +743,9 @@ export default function DashboardContent({
                   }
                 } else {
                   if (isSelected) {
-                    btnStyle += "bg-[#EDE5D8] border-[#C4704A] text-[#2C1F14] ring-1 ring-[#C4704A]";
+                    btnStyle += "bg-[#EDE5D8] border-[#C2703D] text-[#2A2218] ring-1 ring-[#C2703D]";
                   } else {
-                    btnStyle += "bg-white/60 border-[#D4C5B0]/50 hover:bg-[#EDE5D8]/40 hover:border-[#C4704A]/30 text-[#2C1F14]";
+                    btnStyle += "bg-white/60 border-[#D4C5B0]/50 hover:bg-[#EDE5D8]/40 hover:border-[#C2703D]/30 text-[#2A2218]";
                   }
                 }
 
@@ -766,7 +766,7 @@ export default function DashboardContent({
             {quizSubmitted && (
               <div className="mb-6 animate-fadeIn">
                 {selectedAnswer === currentQuestion.correct ? (
-                  <div className="p-4 rounded-xl bg-[#7A9E7E]/10 text-[#4A6741] border border-[#7A9E7E]/30 text-center font-[family-name:var(--font-dm)] text-xs font-semibold leading-relaxed">
+                  <div className="p-4 rounded-xl bg-[#8FA37E]/10 text-[#4A6741] border border-[#8FA37E]/30 text-center font-[family-name:var(--font-dm)] text-xs font-semibold leading-relaxed">
                     🎉 {quizFeedbackText}
                   </div>
                 ) : (
@@ -783,7 +783,7 @@ export default function DashboardContent({
                   <button
                     type="button"
                     onClick={() => setIsQuizOpen(false)}
-                    className="flex-1 bg-transparent hover:bg-sand/15 text-[#2C1F14] font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border border-sand/40 cursor-pointer"
+                    className="flex-1 bg-transparent hover:bg-sand/15 text-[#2A2218] font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border border-sand/40 cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -791,7 +791,7 @@ export default function DashboardContent({
                     type="button"
                     onClick={handleSubmitQuiz}
                     disabled={selectedAnswer === null}
-                    className="flex-1 bg-[#C4704A] hover:bg-[#B35E39] text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="flex-1 bg-[#C2703D] hover:bg-[#B35E39] text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     Submit
                   </button>
@@ -800,7 +800,7 @@ export default function DashboardContent({
                 <button
                   type="button"
                   onClick={() => setIsQuizOpen(false)}
-                  className="w-full bg-[#C4704A] hover:bg-[#B35E39] text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border-0 cursor-pointer"
+                  className="w-full bg-[#C2703D] hover:bg-[#B35E39] text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border-0 cursor-pointer"
                 >
                   Close Quiz
                 </button>

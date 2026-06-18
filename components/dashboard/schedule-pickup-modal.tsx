@@ -211,7 +211,7 @@ export default function SchedulePickupModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           {boostPct != null && (
-            <div className="flex items-center gap-2 rounded-lg border border-[#7A9E7E]/40 bg-[#7A9E7E]/10 px-3 py-2 text-xs font-semibold text-[#4A6741]">
+            <div className="flex items-center gap-2 rounded-lg border border-[#8FA37E]/40 bg-[#8FA37E]/10 px-3 py-2 text-xs font-semibold text-[#4A6741]">
               <Sparkles className="h-3.5 w-3.5" />
               Payout boost active (+{boostPct}%) — applied to this pickup.
             </div>
@@ -318,14 +318,14 @@ export default function SchedulePickupModal({
 
           {/* Time Slot Selector */}
           <div className="flex flex-col gap-1.5 w-full mt-4">
-            <label className="font-syne font-bold text-xs uppercase tracking-wider text-[#2C1F14]">
+            <label className="font-syne font-bold text-xs uppercase tracking-wider text-[#2A2218]">
               Preferred Collection Time <span className="text-terra font-bold">*</span>
             </label>
             <select 
               value={selectedTimeSlot}
               onChange={(e) => setSelectedTimeSlot(e.target.value)}
               required
-              className="w-full font-dm text-sm p-3 bg-linen/60 border border-sand/55 rounded-lg text-[#2C1F14] focus:outline-none focus:border-[#C4704A] transition-colors appearance-none cursor-pointer"
+              className="w-full font-dm text-sm p-3 bg-linen/60 border border-sand/55 rounded-lg text-[#2A2218] focus:outline-none focus:border-[#C2703D] transition-colors appearance-none cursor-pointer"
             >
               <option value="" disabled>Select an available transit slot</option>
               {TRASHIUM_PICKUP_SLOTS.map((slot) => (

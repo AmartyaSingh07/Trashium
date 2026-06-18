@@ -87,7 +87,7 @@ function WeeklyRing({ active }: { active: number }) {
           cy={32}
           r={r}
           fill="none"
-          stroke="#7A9E7E"
+          stroke="#8FA37E"
           strokeWidth={7}
           strokeLinecap="round"
           strokeDasharray={c}
@@ -132,7 +132,7 @@ export function DailyRitual({
   return (
     <section
       aria-label="Daily Grove Ritual"
-      className="t-glass-card animate-fade-up-delay-2 flex flex-col gap-5 rounded-xl border border-[rgba(196,112,74,0.18)] p-6 shadow-sm"
+      className="t-glass-card animate-fade-up-delay-2 flex flex-col gap-5 rounded-xl border border-[rgba(194,112,61,0.18)] p-6 shadow-sm"
     >
       {/* Header — title + live streak multiplier + midnight countdown / perfect-day state */}
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -142,7 +142,7 @@ export function DailyRitual({
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <span
-            className="inline-flex items-center gap-1 rounded-full border border-[#C4704A]/30 bg-[#C4704A]/10 px-2.5 py-1 font-[family-name:var(--font-jetbrains)] text-sm font-bold text-[#C4704A]"
+            className="inline-flex items-center gap-1 rounded-full border border-[#C2703D]/30 bg-[#C2703D]/10 px-2.5 py-1 font-[family-name:var(--font-jetbrains)] text-sm font-bold text-[#C2703D]"
             title={`Streak bonus: every daily-action credit is multiplied by ${mult.toFixed(2)}`}
           >
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> ×{mult.toFixed(2)}
@@ -166,9 +166,9 @@ export function DailyRitual({
         longestStreak={longestStreak}
         total={totalPickups}
         title="Grove Streak"
-        primaryColor="#C4704A"
-        accentColor="#7A9E7E"
-        textColor="#2C1F14"
+        primaryColor="#C2703D"
+        accentColor="#8FA37E"
+        textColor="#2A2218"
         theme="light"
         showHowItWorks={false}
         showActivities={false}
@@ -182,7 +182,7 @@ export function DailyRitual({
       <div className="relative flex flex-col gap-2.5">
         <div className="flex items-center justify-between">
           <span className="font-syne text-xs font-bold uppercase tracking-wider text-bark">Today&apos;s Ritual</span>
-          <span className="font-[family-name:var(--font-jetbrains)] text-xs font-bold text-[#C4704A]">{comboCount}/3 combo</span>
+          <span className="font-[family-name:var(--font-jetbrains)] text-xs font-bold text-[#C2703D]">{comboCount}/3 combo</span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-sand/35">
           <div className="h-full rounded-full bg-gradient-to-r from-sage to-terra transition-all duration-500" style={{ width: `${(comboCount / 3) * 100}%` }} />
@@ -202,17 +202,17 @@ export function DailyRitual({
                 className={cn(
                   "flex flex-col items-center gap-1 rounded-xl border p-3 text-center transition-all",
                   s.done
-                    ? "border-[#7A9E7E]/40 bg-[#7A9E7E]/10"
+                    ? "border-[#8FA37E]/40 bg-[#8FA37E]/10"
                     : "border-[#D4C5B0]/50 bg-[#EDE5D8]/40",
-                  clickable && "cursor-pointer hover:border-[#C4704A]/40 hover:bg-[#EDE5D8]/70",
+                  clickable && "cursor-pointer hover:border-[#C2703D]/40 hover:bg-[#EDE5D8]/70",
                   !clickable && !s.done && "cursor-default opacity-70",
                 )}
               >
-                <span className={cn("flex h-8 w-8 items-center justify-center rounded-full", s.done ? "bg-[#7A9E7E]/20 text-[#4A6741]" : "bg-[#C4704A]/10 text-[#C4704A]")}>
+                <span className={cn("flex h-8 w-8 items-center justify-center rounded-full", s.done ? "bg-[#8FA37E]/20 text-[#4A6741]" : "bg-[#C2703D]/10 text-[#C2703D]")}>
                   {s.done ? <Check className="h-4 w-4" strokeWidth={3} aria-hidden="true" /> : <Icon className="h-4 w-4" aria-hidden="true" />}
                 </span>
                 <span className="font-dm text-[11px] font-semibold leading-tight text-bark">{s.label}</span>
-                <span className="font-[family-name:var(--font-jetbrains)] text-[11px] font-bold text-[#C4704A]">+{s.value}</span>
+                <span className="font-[family-name:var(--font-jetbrains)] text-[11px] font-bold text-[#C2703D]">+{s.value}</span>
                 <span className="font-dm text-[9px] text-[#6B5744]">{s.sub}</span>
               </button>
             )
@@ -229,7 +229,7 @@ export function DailyRitual({
       {/* Shield + weekly canopy ring */}
       <div className="grid grid-cols-2 gap-3">
         <div
-          className="flex items-center gap-3 rounded-xl border border-[#7A9E7E]/30 bg-[#7A9E7E]/8 p-3"
+          className="flex items-center gap-3 rounded-xl border border-[#8FA37E]/30 bg-[#8FA37E]/8 p-3"
           title="A shield protects your streak through one missed day. Earn more from milestone chests."
         >
           <Snowflake className="h-7 w-7 shrink-0 text-[#5E7C8A]" aria-hidden="true" />
@@ -257,7 +257,7 @@ export function DailyRitual({
           <span className="font-syne text-xs font-bold uppercase tracking-wider text-bark">Milestone Chests</span>
           {nextMilestone && (
             <span className="font-dm text-[11px] text-[#6B5744]">
-              Next in <span className="font-[family-name:var(--font-jetbrains)] font-bold text-[#C4704A]">{nextMilestone.days - currentStreak}d</span> → +{nextMilestone.reward}
+              Next in <span className="font-[family-name:var(--font-jetbrains)] font-bold text-[#C2703D]">{nextMilestone.days - currentStreak}d</span> → +{nextMilestone.reward}
             </span>
           )}
         </div>
@@ -269,21 +269,21 @@ export function DailyRitual({
                 key={m.days}
                 className={cn(
                   "flex flex-col items-center gap-1 rounded-xl border p-2.5",
-                  unlocked ? "t-chest-pop border-[#C4704A]/35 bg-[#C4704A]/8" : "border-[#D4C5B0]/50 bg-[#EDE5D8]/30",
+                  unlocked ? "t-chest-pop border-[#C2703D]/35 bg-[#C2703D]/8" : "border-[#D4C5B0]/50 bg-[#EDE5D8]/30",
                 )}
                 style={unlocked ? ({ animationDelay: `${i * 90}ms` } as React.CSSProperties) : undefined}
                 title={unlocked ? `${m.days}-day chest unlocked` : `Reach a ${m.days}-day streak`}
               >
-                <span className={cn("relative flex h-9 w-9 items-center justify-center rounded-full", unlocked ? "bg-[#C4704A]/15 text-[#C4704A]" : "bg-[#D4C5B0]/30 text-[#9A8C7A]")}>
+                <span className={cn("relative flex h-9 w-9 items-center justify-center rounded-full", unlocked ? "bg-[#C2703D]/15 text-[#C2703D]" : "bg-[#D4C5B0]/30 text-[#9A8C7A]")}>
                   <Gift className="h-4 w-4" aria-hidden="true" />
                   {!unlocked && (
-                    <span className="absolute -bottom-1 -right-1 rounded-full border border-[#F4EFE6] bg-[#6B5744] p-0.5">
-                      <Lock className="h-2.5 w-2.5 text-[#F4EFE6]" aria-hidden="true" />
+                    <span className="absolute -bottom-1 -right-1 rounded-full border border-[#F4EFE3] bg-[#6B5744] p-0.5">
+                      <Lock className="h-2.5 w-2.5 text-[#F4EFE3]" aria-hidden="true" />
                     </span>
                   )}
                 </span>
                 <span className="font-[family-name:var(--font-jetbrains)] text-[11px] font-bold text-bark">{m.days}d</span>
-                <span className={cn("font-[family-name:var(--font-jetbrains)] text-[10px] font-bold", unlocked ? "text-[#C4704A]" : "text-[#9A8C7A]")}>+{m.reward}</span>
+                <span className={cn("font-[family-name:var(--font-jetbrains)] text-[10px] font-bold", unlocked ? "text-[#C2703D]" : "text-[#9A8C7A]")}>+{m.reward}</span>
               </div>
             )
           })}

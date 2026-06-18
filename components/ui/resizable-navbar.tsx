@@ -90,8 +90,8 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
       animate={{
         backdropFilter: visible ? "blur(16px) saturate(1.4)" : "blur(12px) saturate(1.2)",
         boxShadow: visible
-          ? "0 4px 24px rgba(44, 31, 20, 0.08), 0 1px 0 rgba(196, 112, 74, 0.1) inset"
-          : "0 1px 0 rgba(196, 112, 74, 0.08)",
+          ? "0 4px 24px rgba(42,34,24, 0.08), 0 1px 0 rgba(194,112,61, 0.1) inset"
+          : "0 1px 0 rgba(194,112,61, 0.08)",
         width: visible ? "40%" : "100%",
         y: visible ? 12 : 0,
         borderRadius: visible ? "9999px" : "0px",
@@ -170,8 +170,8 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
       animate={{
         backdropFilter: visible ? "blur(16px) saturate(1.4)" : "blur(12px) saturate(1.2)",
         boxShadow: visible
-          ? "0 4px 24px rgba(44, 31, 20, 0.08), 0 1px 0 rgba(196, 112, 74, 0.1) inset"
-          : "0 1px 0 rgba(196, 112, 74, 0.08)",
+          ? "0 4px 24px rgba(42,34,24, 0.08), 0 1px 0 rgba(194,112,61, 0.1) inset"
+          : "0 1px 0 rgba(194,112,61, 0.08)",
         width: visible ? "92%" : "100%",
         paddingRight: visible ? "12px" : "0px",
         paddingLeft: visible ? "12px" : "0px",
@@ -226,7 +226,7 @@ export const MobileNavMenu = ({
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
           className={cn(
-            "absolute inset-x-0 top-16 z-50 flex w-full flex-col items-start justify-start gap-4 rounded-2xl bg-linen/98 backdrop-blur-xl px-5 py-6 border border-terra/12 shadow-[0_8px_32px_rgba(44,31,20,0.12)]",
+            "absolute inset-x-0 top-16 z-50 flex w-full flex-col items-start justify-start gap-4 rounded-2xl bg-linen/98 backdrop-blur-xl px-5 py-6 border border-terra/12 shadow-[0_8px_32px_rgba(42,34,24,0.12)]",
             className,
           )}
         >
@@ -255,16 +255,16 @@ export const NavbarLogo = () => {
   return (
     <Link href="/" className="flex items-center gap-2.5 group select-none cursor-pointer">
       {/* High-Contrast Brand Graphic Container Frame */}
-      <div className="w-9 h-9 rounded-xl bg-[#EDE5D8]/50 border border-[rgba(196,112,74,0.15)] p-1.5 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105 shadow-sm">
+      <div className="w-9 h-9 rounded-xl bg-[#EDE5D8]/50 border border-[rgba(194,112,61,0.15)] p-1.5 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105 shadow-sm">
         <img 
           src="https://fqbjjcbrxrokvdwkydze.supabase.co/storage/v1/object/public/gamification-levels/logo.png"
           alt="Trashium Logo"
-          className="w-full h-full object-contain filter drop-shadow-[0_1px_2px_rgba(44,31,20,0.15)]"
+          className="w-full h-full object-contain filter drop-shadow-[0_1px_2px_rgba(42,34,24,0.15)]"
         />
       </div>
       
       {/* Aligned Typography Stack */}
-      <span className="font-syne font-bold text-lg text-[#2C1F14] tracking-tight group-hover:text-[#C4704A] transition-colors">
+      <span className="font-syne font-bold text-lg text-[#2A2218] tracking-tight group-hover:text-[#C2703D] transition-colors">
         Trashium
       </span>
     </Link>
@@ -293,11 +293,11 @@ export const NavbarButton = ({
 
   const variantStyles = {
     primary:
-      "bg-terra text-linen hover:bg-terra-deep shadow-[0_2px_8px_rgba(196,112,74,0.25)]",
+      "bg-terra text-linen hover:bg-terra-deep shadow-[0_2px_8px_rgba(194,112,61,0.25)]",
     secondary:
       "bg-parchment text-bark border border-terra/15 hover:bg-terra/10 hover:text-terra shadow-none",
     dark:
-      "bg-bark text-linen hover:bg-black shadow-[0_2px_8px_rgba(44,31,20,0.2)]",
+      "bg-bark text-linen hover:bg-black shadow-[0_2px_8px_rgba(42,34,24,0.2)]",
     ghost:
       "bg-transparent text-smoke hover:bg-terra/10 hover:text-terra shadow-none",
   };

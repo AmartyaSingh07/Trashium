@@ -98,7 +98,7 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
     const MILESTONES = [3, 7, 14, 30]
     const intensity =
       currentStreak >= 30 ? 3 : currentStreak >= 14 ? 2 : currentStreak >= 7 ? 1 : 0
-    const flameColor = ["#9A8C7A", "#7A9E7E", "#C4704A", "#B35E39"][intensity]
+    const flameColor = ["#9A8C7A", "#8FA37E", "#C2703D", "#B35E39"][intensity]
     const flameScale = Math.min(1, currentStreak / 30) // 0→1, drives ember size + glow via CSS var
     const nextMilestone = MILESTONES.find((m) => currentStreak < m) ?? null
     const reachedMilestone =
@@ -158,7 +158,7 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
               size="sm"
               length={reachedMilestone}
               subtitle="milestone"
-              className="t-rise border-[#C4704A]/30 bg-[#C4704A]/5"
+              className="t-rise border-[#C2703D]/30 bg-[#C2703D]/5"
               style={{ color: flameColor, animationDelay: "140ms" } as React.CSSProperties}
             />
           )}
@@ -172,15 +172,15 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
 
         {/* streak status: at-risk before midnight vs secured for today */}
         {currentStreak > 0 && !doneToday && (
-          <div className="t-pulse mt-3 mb-1 flex items-start gap-2 rounded-lg border border-[#C4704A]/30 bg-[#C4704A]/5 p-3" role="status">
-            <Flame className="mt-0.5 h-4 w-4 shrink-0 text-[#C4704A]" aria-hidden="true" />
+          <div className="t-pulse mt-3 mb-1 flex items-start gap-2 rounded-lg border border-[#C2703D]/30 bg-[#C2703D]/5 p-3" role="status">
+            <Flame className="mt-0.5 h-4 w-4 shrink-0 text-[#C2703D]" aria-hidden="true" />
             <p className="text-xs text-[#6B5744]">
               Your {currentStreak}-day streak is at risk — log segregation or take the quiz before midnight to keep it.
             </p>
           </div>
         )}
         {currentStreak > 0 && doneToday && (
-          <div className="mt-3 mb-1 flex items-center gap-2 rounded-lg border border-[#7A9E7E]/30 bg-[#7A9E7E]/10 p-3" role="status">
+          <div className="mt-3 mb-1 flex items-center gap-2 rounded-lg border border-[#8FA37E]/30 bg-[#8FA37E]/10 p-3" role="status">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-[#4A6741]" aria-hidden="true" />
             <p className="text-xs text-[#4A6741]">Streak secured for today — nice work!</p>
           </div>
@@ -268,7 +268,7 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
 
         {showActivities && (<>
         {/* Today's Eligible Activities */}
-        <span className="font-syne font-bold text-xs uppercase tracking-wider text-[#2C1F14] mt-4 mb-2 block">
+        <span className="font-syne font-bold text-xs uppercase tracking-wider text-[#2A2218] mt-4 mb-2 block">
           Today&apos;s Eligible Activities
         </span>
         <div className="flex flex-col gap-2 text-left">
@@ -282,23 +282,23 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
               }
             }}
             className={cn(
-              "flex items-center p-3 bg-[#EDE5D8]/40 border border-[#D4C5B0]/50 rounded-lg transition-all hover:bg-[#EDE5D8]/70 hover:border-[#C4704A]/30",
+              "flex items-center p-3 bg-[#EDE5D8]/40 border border-[#D4C5B0]/50 rounded-lg transition-all hover:bg-[#EDE5D8]/70 hover:border-[#C2703D]/30",
               hasPickupToday ? "cursor-default" : "cursor-pointer"
             )}
           >
             <div>
-              <span className="font-dm text-sm font-semibold text-[#2C1F14] block">Schedule Doorstep Pickup</span>
+              <span className="font-dm text-sm font-semibold text-[#2A2218] block">Schedule Doorstep Pickup</span>
               <span className="font-dm text-xs text-[#6B5744] font-normal mt-0.5">Book your dry waste aggregation slot for the week</span>
             </div>
             {hasPickupToday ? (
-              <span className="bg-[#7A9E7E]/10 text-[#4A6741] border border-[#7A9E7E]/30 font-medium text-[11px] rounded px-2 py-0.5 ml-auto flex items-center gap-1">
+              <span className="bg-[#8FA37E]/10 text-[#4A6741] border border-[#8FA37E]/30 font-medium text-[11px] rounded px-2 py-0.5 ml-auto flex items-center gap-1">
                 <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20">
                   <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
                 </svg>
                 Completed
               </span>
             ) : (
-              <span className="bg-[#7A9E7E]/10 text-[#4A6741] border border-[#7A9E7E]/30 font-medium text-[11px] rounded px-2 py-0.5 ml-auto">
+              <span className="bg-[#8FA37E]/10 text-[#4A6741] border border-[#8FA37E]/30 font-medium text-[11px] rounded px-2 py-0.5 ml-auto">
                 Schedule
               </span>
             )}
@@ -312,12 +312,12 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
               }
             }}
             className={cn(
-              "flex items-center p-3 bg-[#EDE5D8]/40 border border-[#D4C5B0]/50 rounded-lg transition-all hover:bg-[#EDE5D8]/70 hover:border-[#C4704A]/30",
+              "flex items-center p-3 bg-[#EDE5D8]/40 border border-[#D4C5B0]/50 rounded-lg transition-all hover:bg-[#EDE5D8]/70 hover:border-[#C2703D]/30",
               isWasteSegregated ? "cursor-default" : "cursor-pointer"
             )}
           >
             <div>
-              <span className="font-dm text-sm font-semibold text-[#2C1F14] block">Log Waste Segregation</span>
+              <span className="font-dm text-sm font-semibold text-[#2A2218] block">Log Waste Segregation</span>
               <span className="font-dm text-xs text-[#6B5744] font-normal mt-0.5">Perform your daily home source-sorting checklist</span>
             </div>
             <div className="ml-auto flex items-center pr-1" onClick={(e) => e.stopPropagation()}>
@@ -330,7 +330,7 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
                     onLogWasteSegregation();
                   }
                 }}
-                className="h-4 w-4 rounded border-2 border-[#D4C5B0] text-[#7A9E7E] focus:ring-[#7A9E7E] focus:ring-opacity-50 cursor-pointer accent-[#7A9E7E] disabled:cursor-default"
+                className="h-4 w-4 rounded border-2 border-[#D4C5B0] text-[#8FA37E] focus:ring-[#8FA37E] focus:ring-opacity-50 cursor-pointer accent-[#8FA37E] disabled:cursor-default"
               />
             </div>
           </div>
@@ -338,10 +338,10 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
           {/* Task 3: Eco-Knowledge Micro-Quiz */}
           <div 
             onClick={onLaunchQuiz}
-            className="flex items-center p-3 bg-[#EDE5D8]/40 border border-[#D4C5B0]/50 rounded-lg transition-all hover:bg-[#EDE5D8]/70 hover:border-[#C4704A]/30 cursor-pointer"
+            className="flex items-center p-3 bg-[#EDE5D8]/40 border border-[#D4C5B0]/50 rounded-lg transition-all hover:bg-[#EDE5D8]/70 hover:border-[#C2703D]/30 cursor-pointer"
           >
             <div>
-              <span className="font-dm text-sm font-semibold text-[#2C1F14] block">Eco-Knowledge Micro-Quiz</span>
+              <span className="font-dm text-sm font-semibold text-[#2A2218] block">Eco-Knowledge Micro-Quiz</span>
               <span className="font-dm text-xs text-[#6B5744] font-normal mt-0.5">Complete today&apos;s fast recycling trivia check to earn +5 bonus credits</span>
             </div>
           </div>
@@ -350,9 +350,9 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
       </section>
 
       {isStreakDetailOpen && (
-        <div className="fixed inset-0 bg-[#2C1F14]/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn" style={{ margin: 0 }}>
-          <div className="bg-[#F4EFE6] border border-[#C4704A]/30 rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl text-[#2C1F14] relative">
-            <h3 className="text-xl font-bold font-[family-name:var(--font-syne)] mb-3 text-[#2C1F14]">Streak Verification Details</h3>
+        <div className="fixed inset-0 bg-[#2A2218]/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn" style={{ margin: 0 }}>
+          <div className="bg-[#F4EFE3] border border-[#C2703D]/30 rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl text-[#2A2218] relative">
+            <h3 className="text-xl font-bold font-[family-name:var(--font-syne)] mb-3 text-[#2A2218]">Streak Verification Details</h3>
             <p className="text-sm mb-4 leading-relaxed text-smoke font-[family-name:var(--font-dm)]">
               Your consecutive counter tracks everyday pickup schedules successfully completed. 
               Keep recycling consistently to grow your green record and eco-rewards!
@@ -374,7 +374,7 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
             </div>
             <button
               onClick={() => setIsStreakDetailOpen(false)}
-              className="w-full bg-[#C4704A] hover:bg-[#B35E39] text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border-0 cursor-pointer"
+              className="w-full bg-[#C2703D] hover:bg-[#B35E39] text-white font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border-0 cursor-pointer"
             >
               Close Details
             </button>

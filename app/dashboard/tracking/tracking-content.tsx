@@ -122,7 +122,7 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F4EFE6]">
+    <div className="flex flex-col min-h-screen bg-[#F4EFE3]">
       <Navbar />
 
       <main className="flex-1 w-full">
@@ -140,7 +140,7 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
             <div
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-mono text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md shadow-lg transition-all duration-500 ${
                 isConnected
-                  ? "bg-[#EDE5D8]/90 border-[#7A9E7E]/40 text-[#4A6741]"
+                  ? "bg-[#EDE5D8]/90 border-[#8FA37E]/40 text-[#4A6741]"
                   : "bg-[#EDE5D8]/90 border-amber-300/40 text-amber-700"
               }`}
             >
@@ -163,23 +163,23 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
           {/* ── Bottom-left ETA & Dispatch Status Card (Glassmorphism) ── */}
           {crewLocation && (
             <div className="absolute bottom-6 left-6 z-[1000] max-w-sm animate-fade-up">
-              <div className="rounded-2xl p-5 bg-[#EDE5D8]/90 backdrop-blur-md border border-[#C4704A]/30 shadow-2xl">
+              <div className="rounded-2xl p-5 bg-[#EDE5D8]/90 backdrop-blur-md border border-[#C2703D]/30 shadow-2xl">
                 {/* Header row with truck icon & status */}
                 <div className="flex items-start gap-4">
                   {/* Animated Truck Icon */}
-                  <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#7A9E7E]/15 border border-[#7A9E7E]/30 flex items-center justify-center text-2xl">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#8FA37E]/15 border border-[#8FA37E]/30 flex items-center justify-center text-2xl">
                     🚛
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <span className="font-syne font-bold text-[10px] uppercase tracking-wider text-[#7A9E7E] flex items-center gap-1.5">
+                    <span className="font-syne font-bold text-[10px] uppercase tracking-wider text-[#8FA37E] flex items-center gap-1.5">
                       <span className="relative flex h-1.5 w-1.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#7A9E7E] opacity-75" />
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#7A9E7E]" />
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8FA37E] opacity-75" />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#8FA37E]" />
                       </span>
                       Trashium Dispatch Active
                     </span>
-                    <h3 className="font-syne font-bold text-xl text-[#2C1F14] mt-1 leading-tight">
+                    <h3 className="font-syne font-bold text-xl text-[#2A2218] mt-1 leading-tight">
                       Arriving in {estimatedMinutes ?? "—"} Mins
                     </h3>
                     <p className="text-[11px] text-[#6B5744] font-mono mt-1 truncate">
@@ -189,20 +189,20 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
                 </div>
 
                 {/* Telemetry Metrics Row */}
-                <div className="mt-4 pt-3 border-t border-[#C4704A]/15 grid grid-cols-3 gap-3">
+                <div className="mt-4 pt-3 border-t border-[#C2703D]/15 grid grid-cols-3 gap-3">
                   <div className="text-center">
                     <span className="block font-mono text-[10px] text-[#6B5744] uppercase tracking-wider">
                       Speed
                     </span>
-                    <span className="block font-mono text-sm font-bold text-[#2C1F14] mt-0.5">
+                    <span className="block font-mono text-sm font-bold text-[#2A2218] mt-0.5">
                       {(crewSpeed * 3.6).toFixed(0)} km/h
                     </span>
                   </div>
-                  <div className="text-center border-x border-[#C4704A]/10">
+                  <div className="text-center border-x border-[#C2703D]/10">
                     <span className="block font-mono text-[10px] text-[#6B5744] uppercase tracking-wider">
                       Heading
                     </span>
-                    <span className="block font-mono text-sm font-bold text-[#2C1F14] mt-0.5">
+                    <span className="block font-mono text-sm font-bold text-[#2A2218] mt-0.5">
                       {getCompassDir(crewHeading)} {Math.round(crewHeading)}°
                     </span>
                   </div>
@@ -210,7 +210,7 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
                     <span className="block font-mono text-[10px] text-[#6B5744] uppercase tracking-wider">
                       Last Ping
                     </span>
-                    <span className="block font-mono text-sm font-bold text-[#2C1F14] mt-0.5">
+                    <span className="block font-mono text-sm font-bold text-[#2A2218] mt-0.5">
                       {formatPingTime(lastPingTime)}
                     </span>
                   </div>
@@ -222,20 +222,20 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
           {/* ── Waiting State (no crew location yet) ── */}
           {!crewLocation && isConnected && (
             <div className="absolute inset-0 flex items-center justify-center z-[999] pointer-events-none">
-              <div className="bg-[#EDE5D8]/95 backdrop-blur-md border border-[#C4704A]/20 rounded-2xl p-8 shadow-2xl text-center max-w-xs animate-fade-up pointer-events-auto">
+              <div className="bg-[#EDE5D8]/95 backdrop-blur-md border border-[#C2703D]/20 rounded-2xl p-8 shadow-2xl text-center max-w-xs animate-fade-up pointer-events-auto">
                 <div className="text-4xl mb-3">📡</div>
-                <h3 className="font-syne font-bold text-base text-[#2C1F14]">
+                <h3 className="font-syne font-bold text-base text-[#2A2218]">
                   Awaiting Crew Telemetry
                 </h3>
                 <p className="text-xs text-[#6B5744] mt-2 leading-relaxed">
                   Your collection crew hasn&apos;t started broadcasting yet. The
                   live tracker will activate automatically once the driver begins
-                  their route in the <span className="font-bold text-[#C4704A]">{userProfile.operating_zone}</span> sector.
+                  their route in the <span className="font-bold text-[#C2703D]">{userProfile.operating_zone}</span> sector.
                 </p>
                 <div className="mt-4 flex items-center justify-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C4704A] animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C4704A] animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C4704A] animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C2703D] animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C2703D] animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C2703D] animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
               </div>
             </div>
