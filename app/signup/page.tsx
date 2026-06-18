@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft } from "lucide-react";
 import BotanicalSVG from "@/components/ui/BotanicalSVG";
+import BrandLockup from "@/components/ui/BrandLockup";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -80,7 +81,7 @@ export default function SignupPage() {
                 <ArrowLeft className="h-4 w-4" />
                 Back to Home
               </Link>
-              <h1 className="font-[family-name:var(--font-cormorant)] text-4xl font-semibold text-bark mb-3 mt-4">Trashium</h1>
+              <BrandLockup variant="static" className="h-10 w-auto mb-3 mt-4" />
               <p className="t-body text-smoke max-w-[220px] leading-relaxed">
                 Incentivized recyclables collection for cleaner communities.
               </p>

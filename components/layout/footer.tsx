@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Leaf } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 const footerLinks = {
@@ -26,8 +25,9 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4 group">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-terra text-white transition-transform group-hover:scale-105">
-                <Leaf className="h-4.5 w-4.5" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-terra/10 transition-transform group-hover:scale-105">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/brand/trashium-icon-static.svg" alt="" className="h-5 w-5" />
               </div>
               <span className="font-[family-name:var(--font-cormorant)] text-2xl font-semibold text-bark">
                 Trashium

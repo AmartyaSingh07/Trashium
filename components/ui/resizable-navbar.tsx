@@ -257,7 +257,7 @@ export const NavbarLogo = () => {
       {/* High-Contrast Brand Graphic Container Frame */}
       <div className="w-9 h-9 rounded-xl bg-[#EDE5D8]/50 border border-[rgba(194,112,61,0.15)] p-1.5 flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105 shadow-sm">
         <img 
-          src="https://fqbjjcbrxrokvdwkydze.supabase.co/storage/v1/object/public/gamification-levels/logo.png"
+          src="/brand/trashium-icon-static.svg"
           alt="Trashium Logo"
           className="w-full h-full object-contain filter drop-shadow-[0_1px_2px_rgba(42,34,24,0.15)]"
         />

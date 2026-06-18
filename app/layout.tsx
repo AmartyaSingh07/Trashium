@@ -38,6 +38,13 @@ export const metadata: Metadata = {
   title: 'Trashium — Incentivized Waste Management',
   description:
     'AI-assisted recyclables aggregation platform for sustainable communities in West Bengal.',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({
