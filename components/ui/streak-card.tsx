@@ -15,6 +15,7 @@ import {
   StreakCalendar,
   type StreakPeriod,
 } from "@/components/ui/streak-calendar"
+import { StreakBadge } from "@/components/ui/streak-badge"
 
 interface StreakCardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Streak periods passed through to StreakCalendar */
@@ -90,11 +91,12 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
     const [isStreakDetailOpen, setIsStreakDetailOpen] = React.useState(false)
     const howItWorksContentId = React.useId()
 
-    // ── Streak intensity + milestones (flame grows from leaf-green → ember as the streak climbs) ──
-    const MILESTONES = [7, 30, 100]
+    // ── Streak intensity + milestones (ember grows dormant → leaf-green → terra as it climbs) ──
+    const MILESTONES = [3, 7, 14, 30]
     const intensity =
-      currentStreak >= 100 ? 3 : currentStreak >= 30 ? 2 : currentStreak >= 7 ? 1 : 0
+      currentStreak >= 30 ? 3 : currentStreak >= 14 ? 2 : currentStreak >= 7 ? 1 : 0
     const flameColor = ["#9A8C7A", "#7A9E7E", "#C4704A", "#B35E39"][intensity]
+    const flameScale = Math.min(1, currentStreak / 30) // 0→1, drives ember size + glow via CSS var
     const nextMilestone = MILESTONES.find((m) => currentStreak < m) ?? null
     const reachedMilestone =
       [...MILESTONES].reverse().find((m) => currentStreak >= m) ?? null
@@ -116,14 +118,16 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
       >
         <header className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Flame
-              className="h-6 w-6 transition-all"
+            <span
+              className={cn("t-flame", currentStreak === 0 && "t-flame-dormant")}
               style={{
-                color: flameColor,
-                filter: intensity >= 2 ? `drop-shadow(0 0 6px ${flameColor}80)` : undefined,
-              }}
+                "--t-flame-color": flameColor,
+                "--t-flame-intensity": String(flameScale),
+              } as React.CSSProperties}
               aria-hidden="true"
-            />
+            >
+              <Flame className="h-6 w-6" style={{ color: flameColor }} />
+            </span>
             <h3 className="text-2xl leading-none font-semibold">{title}</h3>
           </div>
           <Button
@@ -137,28 +141,35 @@ const StreakCard = React.forwardRef<HTMLDivElement, StreakCardProps>(
           </Button>
         </header>
 
-        <p className="text-5xl leading-none font-semibold tracking-tight">
-          {currentStreak}
-          <span className="text-muted-foreground ml-2 text-2xl font-medium">
-            days
-          </span>
-        </p>
-
-        {/* milestone progress */}
-        {reachedMilestone && (
-          <p className="mt-2 inline-flex items-center gap-1 text-xs font-syne font-bold uppercase tracking-wider" style={{ color: flameColor }}>
-            <Flame className="h-3.5 w-3.5" aria-hidden="true" /> {reachedMilestone}-day milestone reached
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-5xl leading-none font-semibold tracking-tight">
+            {currentStreak}
+            <span className="text-muted-foreground ml-2 text-2xl font-medium">
+              days
+            </span>
           </p>
-        )}
+
+          {/* Milestone flare — reuses the StreakBadge chip at 3 / 7 / 14 / 30 days */}
+          {reachedMilestone && (
+            <StreakBadge
+              size="sm"
+              length={reachedMilestone}
+              subtitle="milestone"
+              className="t-rise border-[#C4704A]/30 bg-[#C4704A]/5"
+              style={{ color: flameColor, animationDelay: "140ms" } as React.CSSProperties}
+            />
+          )}
+        </div>
+
         {nextMilestone && (
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-2 text-xs text-muted-foreground">
             {nextMilestone - currentStreak} day{nextMilestone - currentStreak === 1 ? "" : "s"} to your {nextMilestone}-day milestone
           </p>
         )}
 
         {/* streak status: at-risk before midnight vs secured for today */}
         {currentStreak > 0 && !doneToday && (
-          <div className="mt-3 mb-1 flex items-start gap-2 rounded-lg border border-[#C4704A]/30 bg-[#C4704A]/5 p-3" role="status">
+          <div className="t-pulse mt-3 mb-1 flex items-start gap-2 rounded-lg border border-[#C4704A]/30 bg-[#C4704A]/5 p-3" role="status">
             <Flame className="mt-0.5 h-4 w-4 shrink-0 text-[#C4704A]" aria-hidden="true" />
             <p className="text-xs text-[#6B5744]">
               Your {currentStreak}-day streak is at risk — log segregation or take the quiz before midnight to keep it.

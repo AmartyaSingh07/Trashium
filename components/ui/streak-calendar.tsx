@@ -371,7 +371,19 @@ const StreakCalendar = React.forwardRef<HTMLDivElement, StreakCalendarProps>(
                         !isFuture &&
                         "border-border/60 bg-muted/30"
                     )}
-                    style={usedFreeze ? freezeColorStyles : undefined}
+                    style={
+                      usedFreeze
+                        ? freezeColorStyles
+                        : isActive
+                          ? // ponytail: sage→terra ramp for active days (inline overrides bg-primary)
+                            {
+                              background:
+                                "linear-gradient(135deg, #7A9E7E 0%, #C4704A 100%)",
+                              borderColor: "#C4704A",
+                              color: "#F4EFE6",
+                            }
+                          : undefined
+                    }
                   >
                     {usedFreeze ? (
                       <Snowflake
