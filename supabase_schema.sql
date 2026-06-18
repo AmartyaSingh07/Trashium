@@ -404,6 +404,37 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.redeem_marketplace_item(uuid) TO authenticated;
 
+-- 7f. HOUSEHOLDS-ONLY LEADERBOARD (read-only projection)
+-- SECURITY DEFINER bypasses RLS for a limited-column, no-email read. Admin/crew are excluded by the
+-- role filter. Sector = most frequent completed-pickup location; null when the household has none.
+CREATE OR REPLACE FUNCTION public.get_household_leaderboard()
+RETURNS TABLE (
+  user_id uuid,
+  display_name text,
+  sector text,
+  green_credits numeric,
+  kg_recycled numeric
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    p.id AS user_id,
+    COALESCE(p.full_name, 'Eco Warrior') AS display_name,
+    mode() WITHIN GROUP (ORDER BY pr.location) AS sector,   -- most frequent pickup sector
+    p.green_credits,
+    p.kg_recycled
+  FROM profiles p
+  LEFT JOIN pickup_requests pr
+    ON pr.user_id = p.id
+   AND pr.status IN ('collected','processed','completed')
+  WHERE p.role = 'household'
+  GROUP BY p.id, p.full_name, p.green_credits, p.kg_recycled;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_household_leaderboard() TO anon, authenticated;
+
 -- ==========================================
 -- TODO(RLS, later): the user will enable RLS + policies on the gamification/marketplace tables.
 -- Staged here but INERT (commented out). Do NOT uncomment until policies are reviewed.
