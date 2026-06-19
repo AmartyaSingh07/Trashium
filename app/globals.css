@@ -398,3 +398,115 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   KINETIC TYPOGRAPHY LOADER (components/ui/loading-animation.tsx)
+   Full-screen route-loading overlay. Bark backdrop, linen type.
+   ═══════════════════════════════════════════════════════ */
+.loader-container {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 120% at 50% 40%, #34291C 0%, #2A2218 55%, #1C160E 100%);
+  /* 3D space for the character throws */
+  perspective: 1000px;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+/* Fade-out state for the first-open splash gate */
+.loader-container--out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Soft terra glow behind the type for depth */
+.loader-container .loader-glow {
+  position: absolute;
+  width: 60vmin;
+  height: 60vmin;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(194, 112, 61, 0.22) 0%, rgba(194, 112, 61, 0) 70%);
+  filter: blur(8px);
+  pointer-events: none;
+  animation: loader-glow-breathe 4s ease-in-out infinite;
+}
+
+@keyframes loader-glow-breathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.08); }
+}
+
+.loader-container .loader-text {
+  position: relative;
+  transform-style: preserve-3d;
+  color: #F4EFE3; /* linen */
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+  margin: 0;
+}
+
+.loader-container .char {
+  display: inline-block;
+  opacity: 0;
+  will-change: transform, opacity;
+  transform-style: preserve-3d;
+  /* Tint the leading edge of each glyph toward terra for brand warmth */
+  background: linear-gradient(180deg, #F4EFE3 0%, #F4EFE3 60%, #E8A44A 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.loader-container .char--space {
+  background: none;
+  -webkit-text-fill-color: initial;
+}
+
+@keyframes fly-in {
+  from {
+    opacity: 0;
+    transform: var(--transform-from);
+  }
+  to {
+    opacity: 1;
+    transform: translateZ(0) rotateX(0) rotateY(0);
+  }
+}
+
+@keyframes fly-out {
+  from {
+    opacity: 1;
+    transform: translateZ(0) rotateX(0) rotateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: var(--transform-to);
+  }
+}
+
+/* fly-in / fly-out share a single 1s run; play-state toggled per-char in JS */
+.loader-container .char {
+  animation-duration: 1s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+/* Reduced motion: no 3D throws — chars are placed opaque and phrases cross-fade.
+   The global reduce block above already neutralizes durations; this guarantees
+   characters remain visible rather than stuck at opacity 0. */
+@media (prefers-reduced-motion: reduce) {
+  .loader-container .char {
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
+  }
+  .loader-container .loader-glow {
+    animation: none !important;
+  }
+}

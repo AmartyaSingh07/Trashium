@@ -8,6 +8,7 @@ import {
 import Ribbons from '@/components/ui/Ribbons'; // Exact path from Phase 0, directly imported for SSR compatibility
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
+import SiteLoadGate from '@/components/ui/site-load-gate';
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -91,6 +92,9 @@ export default function RootLayout({
         <div className="relative z-10">
           {children}
         </div>
+
+        {/* First-open splash — kinetic loader, once per session, fades after hydration */}
+        <SiteLoadGate />
 
         <Toaster />
       </body>

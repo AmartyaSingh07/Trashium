@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft } from "lucide-react";
 import BotanicalSVG from "@/components/ui/BotanicalSVG";
 import BrandLockup from "@/components/ui/BrandLockup";
+import { KineticTypographyLoader } from "@/components/ui/loading-animation";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,6 +40,8 @@ export default function LoginPage() {
   };
 
   return (
+    <>
+    {loading && <KineticTypographyLoader label="Signing in" />}
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-linen/50 hero-pattern">
       <div className="w-full max-w-3xl overflow-hidden rounded-2xl t-glass-card animate-scale-in">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.1fr]">
@@ -130,5 +133,6 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
