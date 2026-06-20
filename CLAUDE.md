@@ -95,7 +95,7 @@ python publish_to_supabase.py  # upsert to Supabase price_estimates table
 │       ├── server.ts           # Server Supabase client (cookies)
 │       └── middleware.ts       # Session refresh helper
 │
-├── middleware.ts               # Next.js edge middleware — calls updateSession()
+├── proxy.ts                    # Next.js 16 proxy (formerly middleware.ts) — calls updateSession()
 ├── supabase_schema.sql         # Full Supabase schema (run once to bootstrap)
 │
 └── ml/                         # Python ML pricing pipeline
@@ -142,7 +142,7 @@ Auth is handled by **Supabase Auth + SSR cookies** via `@supabase/ssr`.
 > **Note:** the DB role values are `household` / `crew` / `admin` (the `profiles.role` CHECK uses
 > `crew`, not `collector`). The navbar treats `crew` and `collector` interchangeably.
 
-- `middleware.ts` calls `updateSession()` on every request to keep the session fresh.
+- `proxy.ts` (Next.js 16 convention file, formerly `middleware.ts`) calls `updateSession()` on every request to keep the session fresh.
 - Server components use `lib/supabase/server.ts` (`createClient()`).
 - Client components use `lib/supabase/client.ts` (`createBrowserClient()`).
 - On signup, a Supabase trigger (`handle_new_user`) auto-creates a `profiles` row.
