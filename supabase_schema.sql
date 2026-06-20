@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS public.pickup_requests (
   full_name TEXT NOT NULL,
   location TEXT NOT NULL,
   address TEXT NOT NULL,
-  waste_type TEXT NOT NULL,
+  waste_type TEXT NOT NULL,                         -- dominant pricing bucket (a valid WasteType)
+  waste_items TEXT[],                               -- granular leaf types the household selected (multi-select)
   estimated_weight NUMERIC NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'confirmed', 'collected', 'processed', 'cancelled'
   scheduled_date DATE NOT NULL,
@@ -60,9 +61,14 @@ CREATE TABLE IF NOT EXISTS public.pickup_requests (
   estimated_price NUMERIC,
   latitude  NUMERIC, -- pickup geocoordinates (route optimization); nullable
   longitude NUMERIC,
+  payout_override NUMERIC,                          -- admin-set final payout (INR); NULL = use estimated_price
+  override_by UUID REFERENCES public.profiles(id),  -- who overrode (audit)
+  override_at TIMESTAMP WITH TIME ZONE,             -- when (audit)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+-- Authoritative payout for a pickup = COALESCE(payout_override, estimated_price).
+-- TODO(override-ledger): add a payout_overrides history table if a fuller audit trail is needed.
 
 -- RLS Policies for Pickup Requests
 ALTER TABLE public.pickup_requests ENABLE ROW LEVEL SECURITY;
@@ -217,7 +223,11 @@ INSERT INTO public.price_estimates (waste_type, area, price_per_kg) VALUES
 ('Organic', 'Rural', 1.00),
 ('Mixed', 'Urban', 4.00),
 ('Mixed', 'Suburban', 3.00),
-('Mixed', 'Rural', 2.00)
+('Mixed', 'Rural', 2.00),
+-- TODO(ml-battery): batteries seeded from E-Waste rates as a placeholder; train real battery rates in /ml.
+('Battery', 'Urban', 50.00),
+('Battery', 'Suburban', 45.00),
+('Battery', 'Rural', 40.00)
 ON CONFLICT (waste_type, area) DO NOTHING;
 
 -- ==========================================
@@ -689,6 +699,49 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.set_crew_zone(uuid, text) TO authenticated;
+
+-- 8g. set_payout_override — admin-only override of a pickup's final payout (money path).
+-- RLS is row-level (can't gate these 3 columns alone while crew still update status), so the
+-- privileged write goes through this RPC, mirroring set_crew_zone. p_amount NULL clears it.
+CREATE OR REPLACE FUNCTION public.set_payout_override(p_pickup_id uuid, p_amount numeric)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_is_admin boolean;
+BEGIN
+  IF v_uid IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'not_authenticated');
+  END IF;
+
+  SELECT role = 'admin' INTO v_is_admin FROM public.profiles WHERE id = v_uid;
+  IF NOT coalesce(v_is_admin, false) THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'not_admin');
+  END IF;
+
+  IF p_amount IS NOT NULL AND p_amount < 0 THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'invalid_amount');
+  END IF;
+
+  UPDATE public.pickup_requests
+  SET payout_override = p_amount,
+      override_by = CASE WHEN p_amount IS NULL THEN NULL ELSE v_uid END,
+      override_at = CASE WHEN p_amount IS NULL THEN NULL ELSE now() END,
+      updated_at = now()
+  WHERE id = p_pickup_id;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('ok', false, 'reason', 'pickup_not_found');
+  END IF;
+
+  RETURN jsonb_build_object('ok', true, 'pickup_id', p_pickup_id, 'payout_override', p_amount);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.set_payout_override(uuid, numeric) TO authenticated;
 
 -- ==========================================
 -- TODO(RLS, later): the user will enable RLS + policies on the gamification/marketplace tables.

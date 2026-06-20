@@ -35,18 +35,17 @@ import {
   Clock,
   CheckCircle,
   MoreHorizontal,
-  Calculator,
-  TrendingUp,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import MarketplaceAdmin from "@/components/admin/marketplace-admin";
 import CrewHubAssignment from "@/components/admin/crew-hub-assignment";
+import PayoutOverride from "@/components/admin/payout-override";
+import PriceGrid from "@/components/admin/price-grid";
+import { OPERATIONAL_SECTORS } from "@/lib/constants";
 import type {
   PickupRequest,
   PriceEstimate,
   PickupStatus,
-  WasteType,
-  AreaType,
   MarketplaceItem,
   RedemptionOrder,
 } from "@/lib/types";
@@ -55,23 +54,9 @@ type AdminOrder = RedemptionOrder & {
   profiles?: { full_name: string | null; email: string | null } | null;
 };
 
-const wasteTypes: WasteType[] = [
-  "Plastic", "Paper", "Glass", "Metal", "E-Waste", "Organic", "Mixed",
-];
-const areas: AreaType[] = ["Urban", "Suburban", "Rural"];
-
-const OPERATIONAL_SECTORS = ['Rishra', 'Howrah', 'Shyamnagar', 'Tarakeswar', 'Hugli-Chinsura'];
-
 const normalizeSectorName = (zone: string) => {
   if (zone === 'Bally' || zone === 'Belur') return 'Howrah';
   return zone;
-};
-
-const mapSectorToArea = (sector: string): AreaType => {
-  if (sector === "Rishra" || sector === "Howrah") return "Urban";
-  if (sector === "Shyamnagar") return "Suburban";
-  if (sector === "Tarakeswar" || sector === "Hugli-Chinsura") return "Rural";
-  return "Urban";
 };
 
 const getDisplayWeight = (weightNum: number | string) => {
@@ -107,12 +92,13 @@ export default function AdminContent({
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [selectedSector, setSelectedSector] = useState("Rishra");
 
   const fetchFullFledgedData = async () => {
     const { data, error } = await supabase
       .from('pickup_requests')
-      .select('*, profiles(full_name, email)')
+      // Disambiguate the FK: pickup_requests now has TWO refs to profiles (user_id + override_by),
+      // so PostgREST needs the explicit constraint name to embed the household profile.
+      .select('*, profiles!pickup_requests_user_id_fkey(full_name, email)')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -127,101 +113,6 @@ export default function AdminContent({
     }));
     setRequests(normalizedData);
   };
-
-  const getSectorRankings = (sector: string) => {
-    const sectorMocks: { [key: string]: Array<{ name: string; email: string; value: number }> } = {
-      Rishra: [
-        { name: "Amartya Singh", email: "amartya.singh@gmail.com", value: 145 },
-        { name: "Sam Sulek", email: "sam.sulek@gmail.com", value: 120 },
-        { name: "Priya Das", email: "priya.das@outlook.com", value: 95 },
-        { name: "Rahul Sen", email: "rahul.sen@gmail.com", value: 80 },
-        { name: "Ananya Roy", email: "ananya.roy@yahoo.com", value: 65 },
-      ],
-      Howrah: [
-        { name: "Vikram Malhotra", email: "vikram.m@gmail.com", value: 180 },
-        { name: "Sneha Chatterjee", email: "sneha.c@gmail.com", value: 110 },
-        { name: "Amit Ghosh", email: "amit.ghosh@hotmail.com", value: 85 },
-        { name: "Riya Paul", email: "riya.p@gmail.com", value: 75 },
-      ],
-      Shyamnagar: [
-        { name: "Debabrata Dey", email: "debabrata.d@gmail.com", value: 210 },
-        { name: "Tanmoy Bose", email: "tanmoy.bose@gmail.com", value: 150 },
-        { name: "Soma Mukherjee", email: "soma.m@gmail.com", value: 130 },
-        { name: "Kushal Mitra", email: "kushal.mitra@gmail.com", value: 90 },
-      ],
-      Tarakeswar: [
-        { name: "Ayan Saha", email: "ayan.saha@gmail.com", value: 115 },
-        { name: "Payel Sen", email: "payel.sen@gmail.com", value: 90 },
-        { name: "Subhadip Roy", email: "subhadip.roy@gmail.com", value: 70 },
-      ],
-      "Hugli-Chinsura": [
-        { name: "Pritha Dey", email: "pritha.dey@gmail.com", value: 125 },
-        { name: "Sourav Kar", email: "sourav.kar@gmail.com", value: 105 },
-        { name: "Mimi Das", email: "mimi.das@gmail.com", value: 85 },
-      ],
-    };
-
-    const mocks = sectorMocks[sector] || [];
-    const userTotals: { [userId: string]: { name: string; email: string; totalWeight: number } } = {};
-    
-    pickups.forEach((p) => {
-      const isCompleted = (p.status as string) === "completed" || (p.status as string) === "processed" || (p.status as string) === "collected";
-      const matchesSector = p.location.toLowerCase().includes(sector.toLowerCase()) || 
-                            p.address.toLowerCase().includes(sector.toLowerCase());
-      
-      if (isCompleted && matchesSector) {
-        const userId = p.user_id;
-        const name = (p as any).profiles?.full_name || p.full_name || "User";
-        const email = (p as any).profiles?.email || "User";
-        const weight = Number(p.estimated_weight || 0);
-
-        if (!userTotals[userId]) {
-          userTotals[userId] = { name, email, totalWeight: 0 };
-        }
-        userTotals[userId].totalWeight += weight;
-      }
-    });
-
-    const mergedList: Array<{ userId: string; userName: string; byline: string; value: number }> = [];
-    
-    Object.entries(userTotals).forEach(([userId, info]) => {
-      mergedList.push({
-        userId,
-        userName: info.name,
-        byline: info.email,
-        value: Math.round(info.totalWeight),
-      });
-    });
-
-    mocks.forEach((mock, idx) => {
-      if (!mergedList.some(item => item.userName.toLowerCase() === mock.name.toLowerCase())) {
-        mergedList.push({
-          userId: `mock-user-${sector}-${idx}`,
-          userName: mock.name,
-          byline: mock.email,
-          value: mock.value,
-        });
-      }
-    });
-
-    const sorted = mergedList.sort((a, b) => b.value - a.value);
-
-    const rankings = sorted.map((item, index) => ({
-      userId: item.userId,
-      userName: item.userName,
-      byline: item.byline,
-      value: item.value,
-      rank: index + 1,
-      displayed: true,
-      rankChange: index === 0 ? 0 : index === 1 ? 1 : -1,
-    }));
-
-    const podiumRankings = rankings.slice(0, 3);
-
-    return { rankings, podiumRankings };
-  };
-
-  const { rankings: sectorRankings, podiumRankings: sectorPodium } = getSectorRankings(selectedSector);
 
   useEffect(() => {
     const loadData = async () => {
@@ -324,97 +215,44 @@ export default function AdminContent({
     if (value !== null) setStatusFilter(value);
   };
 
-  // Price estimator state
-  const [estimatorWaste, setEstimatorWaste] = useState<WasteType | "">("");
-  const [estimatorArea, setEstimatorArea] = useState<AreaType | "">("");
-  const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
-
-  const handleEstimatorWasteChange = (value: string | null) => {
-    if (value !== null) {
-      setEstimatorWaste(value as WasteType);
-      setEstimatedPrice(null);
-    }
-  };
-  const handleEstimatorAreaChange = (value: string | null) => {
-    if (value !== null) {
-      setEstimatorArea(value as AreaType);
-      setEstimatedPrice(null);
-    }
-  };
-  const weightRanges = [
-    { label: "5-10 kg", value: "5-10 kg", midpoint: 7.5 },
-    { label: "10-15 kg", value: "10-15 kg", midpoint: 12.5 },
-    { label: "15-20 kg", value: "15-20 kg", midpoint: 17.5 },
-    { label: "20+ kg", value: "20+ kg", midpoint: 25.0 },
-  ];
-  const [estimatorWeight, setEstimatorWeight] = useState("");
-  const handleWeightChange = (value: string | null) => {
-    if (value !== null) {
-      setEstimatorWeight(value);
-      setEstimatedPrice(null);
-    }
-  };
-
-  const handleCalculate = () => {
-    if (!estimatorWaste || !estimatorWeight) {
-      toast.error("Please select a waste type and weight range");
-      return;
-    }
-    const selectedRange = weightRanges.find(r => r.value === estimatorWeight);
-    if (!selectedRange) {
-      toast.error("Please select a valid weight range");
-      return;
-    }
-    const weight = selectedRange.midpoint;
-
-    // Base rates per kg: Plastic = ₹12, Paper = ₹8, Metal = ₹45, Fabric = ₹5.
-    let baseRate = 10;
-    switch (estimatorWaste) {
-      case "Plastic":
-        baseRate = 12;
-        break;
-      case "Paper":
-        baseRate = 8;
-        break;
-      case "Metal":
-        baseRate = 45;
-        break;
-      case "Glass":
-        baseRate = 10;
-        break;
-      case "E-Waste":
-        baseRate = 30;
-        break;
-      case "Organic":
-        baseRate = 3;
-        break;
-      case "Mixed":
-        baseRate = 6;
-        break;
-      default:
-        if ((estimatorWaste as string).toLowerCase() === "fabric") {
-          baseRate = 5;
-        }
-        break;
-    }
-
-    let total = weight * baseRate;
-
-    // Adjust total based on Area / Zone (+5% or -5%)
-    const mappedArea = mapSectorToArea(estimatorArea);
-    if (mappedArea === "Urban") {
-      total *= 1.05;
-    } else if (mappedArea === "Rural") {
-      total *= 0.95;
-    }
-
-    setEstimatedPrice(parseFloat(total.toFixed(2)));
-  };
+  // NOTE: the admin price estimator was dead code (hardcoded rates, never rendered). Removed.
+  // The shared estimateQuote() contract (lib/estimate.ts) is the canonical estimator now.
+  // TODO(admin-override): if admin needs a supervisory override estimator, build it on estimateQuote().
 
   const pendingCount = pickups.filter((p) => p.status === "pending").length;
   const todayCount = pickups.filter(
     (p) => p.scheduled_date === new Date().toISOString().split("T")[0]
   ).length;
+
+  // --- Real aggregates (replace former hardcoded analytics; no fabricated numbers) ---
+  const isDone = (s: string) => s === "completed" || s === "processed";
+  const isActive = (s: string) => s === "accepted" || s === "confirmed" || s === "collected";
+  const authoritativePayout = (p: PickupRequest) => Number(p.payout_override ?? p.estimated_price ?? 0);
+
+  const totalPayoutCommitted = pickups.reduce((sum, p) => sum + authoritativePayout(p), 0);
+  const distinctUsers = new Set(pickups.map((p) => p.user_id)).size;
+  const avgPickupsPerUser = distinctUsers ? pickups.length / distinctUsers : 0;
+
+  const sectorStats = OPERATIONAL_SECTORS.map((sector) => {
+    const inSector = pickups.filter((p) => p.location === sector);
+    return {
+      sector,
+      total: inSector.length,
+      pending: inSector.filter((p) => p.status === "pending").length,
+      active: inSector.filter((p) => isActive(p.status as string)).length,
+      done: inSector.filter((p) => isDone(p.status as string)).length,
+      kg: inSector
+        .filter((p) => isDone(p.status as string))
+        .reduce((s, p) => s + Number(p.estimated_weight || 0), 0),
+    };
+  });
+
+  // Override saved → reflect new authoritative payout locally without a full refetch.
+  const handleOverrideSaved = (id: string, override: number | null) => {
+    setPickups((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, payout_override: override } : p))
+    );
+  };
 
   // Filter pickups
   const filtered = pickups.filter((p) => {
@@ -427,23 +265,6 @@ export default function AdminContent({
       p.waste_type.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
-
-  // Price estimation
-  const getEstimatedPrice = () => {
-    if (!estimatorWaste || !estimatorArea) return null;
-    const mappedArea = mapSectorToArea(estimatorArea);
-    const match = priceEstimates.find(
-      (pe) => pe.waste_type === estimatorWaste && pe.area === mappedArea
-    );
-    return match?.price_per_kg ?? null;
-  };
-
-  const pricePerKg = getEstimatedPrice();
-  const selectedEstimatorRange = weightRanges.find(r => r.value === estimatorWeight);
-  const totalEstimate =
-    pricePerKg && selectedEstimatorRange
-      ? pricePerKg * selectedEstimatorRange.midpoint
-      : null;
 
   const handleStatusUpdate = async (selectedPickupId: string, newStatus: PickupStatus) => {
     let mappedStatusValue = newStatus as string;
@@ -579,35 +400,35 @@ export default function AdminContent({
                   <tbody>
                     <tr className="hover:bg-linen/60 transition-colors duration-150 border-b border-sand/15 text-xs text-[#6B5744]">
                       <td className="py-2.5 px-3 font-semibold text-bark">
-                        Points Issuance Velocity
+                        Total Payout Committed
                       </td>
                       <td className="py-2.5 px-3 font-medium text-clay font-mono">
-                        2,450 / Month
+                        ₹{totalPayoutCommitted.toFixed(2)}
                       </td>
                       <td className="py-2.5 px-3 text-emerald-700 font-semibold">
-                        Optimal
+                        {pickups.length} requests
                       </td>
                     </tr>
                     <tr className="hover:bg-linen/60 transition-colors duration-150 border-b border-sand/15 text-xs text-[#6B5744]">
                       <td className="py-2.5 px-3 font-semibold text-bark">
-                        Average Active Streak Velocity
+                        Avg Pickups per Household
                       </td>
                       <td className="py-2.5 px-3 font-semibold text-bark font-mono">
-                        3.4 pickups/user
+                        {avgPickupsPerUser.toFixed(1)} / user
                       </td>
                       <td className="py-2.5 px-3 text-emerald-700 font-semibold">
-                        Active
+                        {distinctUsers} households
                       </td>
                     </tr>
                     <tr className="hover:bg-linen/60 transition-colors duration-150 text-xs text-[#6B5744]">
                       <td className="py-2.5 px-3 font-semibold text-bark">
-                        Municipal Approval Clearing Requests
+                        Pending Approval
                       </td>
                       <td className="py-2.5 px-3 font-semibold text-bark font-mono">
-                        5 Pending Approval
+                        {pendingCount} pending
                       </td>
-                      <td className="py-2.5 px-3 text-amber-700 font-semibold">
-                        Awaiting Signature
+                      <td className={`py-2.5 px-3 font-semibold ${pendingCount > 0 ? "text-amber-700" : "text-emerald-700"}`}>
+                        {pendingCount > 0 ? "Needs review" : "Clear"}
                       </td>
                     </tr>
                   </tbody>
@@ -618,23 +439,23 @@ export default function AdminContent({
             {/* Sector processing throughput */}
             <div className="border-t border-[rgba(194,112,61,0.12)] pt-5">
               <h3 className="font-syne font-bold text-xs uppercase tracking-wider text-[#6B5744] mb-3">
-                Sector-wise Processing Throughput & Minting Summary
+                Sector-wise Pipeline &amp; Processed Throughput
               </h3>
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-                {[
-                  { sector: "Rishra", throughput: "1,450 kg/mo", minted: "1,120 credits" },
-                  { sector: "Howrah", throughput: "1,180 kg/mo", minted: "890 credits" },
-                  { sector: "Shyamnagar", throughput: "1,820 kg/mo", minted: "1,480 credits" },
-                  { sector: "Tarakeswar", throughput: "850 kg/mo", minted: "620 credits" },
-                  { sector: "Hugli-Chinsura", throughput: "1,020 kg/mo", minted: "780 credits" }
-                ].map((item, idx) => (
-                  <div key={idx} className="p-3 rounded-lg bg-white/50 border border-sand/20 text-xs">
+                {sectorStats.map((s) => (
+                  <div key={s.sector} className="p-3 rounded-lg bg-white/50 border border-sand/20 text-xs">
                     <p className="text-[10px] text-smoke font-bold font-syne uppercase tracking-wider mb-1">
-                      {item.sector}
+                      {s.sector}
                     </p>
                     <div className="flex flex-col gap-0.5 text-[#6B5744]">
-                      <p className="text-[11px]">Throughput: <span className="font-mono font-bold text-[#2A2218]">{item.throughput}</span></p>
-                      <p className="text-[11px]">Minted: <span className="font-mono font-semibold text-clay">{item.minted}</span></p>
+                      <p className="text-[11px]">Processed: <span className="font-mono font-bold text-[#2A2218]">{s.kg.toFixed(0)} kg</span></p>
+                      <p className="text-[11px] font-mono">
+                        <span className="text-amber-700">{s.pending} pending</span>
+                        {" · "}
+                        <span className="text-clay">{s.active} active</span>
+                        {" · "}
+                        <span className="text-emerald-700">{s.done} done</span>
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -714,6 +535,14 @@ export default function AdminContent({
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Payout estimator + override (left) and price-grid monitor (right) */}
+      {userRole === "admin" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 w-full max-w-7xl mx-auto mb-10">
+          <PayoutOverride pickups={pickups} onSaved={handleOverrideSaved} />
+          <PriceGrid estimates={priceEstimates} />
         </div>
       )}
 

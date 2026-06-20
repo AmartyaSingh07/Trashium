@@ -14,7 +14,8 @@ export type WasteType =
   | "Metal"
   | "E-Waste"
   | "Organic"
-  | "Mixed";
+  | "Mixed"
+  | "Battery"; // pricing bucket for all battery leaf types; rates seeded from E-Waste (TODO(ml-battery))
 
 export type PickupStatus =
   | "pending"
@@ -54,6 +55,9 @@ export interface PickupRequest {
   time_slot?: string | null;
   notes: string;
   estimated_price: number | null;
+  payout_override?: number | null; // admin-set final payout; authoritative = payout_override ?? estimated_price
+  override_by?: string | null;
+  override_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -72,6 +76,10 @@ export interface PriceEstimate {
   waste_type: WasteType;
   area: AreaType;
   price_per_kg: number;
+  logistics_per_kg: number | null;
+  market_price_per_kg: number | null;
+  profit_per_kg: number | null;
+  model_version: string | null;
   created_at: string;
 }
 

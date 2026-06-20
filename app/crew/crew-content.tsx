@@ -12,6 +12,12 @@ const OptimizedRouteMap = dynamic(() => import("@/components/maps/OptimizedRoute
 
 import { optimizeRoute } from "@/lib/route-optimizer";
 import { DEFAULT_TRUCK, SECTOR_DEPOTS } from "@/lib/constants";
+import { estimateMultiQuote } from "@/lib/estimate";
+import type { EstimateResult, RiskLevel } from "@/lib/estimator-types";
+import { WASTE_CATALOG, toEntries, totalKg } from "@/lib/waste-items";
+
+const LEVEL_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/gamification-levels`;
+const CREW_SECTORS = ["Rishra", "Howrah", "Shyamnagar", "Tarakeswar", "Hugli-Chinsura"];
 
 interface PickupRequest {
   id: string;
@@ -41,21 +47,38 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const trackingChannelRef = useRef<RealtimeChannel | null>(null);
   
-  // On-Site scrap calculator state variables
-  const [estimatorMaterial, setEstimatorMaterial] = useState("PET Bottles (Plastic)");
-  const [estimatorWeight, setEstimatorWeight] = useState("");
-  const [estimatorPenalty, setEstimatorPenalty] = useState("0.0");
+  // On-Site scrap calculator — routes through the shared estimateQuote() contract (no hardcoded rates).
+  // Sector defaults to the crew's operating zone; the doorstep quality observation IS the risk input.
+  const defaultSector = CREW_SECTORS.includes(profile.operating_zone || "") ? (profile.operating_zone as string) : "Howrah";
+  const [estItems, setEstItems] = useState<string[]>([]);
+  const [estKg, setEstKg] = useState<Record<string, string>>({});
+  const [estRisk, setEstRisk] = useState<RiskLevel>("Medium");
+  const [estSector, setEstSector] = useState(defaultSector);
+  const [estResult, setEstResult] = useState<EstimateResult | null>(null);
 
-  const getCalculatedPayout = () => {
-    const w = parseFloat(estimatorWeight);
-    if (isNaN(w) || w <= 0) return "Dynamic Sync";
-    let rate = 12;
-    if (estimatorMaterial === "Cardboard / Paper") rate = 8;
-    else if (estimatorMaterial === "Aluminum Cans (Metal)") rate = 45;
-    const penalty = parseFloat(estimatorPenalty) || 0;
-    const total = w * rate * (1 - penalty);
-    return total.toFixed(2);
+  const toggleEstItem = (label: string) => {
+    setEstItems((prev) => (prev.includes(label) ? prev.filter((x) => x !== label) : [...prev, label]));
+    // Drop a deselected material's weight so it stops counting toward the quote.
+    setEstKg((prev) => {
+      if (prev[label] == null) return prev;
+      const next = { ...prev };
+      delete next[label];
+      return next;
+    });
   };
+
+  // On-site payout = sum of each material's quote, logistics charged once. No hardcoded rates.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!estItems.length || totalKg(estItems, estKg) <= 0) { if (!cancelled) setEstResult(null); return; }
+      try {
+        const r = await estimateMultiQuote({ entries: toEntries(estItems, estKg), sector: estSector, risk: estRisk });
+        if (!cancelled) setEstResult(r);
+      } catch { if (!cancelled) setEstResult(null); }
+    })();
+    return () => { cancelled = true; };
+  }, [estItems, estKg, estRisk, estSector]);
 
 
 
@@ -321,53 +344,94 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
 
             {/* 2. MOUNT THE MIGRATE ON-SITE PRICE ESTIMATOR */}
             <div className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.18)] shadow-sm mt-6">
-              <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-3">
-                🧮 Price Estimator
+              <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-3 flex items-center gap-2">
+                <img src={`${LEVEL_BUCKET_BASE}/price-estimator.png`} alt="" className="h-7 w-7 object-contain" loading="lazy" />
+                Price Estimator
               </h2>
               <p className="text-xs text-[#6B5744] mb-4">Verify weights and calculate real-time custom Indian Rupee (₹) payouts directly at the doorstep if load discrepancies occur.</p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+              <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold uppercase text-[#2A2218]">Material stream type</label>
-                  <select 
-                    value={estimatorMaterial}
-                    onChange={(e) => setEstimatorMaterial(e.target.value)}
-                    className="p-2.5 bg-[#F4EFE3] border border-[#D4C5B0] rounded-lg text-xs text-[#2A2218]"
-                  >
-                    <option>PET Bottles (Plastic)</option>
-                    <option>Cardboard / Paper</option>
-                    <option>Aluminum Cans (Metal)</option>
-                  </select>
+                  <label className="text-[11px] font-bold uppercase text-[#2A2218]">
+                    Material streams
+                    {estItems.length > 0 && (
+                      <span className="ml-1 font-normal normal-case text-[#8C7A63]">· {estItems.length} · {totalKg(estItems, estKg)} kg</span>
+                    )}
+                  </label>
+                  <p className="text-[11px] text-[#8C7A63] mb-1">Tick each stream in the load and weigh it — the payout adds up across all of them.</p>
+                  <div role="group" aria-label="Select material streams" className="max-h-52 overflow-y-auto rounded-lg border border-[#D4C5B0] bg-[#F4EFE3]">
+                    {WASTE_CATALOG.map((cat) => (
+                      <div key={cat.category}>
+                        <div className="sticky top-0 z-10 bg-[#F4EFE3] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#8C7A63] border-b border-[#D4C5B0]/60">
+                          {cat.category}
+                        </div>
+                        {cat.items.map((it) => {
+                          const checked = estItems.includes(it.label);
+                          const id = `crew-m-${it.label.replace(/\s+/g, "-")}`;
+                          return (
+                            <div key={it.label} className="flex min-h-11 items-center gap-2.5 px-3 py-2 text-xs text-[#2A2218] hover:bg-[#EDE5D8]/60">
+                              <input
+                                id={id}
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleEstItem(it.label)}
+                                className="h-4 w-4 shrink-0 accent-[#C2703D] cursor-pointer"
+                              />
+                              <label htmlFor={id} className={`flex-1 cursor-pointer ${checked ? "font-semibold" : ""}`}>{it.label}</label>
+                              {checked && (
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  min="0"
+                                  step="0.5"
+                                  placeholder="kg"
+                                  value={estKg[it.label] ?? ""}
+                                  onChange={(e) => setEstKg((p) => ({ ...p, [it.label]: e.target.value }))}
+                                  aria-label={`${it.label} weight in kilograms`}
+                                  className="w-16 shrink-0 rounded-md border border-[#D4C5B0] bg-white px-2 py-1 text-right text-xs text-[#2A2218] focus:border-[#C2703D] focus:outline-none"
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold uppercase text-[#2A2218]">Doorstep Weight Class</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. 12.5" 
-                    value={estimatorWeight}
-                    onChange={(e) => setEstimatorWeight(e.target.value)}
-                    className="p-2.5 bg-[#F4EFE3] border border-[#D4C5B0] rounded-lg text-xs text-[#2A2218]" 
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold uppercase text-[#2A2218]">Quality Impurity Penalty (AI Risk)</label>
-                  <select 
-                    value={estimatorPenalty}
-                    onChange={(e) => setEstimatorPenalty(e.target.value)}
-                    className="p-2.5 bg-[#F4EFE3] border border-[#D4C5B0] rounded-lg text-xs text-[#2A2218]"
-                  >
-                    <option value="0.0">0% Clean Load (No Defect)</option>
-                    <option value="0.2">20% Minor Contamination</option>
-                    <option value="0.5">50% High Moisture Risk</option>
-                    <option value="0.8">80% Industrial Degradation</option>
-                  </select>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold uppercase text-[#2A2218]">Quality Defect Risk</label>
+                    <select
+                      value={estRisk}
+                      onChange={(e) => setEstRisk(e.target.value as RiskLevel)}
+                      className="p-2.5 bg-[#F4EFE3] border border-[#D4C5B0] rounded-lg text-xs text-[#2A2218]"
+                    >
+                      <option value="Low">Low — clean load</option>
+                      <option value="Medium">Medium — minor contamination</option>
+                      <option value="High">High — heavy defect / moisture</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold uppercase text-[#2A2218]">Sector</label>
+                    <select
+                      value={estSector}
+                      onChange={(e) => setEstSector(e.target.value)}
+                      className="p-2.5 bg-[#F4EFE3] border border-[#D4C5B0] rounded-lg text-xs text-[#2A2218]"
+                    >
+                      {CREW_SECTORS.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
-              
+
               <div className="mt-4 pt-3 border-t border-[rgba(194,112,61,0.08)] flex justify-between items-center">
-                <span className="text-xs font-semibold text-[#6B5744]">Calculated Payout Estimation:</span>
+                <span className="text-xs font-semibold text-[#6B5744]">
+                  Calculated Payout Estimation:
+                  {estResult && <span className="ml-2 font-normal text-[#8C7A63]">₹{estResult.userPayoutPerKg.toFixed(2)}/kg · {estResult.distanceKm}km logistics</span>}
+                </span>
                 <span className="font-mono text-sm font-bold text-[#4A6741] bg-[#8FA37E]/10 px-3 py-1 rounded">
-                  {getCalculatedPayout() === "Dynamic Sync" ? "₹ Dynamic Sync" : `₹ ${getCalculatedPayout()}`}
+                  {estResult ? `₹ ${estResult.userPayoutTotal.toFixed(2)}` : "₹ Dynamic Sync"}
                 </span>
               </div>
             </div>

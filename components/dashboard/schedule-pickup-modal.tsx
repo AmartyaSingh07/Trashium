@@ -24,18 +24,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CalendarPlus, Loader2, Sparkles } from "lucide-react";
-import { applyBoost } from "@/lib/pricing-math";
-import type { WasteType } from "@/lib/types";
+import { CountUp } from "@/components/ui/count-up";
+import { estimateMultiQuote } from "@/lib/estimate";
+import type { EstimateResult, RiskLevel } from "@/lib/estimator-types";
+import { WASTE_CATALOG, toEntries, totalKg, dominantBucket } from "@/lib/waste-items";
 
-const wasteTypes: WasteType[] = [
-  "Plastic",
-  "Paper",
-  "Glass",
-  "Metal",
-  "E-Waste",
-  "Organic",
-  "Mixed",
-];
+const LEVEL_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/gamification-levels`;
+
 const OPERATIONAL_SECTORS = ['Rishra', 'Howrah', 'Shyamnagar', 'Tarakeswar', 'Hugli-Chinsura'];
 const TRASHIUM_PICKUP_SLOTS = [
   "08:00 AM - 09:00 AM",
@@ -93,25 +88,45 @@ export default function SchedulePickupModal({
       cancelled = true;
     };
   }, [supabase, open]);
-  const weightRanges = [
-    { label: "5-10 kg", value: "5-10 kg", midpoint: 7.5 },
-    { label: "10-15 kg", value: "10-15 kg", midpoint: 12.5 },
-    { label: "15-20 kg", value: "15-20 kg", midpoint: 17.5 },
-    { label: "20+ kg", value: "20+ kg", midpoint: 25.0 },
-  ];
   const [form, setForm] = useState({
-    waste_type: "" as WasteType | "",
-    estimated_weight: "",
+    waste_items: [] as string[],
+    item_kg: {} as Record<string, string>, // per-material weight (kg), keyed by leaf label
     location: "",
     address: "",
     scheduled_date: "",
     notes: "",
+    risk: "Medium" as RiskLevel,
+    pincode: "",
   });
+  const [estResult, setEstResult] = useState<EstimateResult | null>(null);
+
+  // Live payout preview — sums each material's quote, logistics charged once. No hardcoded rates.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!form.waste_items.length || !form.location || totalKg(form.waste_items, form.item_kg) <= 0) {
+        if (!cancelled) setEstResult(null);
+        return;
+      }
+      try {
+        const r = await estimateMultiQuote({
+          entries: toEntries(form.waste_items, form.item_kg),
+          sector: form.location,
+          risk: form.risk,
+          pincode: form.pincode || undefined,
+          boostPct,
+        });
+        if (!cancelled) setEstResult(r);
+      } catch { if (!cancelled) setEstResult(null); }
+    })();
+    return () => { cancelled = true; };
+  }, [form.waste_items, form.item_kg, form.location, form.risk, form.pincode, boostPct]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.waste_type || !form.location || !form.scheduled_date || !selectedTimeSlot) {
-      toast.error("Please fill in all required fields");
+    const weight = totalKg(form.waste_items, form.item_kg);
+    if (!form.waste_items.length || weight <= 0 || !form.location || !form.scheduled_date || !selectedTimeSlot) {
+      toast.error("Add a weight for each material and fill in all required fields");
       return;
     }
 
@@ -122,26 +137,21 @@ export default function SchedulePickupModal({
         throw new Error("No active authenticated session found.");
       }
 
-      const weight = weightRanges.find(r => r.value === form.estimated_weight)?.midpoint || 0;
-
-      // Payout estimate from price_estimates (sector = area), boosted if a perk is pending. No hard-coded rates.
-      let estimatedPrice: number | null = null;
-      if (weight > 0) {
-        const { data: rate } = await supabase
-          .from("price_estimates")
-          .select("price_per_kg")
-          .eq("area", form.location)
-          .eq("waste_type", form.waste_type)
-          .maybeSingle();
-        if (rate?.price_per_kg != null) {
-          estimatedPrice = applyBoost(Number(rate.price_per_kg) * weight, boostPct);
-        }
-      }
+      // Payout = sum of each material's quote, logistics charged once. No hard-coded rates.
+      const q = await estimateMultiQuote({
+        entries: toEntries(form.waste_items, form.item_kg),
+        sector: form.location,
+        risk: form.risk,
+        pincode: form.pincode || undefined,
+        boostPct,
+      });
+      const estimatedPrice: number | null = q.userPayoutTotal;
 
       const { error } = await supabase.from("pickup_requests").insert({
         user_id: currentUser.id,
         full_name: userName,
-        waste_type: form.waste_type,
+        waste_type: dominantBucket(form.waste_items, form.item_kg), // valid pricing bucket for all downstream consumers
+        waste_items: form.waste_items,
         estimated_weight: weight,
         location: form.location,
         address: form.address,
@@ -164,18 +174,21 @@ export default function SchedulePickupModal({
       }
 
       toast.success("Pickup scheduled successfully!", {
-        description: `${form.waste_type} pickup on ${form.scheduled_date}`,
+        description: `${form.waste_items.join(", ")} pickup on ${form.scheduled_date}`,
       });
 
       setOpen(false);
       setForm({
-        waste_type: "",
-        estimated_weight: "",
+        waste_items: [],
+        item_kg: {},
         location: "",
         address: "",
         scheduled_date: "",
         notes: "",
+        risk: "Medium",
+        pincode: "",
       });
+      setEstResult(null);
       setSelectedTimeSlot("");
       onScheduled?.();
     } catch (err) {
@@ -185,6 +198,21 @@ export default function SchedulePickupModal({
       setLoading(false);
     }
   };
+
+  const toggleItem = (label: string) =>
+    setForm((f) => {
+      const has = f.waste_items.includes(label);
+      const item_kg = { ...f.item_kg };
+      if (has) delete item_kg[label]; // drop its weight when deselected
+      return {
+        ...f,
+        waste_items: has ? f.waste_items.filter((x) => x !== label) : [...f.waste_items, label],
+        item_kg,
+      };
+    });
+
+  const setItemKg = (label: string, kg: string) =>
+    setForm((f) => ({ ...f, item_kg: { ...f.item_kg, [label]: kg } }));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -217,50 +245,99 @@ export default function SchedulePickupModal({
             </div>
           )}
 
-          {/* Waste Type */}
+          {/* Materials — grouped multi-select */}
           <div className="space-y-1.5">
-            <Label htmlFor="waste_type" className="text-xs font-semibold uppercase tracking-wider text-bark font-[family-name:var(--font-syne)]">
-              Waste Type <span className="text-terra font-bold">*</span>
+            <Label className="text-xs font-semibold uppercase tracking-wider text-bark font-[family-name:var(--font-syne)]">
+              Materials <span className="text-terra font-bold">*</span>
+              {form.waste_items.length > 0 && (
+                <span className="ml-1 font-normal normal-case tracking-normal text-smoke">
+                  · {form.waste_items.length} selected · {totalKg(form.waste_items, form.item_kg)} kg
+                </span>
+              )}
             </Label>
-            <Select
-              value={form.waste_type}
-              onValueChange={(v) => {
-                if (v !== null) setForm({ ...form, waste_type: v as WasteType });
-              }}
-            >
-              <SelectTrigger id="waste_type" className="bg-linen/60 border-sand/55 text-bark placeholder:text-smoke/50 focus:border-terra focus:ring-terra focus:ring-1 focus-visible:ring-terra focus-visible:ring-1 focus-visible:outline-none">
-                <SelectValue placeholder="Select waste type" />
-              </SelectTrigger>
-              <SelectContent className="bg-linen border-sand/40 text-bark">
-                {wasteTypes.map((type) => (
-                  <SelectItem key={type} value={type} className="hover:bg-sand/15 focus:bg-sand/15">
-                    {type}
-                  </SelectItem>
+            <p className="text-[11px] text-[#8C7A63]">Pick each material and enter its weight (kg) — your payout adds up across all of them.</p>
+
+            {form.waste_items.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {form.waste_items.map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => toggleItem(label)}
+                    className="inline-flex items-center gap-1 rounded-full bg-terra/15 px-2.5 py-1 text-xs font-medium text-bark transition-colors hover:bg-terra/25"
+                  >
+                    {label}
+                    <span aria-hidden className="text-terra">×</span>
+                    <span className="sr-only">Remove {label}</span>
+                  </button>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            )}
+
+            <div
+              role="group"
+              aria-label="Select materials"
+              className="max-h-56 overflow-y-auto rounded-lg border border-sand/55 bg-linen/60"
+            >
+              {WASTE_CATALOG.map((cat) => (
+                <div key={cat.category}>
+                  <div className="sticky top-0 z-10 bg-linen px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-smoke font-[family-name:var(--font-syne)] border-b border-sand/30">
+                    {cat.category}
+                  </div>
+                  {cat.items.map((it) => {
+                    const checked = form.waste_items.includes(it.label);
+                    const id = `m-${it.label.replace(/\s+/g, "-")}`;
+                    return (
+                      <div
+                        key={it.label}
+                        className="flex min-h-11 items-center gap-2.5 px-3 py-2 text-sm text-bark transition-colors hover:bg-sand/15"
+                      >
+                        <input
+                          id={id}
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleItem(it.label)}
+                          className="h-4 w-4 shrink-0 accent-[#C2703D] cursor-pointer"
+                        />
+                        <label htmlFor={id} className={`flex-1 cursor-pointer ${checked ? "font-medium" : ""}`}>
+                          {it.label}
+                        </label>
+                        {checked && (
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min="0"
+                            step="0.5"
+                            placeholder="kg"
+                            value={form.item_kg[it.label] ?? ""}
+                            onChange={(e) => setItemKg(it.label, e.target.value)}
+                            aria-label={`${it.label} weight in kilograms`}
+                            className="w-16 shrink-0 rounded-md border border-sand/55 bg-linen px-2 py-1 text-right text-xs text-bark focus:border-terra focus:outline-none"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Weight Range */}
-          <div className="space-y-1.5">
-            <Label htmlFor="weight" className="text-xs font-semibold uppercase tracking-wider text-bark font-[family-name:var(--font-syne)]">Estimated Weight Range</Label>
-            <Select
-              value={form.estimated_weight}
-              onValueChange={(v) => {
-                if (v !== null) setForm({ ...form, estimated_weight: v });
-              }}
+
+          {/* Quality Risk */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-syne font-bold text-xs uppercase tracking-wider text-[#2A2218]">
+              Quality Risk
+            </label>
+            <select
+              value={form.risk}
+              onChange={(e) => setForm({ ...form, risk: e.target.value as RiskLevel })}
+              className="w-full font-dm text-sm p-3 bg-linen/60 border border-sand/55 rounded-lg text-[#2A2218] focus:outline-none focus:border-[#C2703D] transition-colors appearance-none cursor-pointer"
             >
-              <SelectTrigger id="weight" className="bg-linen/60 border-sand/55 text-bark placeholder:text-smoke/50 focus:border-terra focus:ring-terra focus:ring-1 focus-visible:ring-terra focus-visible:ring-1 focus-visible:outline-none">
-                <SelectValue placeholder="Select weight range" />
-              </SelectTrigger>
-              <SelectContent className="bg-linen border-sand/40 text-bark">
-                {weightRanges.map((r) => (
-                  <SelectItem key={r.value} value={r.value} className="hover:bg-sand/15 focus:bg-sand/15">
-                    {r.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="Low">Low — clean, well-sorted</option>
+              <option value="Medium">Medium — some contamination</option>
+              <option value="High">High — mixed / soiled</option>
+            </select>
           </div>
 
           {/* Location */}
@@ -297,6 +374,20 @@ export default function SchedulePickupModal({
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               className="bg-linen/60 border-sand/55 text-bark placeholder:text-smoke/50 focus:border-terra focus:ring-terra focus:ring-1 focus-visible:ring-terra focus-visible:ring-1 focus-visible:outline-none"
             />
+          </div>
+
+          {/* Pincode (distance hint for logistics; optional) */}
+          <div className="space-y-1.5">
+            <Label htmlFor="pincode" className="text-xs font-semibold uppercase tracking-wider text-bark font-[family-name:var(--font-syne)]">Pincode</Label>
+            <Input
+              id="pincode"
+              inputMode="numeric"
+              placeholder="e.g., 712248"
+              value={form.pincode}
+              onChange={(e) => setForm({ ...form, pincode: e.target.value })}
+              className="bg-linen/60 border-sand/55 text-bark placeholder:text-smoke/50 focus:border-terra focus:ring-terra focus:ring-1 focus-visible:ring-terra focus-visible:ring-1 focus-visible:outline-none"
+            />
+            <span className="text-[11px] text-[#8C7A63]">Used to estimate pickup logistics; sector distance is used if left blank.</span>
           </div>
 
           {/* Date */}
@@ -348,6 +439,26 @@ export default function SchedulePickupModal({
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               className="bg-linen/60 border-sand/55 text-bark placeholder:text-smoke/50 focus:border-terra focus:ring-terra focus:ring-1 focus-visible:ring-terra focus-visible:ring-1 focus-visible:outline-none resize-none"
             />
+          </div>
+
+          {/* Live payout preview */}
+          <div className="rounded-xl border border-sand/40 bg-[#F4EFE3]/70 px-4 py-3">
+            <div className="flex items-center gap-2 mb-1">
+              <img src={`${LEVEL_BUCKET_BASE}/price-estimator.png`} alt="" className="h-7 w-7 object-contain" loading="lazy" />
+              <span className="font-syne font-bold text-xs uppercase tracking-wider text-bark">Payout Estimate</span>
+            </div>
+            {estResult ? (
+              <>
+                <p className="font-[family-name:var(--font-jetbrains)] text-3xl font-bold text-[#4A6741] leading-none">
+                  ₹<CountUp value={estResult.userPayoutTotal} format={(n) => Math.round(n).toString()} />
+                </p>
+                <p className="text-[11px] text-[#8C7A63] mt-1">
+                  ₹{estResult.userPayoutPerKg.toFixed(2)}/kg · logistics ₹{estResult.logisticsPerKg.toFixed(2)}/kg · {estResult.distanceKm} km
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-[#8C7A63]">Select materials, enter their weights and pick an area to see your payout.</p>
+            )}
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
