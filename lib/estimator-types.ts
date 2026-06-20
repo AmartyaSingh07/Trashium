@@ -8,7 +8,8 @@ export type RiskLevel = "Low" | "Medium" | "High";
 export type DemandLevel = "Low" | "Medium" | "High";
 
 export interface EstimateInput {
-  wasteType: WasteType; // material
+  wasteType: WasteType; // coarse pricing bucket (fallback key)
+  material?: string; // granular leaf material (e.g. "Copper"); preferred lookup key, falls back to wasteType
   sector: string; // one of OPERATIONAL_SECTORS (region)
   quantityKg: number; // exact or midpoint of a range
   risk: RiskLevel; // real model input
@@ -22,7 +23,7 @@ export interface EstimateInput {
 // Multi-material pickup: one stop, several material streams each with its own weight.
 // Payout sums each stream's gross household value, then charges logistics ONCE for the stop.
 export interface MultiEstimateInput {
-  entries: { wasteType: WasteType; quantityKg: number }[];
+  entries: { wasteType: WasteType; material?: string; quantityKg: number }[];
   sector: string;
   risk: RiskLevel;
   demand?: DemandLevel;

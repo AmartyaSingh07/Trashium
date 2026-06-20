@@ -21,9 +21,10 @@ export const WASTE_CATALOG: { category: string; items: { label: string; bucket: 
 export const ITEM_BUCKET = new Map(WASTE_CATALOG.flatMap((c) => c.items.map((i) => [i.label, i.bucket] as const)));
 export const BUCKET_ORDER = [...new Set(WASTE_CATALOG.flatMap((c) => c.items.map((i) => i.bucket)))];
 
-/** Selected labels + their per-material weights → priced entries for estimateMultiQuote. */
+/** Selected labels + their per-material weights → priced entries for estimateMultiQuote.
+ *  material = leaf label (granular price key); wasteType = its bucket (fallback). */
 export const toEntries = (items: string[], kg: Record<string, string>) =>
-  items.map((label) => ({ wasteType: ITEM_BUCKET.get(label) as WasteType, quantityKg: parseFloat(kg[label]) || 0 }));
+  items.map((label) => ({ material: label, wasteType: ITEM_BUCKET.get(label) as WasteType, quantityKg: parseFloat(kg[label]) || 0 }));
 
 export const totalKg = (items: string[], kg: Record<string, string>) =>
   items.reduce((s, label) => s + (parseFloat(kg[label]) || 0), 0);

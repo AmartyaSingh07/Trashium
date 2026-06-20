@@ -450,7 +450,7 @@ export default function SchedulePickupModal({
             {estResult ? (
               <>
                 <p className="font-[family-name:var(--font-jetbrains)] text-3xl font-bold text-[#4A6741] leading-none">
-                  ₹<CountUp value={estResult.userPayoutTotal} format={(n) => Math.round(n).toString()} />
+                  ₹<CountUp value={estResult.userPayoutTotal} format={(n) => n.toFixed(2)} />
                 </p>
                 <p className="text-[11px] text-[#8C7A63] mt-1">
                   ₹{estResult.userPayoutPerKg.toFixed(2)}/kg · logistics ₹{estResult.logisticsPerKg.toFixed(2)}/kg · {estResult.distanceKm} km

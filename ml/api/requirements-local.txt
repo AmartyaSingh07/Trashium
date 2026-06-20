@@ -1,0 +1,18 @@
+# Local-dev requirements — UNPINNED so pip installs prebuilt wheels for YOUR Python
+# version (avoids building pandas/numpy from source, which needs a C++ compiler).
+# Use this for `npm run dev` testing. The deploy container still uses the pinned
+# requirements.txt (Python 3.11 in the Dockerfile, where the pins have wheels).
+#
+#   pip install -r api/requirements-local.txt
+#
+# IMPORTANT: scikit-learn must match the version your model was trained with closely
+# enough to unpickle the .joblib. The trained artifacts use sklearn 1.7.2. If your
+# Python has no 1.7.2 wheel, install the newest 1.7.x (still loads mv_v2 fine).
+fastapi
+uvicorn[standard]
+scikit-learn>=1.7,<1.8
+joblib
+pandas
+numpy
+openpyxl
+pydantic

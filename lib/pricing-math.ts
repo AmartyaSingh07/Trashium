@@ -26,15 +26,21 @@ export function applyBoost(basePrice: number, pct: number | null | undefined): n
  * Serve-time logistics cost (INR) for ONE stop on a multi-stop collection run.
  * The full trip cost (base + per-km) is shared across the expected stops per run, so a single
  * household isn't charged the whole solo-trip cost (which zeroed out small/low-value loads).
+ *
+ * `stopsPerRun` is the number of stops the trip cost is divided across. It defaults to the static
+ * EXPECTED_STOPS_PER_RUN, but estimate.ts passes a sector-specific value derived from that sector's
+ * historical pickup density (denser sector → more stops → cheaper per-stop logistics → higher
+ * payout). Always clamp it upstream so a sparse/empty sector can't crater payouts.
  * Mirrors /ml/pricing.py estimate_logistics_cost — keep in sync (TODO(ml-logistics-sync)).
  */
-export function estimateLogisticsCost(distanceKm: number): number {
-  return (LOGISTICS_BASE + LOGISTICS_PER_KM * distanceKm) / EXPECTED_STOPS_PER_RUN;
+export function estimateLogisticsCost(distanceKm: number, stopsPerRun: number = EXPECTED_STOPS_PER_RUN): number {
+  const stops = stopsPerRun > 0 ? stopsPerRun : EXPECTED_STOPS_PER_RUN;
+  return (LOGISTICS_BASE + LOGISTICS_PER_KM * distanceKm) / stops;
 }
 
-export function logisticsPerKg(distanceKm: number, qtyKg: number): number {
+export function logisticsPerKg(distanceKm: number, qtyKg: number, stopsPerRun: number = EXPECTED_STOPS_PER_RUN): number {
   if (!qtyKg || qtyKg <= 0) return 0;
-  return estimateLogisticsCost(distanceKm) / qtyKg;
+  return estimateLogisticsCost(distanceKm, stopsPerRun) / qtyKg;
 }
 
 /** market_value/kg × (1 − commission) − logistics/kg. Not floored here (buildResult floors). */
@@ -74,10 +80,11 @@ export function buildMultiResult(
   distanceKm: number,
   source: EstimateResult["source"],
   modelVersion: string | null,
-  boostPct: number | null | undefined
+  boostPct: number | null | undefined,
+  stopsPerRun: number = EXPECTED_STOPS_PER_RUN
 ): EstimateResult {
   const totalKg = entries.reduce((s, e) => s + e.qtyKg, 0);
-  const stopCost = estimateLogisticsCost(distanceKm); // one trip cost for the whole stop
+  const stopCost = estimateLogisticsCost(distanceKm, stopsPerRun); // one trip cost for the whole stop
   const grossPayout = entries.reduce((s, e) => s + e.mvPerKg * (1 - COMMISSION) * e.qtyKg, 0);
   const rawPayoutTotal = Math.max(grossPayout - stopCost, 0); // never negative
   const payoutTotal = applyBoost(rawPayoutTotal, boostPct);
@@ -104,9 +111,10 @@ export function buildResult(
   qtyKg: number,
   source: EstimateResult["source"],
   modelVersion: string | null,
-  boostPct: number | null | undefined
+  boostPct: number | null | undefined,
+  stopsPerRun: number = EXPECTED_STOPS_PER_RUN,
 ): EstimateResult {
-  const lpk = logisticsPerKg(distanceKm, qtyKg);
+  const lpk = logisticsPerKg(distanceKm, qtyKg, stopsPerRun);
   const rawPayoutPerKg = Math.max(userPayoutPerKg(mvPerKg, lpk), 0); // never quote negative
   const payoutPerKg = applyBoost(rawPayoutPerKg, boostPct); // marketplace booster, if any
   const mgnk = marginPerKg(mvPerKg);

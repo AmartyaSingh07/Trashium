@@ -49,6 +49,7 @@ export interface PickupRequest {
   location: string;
   address: string;
   waste_type: WasteType;
+  waste_items?: string[] | null; // granular leaf materials chosen at booking (e.g. ["Copper"]); null for legacy rows
   estimated_weight: number;
   status: PickupStatus;
   scheduled_date: string;
@@ -74,6 +75,7 @@ export interface GlobalImpact {
 export interface PriceEstimate {
   id: string;
   waste_type: WasteType;
+  material_type?: string | null; // granular leaf material (e.g. "Copper"); = waste_type for bucket rows
   area: AreaType;
   price_per_kg: number;
   logistics_per_kg: number | null;

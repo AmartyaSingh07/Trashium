@@ -9,11 +9,32 @@
  */
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { estimateQuote } from "@/lib/estimate";
+import { estimateMultiQuote } from "@/lib/estimate";
 import { MIN_MARGIN_PER_KG } from "@/lib/pricing-constants";
+import { ITEM_BUCKET } from "@/lib/waste-items";
 import type { EstimateResult, RiskLevel } from "@/lib/estimator-types";
 import type { PickupRequest, WasteType } from "@/lib/types";
 import { toast } from "sonner";
+
+/**
+ * Reconstruct the priced entries for a pickup. Prefer the granular leaf materials the household
+ * chose (waste_items, e.g. ["Copper"]) so the admin sees the SAME granular rate the household did,
+ * not the blended bucket. Per-item weights aren't stored, so split the total weight evenly across
+ * items. Legacy rows with no waste_items fall back to one entry on the coarse waste_type bucket.
+ */
+function pickupEntries(pickup: PickupRequest): { wasteType: WasteType; material?: string; quantityKg: number }[] {
+  const totalKg = Number(pickup.estimated_weight) || 0;
+  const items = (pickup.waste_items ?? []).filter(Boolean);
+  if (items.length === 0) {
+    return [{ wasteType: pickup.waste_type as WasteType, quantityKg: totalKg }];
+  }
+  const per = totalKg / items.length; // even split — per-item kg isn't persisted
+  return items.map((label) => ({
+    material: label,
+    wasteType: (ITEM_BUCKET.get(label) ?? pickup.waste_type) as WasteType,
+    quantityKg: per,
+  }));
+}
 
 const LEVEL_BUCKET_BASE = `${
   process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"
@@ -43,10 +64,11 @@ export default function PayoutOverride({
   const compute = async (pickup: PickupRequest, r: RiskLevel) => {
     setComputing(true);
     try {
-      const res = await estimateQuote({
-        wasteType: pickup.waste_type as WasteType,
+      // Multi-material, granular: same seam (live model → Supabase fallback), commission,
+      // logistics and dynamic per-sector stops as the household/crew estimators.
+      const res = await estimateMultiQuote({
+        entries: pickupEntries(pickup),
         sector: pickup.location,
-        quantityKg: Number(pickup.estimated_weight),
         risk: r,
       });
       setResult(res);
@@ -159,7 +181,15 @@ export default function PayoutOverride({
                 <Stat label="Margin / kg" value={money(result.marginPerKg)} />
                 <Stat label="Distance" value={`${result.distanceKm} km`} />
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+              <p className="mt-3 text-[11px] text-[#6B5744]">
+                Priced on:{" "}
+                <span className="font-mono text-[#2A2218]">
+                  {selected.waste_items && selected.waste_items.length > 0
+                    ? `${selected.waste_items.join(", ")} · ${Number(selected.estimated_weight)}kg split evenly`
+                    : `${selected.waste_type} (bucket — no granular items on this pickup)`}
+                </span>
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#EDE5D8] text-[#6B5744] border border-sand/40">
                   source: {result.source}{result.modelVersion ? ` · ${result.modelVersion}` : ""}
                 </span>
