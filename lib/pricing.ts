@@ -12,6 +12,7 @@
  * `area` in price_estimates stores an OPERATIONAL SECTOR (matches the pickup form).
  */
 import { createClient } from "@/lib/supabase/server";
+import { TILE_MATERIAL_TYPES } from "@/lib/constants";
 import type { WasteType } from "@/lib/types";
 
 // Re-exported so server code uses lib/pricing as the single pricing entrypoint. Pure math lives in pricing-math.
@@ -73,4 +74,36 @@ export async function quotePickup(
   const rate = await getRate(sector, wasteType);
   if (!rate) return null;
   return quoteFromRate(rate, weightKg);
+}
+
+/**
+ * Per-sector payout rates for individual `material_type` rows, used by the
+ * landing-page rate tiles (components/materials/flipping-rates.tsx).
+ *
+ * Returns a nested map: sector -> material_type -> rounded payout per kg.
+ * Reads live from `price_estimates`, so it always reflects the latest ML run
+ * (no hardcoded rates - see CLAUDE.md rule 3). The material list lives in
+ * lib/constants.ts (a server-safe module) so it stays a plain array here.
+ */
+export type TileRatesBySector = Record<string, Record<string, number>>;
+
+export async function getTileRatesBySector(): Promise<TileRatesBySector> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("price_estimates")
+    .select("area, material_type, price_per_kg")
+    .in("material_type", [...TILE_MATERIAL_TYPES]);
+
+  const map: TileRatesBySector = {};
+  if (error || !data) return map;
+
+  for (const row of data as {
+    area: string;
+    material_type: string;
+    price_per_kg: number;
+  }[]) {
+    if (row.area == null || row.material_type == null) continue;
+    (map[row.area] ??= {})[row.material_type] = Math.round(Number(row.price_per_kg));
+  }
+  return map;
 }

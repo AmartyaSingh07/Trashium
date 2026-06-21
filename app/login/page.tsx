@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { KineticTypographyLoader } from "@/components/ui/loading-animation";
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
+  const t = useTranslations("auth");
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +35,7 @@ export default function LoginPage() {
       toast.error(error.message);
       setLoading(false);
     } else {
-      toast.success("Welcome back!");
+      toast.success(t("welcomeBackToast"));
       router.push("/dashboard");
       router.refresh();
     }
@@ -41,7 +43,7 @@ export default function LoginPage() {
 
   return (
     <>
-    {loading && <KineticTypographyLoader label="Signing in" />}
+    {loading && <KineticTypographyLoader label={t("loggingIn")} />}
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-linen/50 hero-pattern">
       <div className="w-full max-w-3xl overflow-hidden rounded-2xl t-glass-card animate-scale-in">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.1fr]">
@@ -60,11 +62,11 @@ export default function LoginPage() {
                 className="mb-6 inline-flex items-center gap-2 text-sm text-[#C2703D] hover:text-terra-deep transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to Home
+                {t("backToHome")}
               </Link>
               <BrandLockup variant="static" className="h-10 w-auto mb-3 mt-4" />
               <p className="t-body text-smoke max-w-[220px] leading-relaxed">
-                Incentivized recyclables collection for cleaner communities.
+                {t("brandBlurb")}
               </p>
             </div>
 
@@ -75,12 +77,12 @@ export default function LoginPage() {
 
           {/* ── RIGHT: Form panel ── */}
           <div className="px-10 py-12 flex flex-col justify-center">
-            <h2 className="t-heading text-xl text-bark mb-1">Welcome back</h2>
-            <p className="t-body text-smoke text-sm mb-8">Sign in to continue</p>
+            <h2 className="t-heading text-xl text-bark mb-1">{t("loginTitle")}</h2>
+            <p className="t-body text-smoke text-sm mb-8">{t("loginSubtitle")}</p>
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="t-label text-smoke">Email</Label>
+                <Label htmlFor="email" className="t-label text-smoke">{t("emailLabel")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -95,7 +97,7 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="t-label text-smoke">Password</Label>
+                <Label htmlFor="password" className="t-label text-smoke">{t("passwordLabel")}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -115,17 +117,17 @@ export default function LoginPage() {
                 disabled={loading}
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {loading ? "Signing in..." : "Sign In"}
+                {loading ? t("loggingIn") : t("loginButton")}
               </Button>
             </form>
 
             <p className="mt-6 text-center text-sm text-smoke">
-              Don&apos;t have an account?{" "}
+              {t("noAccount")}{" "}
               <Link
                 href="/signup"
                 className="font-semibold text-terra hover:underline"
               >
-                Join the Movement
+                {t("signUpLink")}
               </Link>
             </p>
           </div>

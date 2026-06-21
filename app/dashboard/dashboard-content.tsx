@@ -15,6 +15,7 @@ import type { Profile, PickupRequest, ResolvedBadge, LeaderboardEntry, DailyStat
 import { DailyRitual } from "@/components/ui/daily-ritual";
 import { AchievementBadge, AchievementCard, AchievementUnlocked, type UserAchievement } from 'ui.trophy';
 import { LeaderboardCard } from "@/components/ui/leaderboard-card";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 const DEFAULT_DAILY: DailyStatus = {
@@ -67,6 +68,7 @@ export default function DashboardContent({
 }: DashboardContentProps) {
   const [pickups, setPickups] = useState<PickupRequest[]>(() => initialPickups.map(normalizePickup));
   const supabase = createClient();
+  const td = useTranslations("dashboard");
   const isHousehold = profile?.role === "household";
 
   // Authoritative daily-ritual state (server-tracked). Seeded from the SSR get_daily_status fetch;
@@ -430,7 +432,7 @@ export default function DashboardContent({
       <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-6 pb-4 relative z-10 min-h-[auto] animate-fade-up">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-950 leading-tight block py-1">
-            Welcome back,{" "}
+            {td("greeting")},{" "}
             <span className="text-gradient-terra font-semibold">{fullName}</span>{" "}
             <span className="inline-flex items-center justify-center h-8 w-8 relative align-middle ml-1 animate-float" title={activeTier.rank}>
               {/* Supabase PNG */}
@@ -639,7 +641,7 @@ export default function DashboardContent({
 
         <div className="lg:col-span-2 t-glass-card p-6 flex flex-col gap-4">
           <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark">
-            Recent Pickups
+            {td("recentPickups")}
           </h3>
           <RecentPickups pickups={pickups} onCancel={handleCancelPickup} onReschedule={handleReschedulePickup} />
         </div>

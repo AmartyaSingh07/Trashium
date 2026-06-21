@@ -1,9 +1,35 @@
-# Trashium — Context Handoff (LATEST: 2026-06-19, session 2)
+# Trashium — Context Handoff (LATEST: 2026-06-21, session 3)
 
 > Paste this whole file at the start of a new chat to continue without context loss.
-> The CURRENT session (loader + estimator rehaul + admin hub + logistics fix + bug fix) is documented
-> first. The earlier Gamification/Daily-Ritual handoff is preserved unchanged below as historical
-> reference. Read together with `CLAUDE.md` and the three PLAN `.md` files referenced inside.
+> The CURRENT session (live landing rates + PWA support + legal/info pages) is documented first.
+> Previous sessions are preserved below. Read together with `CLAUDE.md`.
+
+---
+
+## ✅ DONE THIS SESSION (2026-06-21, session 3)
+
+### 1. Dynamic Landing Page Rates Matrix
+- **Objective:** Eliminate hardcoded rates from the public landing page in accordance with CLAUDE.md Rule 3.
+- **Implementation:**
+  - Added `TILE_MATERIAL_TYPES` in [constants.ts](file:///s:/Developer/Projects/Final%20Year/Trashium/lib/constants.ts) containing 14 operational material categories.
+  - Implemented `getTileRatesBySector()` in [pricing.ts](file:///s:/Developer/Projects/Final%20Year/Trashium/lib/pricing.ts) to query the Supabase `price_estimates` table and group rounded payout rates by sector.
+  - Built [FlippingRates](file:///s:/Developer/Projects/Final%20Year/Trashium/components/materials/flipping-rates.tsx) component rendering a responsive matrix of flipping cards. Each card displays the live rate, category icon, and a witty ecological insight on its back.
+  - Refactored [page.tsx](file:///s:/Developer/Projects/Final%20Year/Trashium/app/page.tsx) to fetch the rates on the server side and pass them to the client component.
+
+### 2. Progressive Web App (PWA) Support
+- **Objective:** Enable platform installation and offline capability.
+- **Implementation:**
+  - Created web manifest at [manifest.ts](file:///s:/Developer/Projects/Final%20Year/Trashium/app/manifest.ts) using brand-themed colors.
+  - Added service worker `sw.js` and registered it via `ServiceWorkerRegister` in [sw-register.tsx](file:///s:/Developer/Projects/Final%20Year/Trashium/components/ui/sw-register.tsx).
+  - Built an install prompt component [pwa-install-button.tsx](file:///s:/Developer/Projects/Final%20Year/Trashium/components/ui/pwa-install-button.tsx) which integrates into the navbar (collapsing to a minimal icon-only button when scrolled/collapsed, or showing full width in mobile menu).
+  - Wired in [layout.tsx](file:///s:/Developer/Projects/Final%20Year/Trashium/app/layout.tsx).
+
+### 3. Legal and Information Pages Expansion
+- **Objective:** Add standard company information and policy pages with consistent high-end styling.
+- **Implementation:**
+  - Added page routes under `/about`, `/careers`, `/cookie-policy`, `/privacy-policy`, `/terms-of-service`.
+  - Extracted shared structures into [legal-page.tsx](file:///s:/Developer/Projects/Final%20Year/Trashium/components/layout/legal-page.tsx), [page-hero.tsx](file:///s:/Developer/Projects/Final%20Year/Trashium/components/layout/page-hero.tsx), and [page-shell.tsx](file:///s:/Developer/Projects/Final%20Year/Trashium/components/layout/page-shell.tsx).
+  - Updated footer links in [footer.tsx](file:///s:/Developer/Projects/Final%20Year/Trashium/components/layout/footer.tsx) to route to the new paths.
 
 ---
 

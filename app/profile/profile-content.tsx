@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Lock, Check } from "lucide-react";
+import React, { useState, useEffect, useTransition } from "react";
+import { Lock, Check, Globe } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { setLanguage } from "@/app/actions/language";
 import { OPERATIONAL_SECTORS } from "@/lib/constants";
 import { getTier, getLevelNumber, getTierIconFilename } from "@/lib/gamification";
 import type { User } from "@supabase/supabase-js";
@@ -19,8 +22,29 @@ const BADGE_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fq
 
 export default function ProfileContent({ profile, user, badges }: ProfileContentProps) {
   const supabase = createClient();
+  const t = useTranslations("profile");
+  const tLang = useTranslations("language");
+  const locale = useLocale();
+  const router = useRouter();
+  const [isLangPending, startLangTransition] = useTransition();
   const [isEditMode, setIsEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Language preference — persists to NEXT_LOCALE cookie + profiles.preferred_language,
+  // then refreshes so server components re-render in the chosen language.
+  const LANGS = [
+    { code: "en", native: "English" },
+    { code: "hi", native: "हिंदी" },
+    { code: "bn", native: "বাংলা" },
+  ];
+  const handleLanguageChange = (code: string) => {
+    if (code === locale) return;
+    document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+    startLangTransition(async () => {
+      await setLanguage(code);
+      router.refresh();
+    });
+  };
 
   // Map incoming props to user's internal structure
   const userAuth = { id: user.id, email: user.email ?? "" };
@@ -220,19 +244,19 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
           <form onSubmit={handleSaveProfile} className="t-glass-card rounded-3xl p-6 sm:p-8 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.15)] backdrop-blur-md shadow-sm flex flex-col gap-6">
             <div className="flex justify-between items-center border-b border-[rgba(194,112,61,0.12)] pb-4">
               <div>
-                <h2 className="font-syne font-bold text-lg text-[#2A2218]">Account Specifications</h2>
-                <p className="text-xs text-[#6B5744] mt-0.5">Manage identity fields and regional routing assignments safely.</p>
+                <h2 className="font-syne font-bold text-lg text-[#2A2218]">{t("accountSpecs")}</h2>
+                <p className="text-xs text-[#6B5744] mt-0.5">{t("accountSpecsHint")}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsEditMode(!isEditMode)}
                 className={`font-syne font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-xl border transition-all ${
-                  isEditMode 
-                    ? "bg-[#2A2218] text-white border-black" 
+                  isEditMode
+                    ? "bg-[#2A2218] text-white border-black"
                     : "bg-[#F4EFE3] text-[#2A2218] border-[#D4C5B0] hover:bg-[#EDE5D8]"
                 }`}
               >
-                {isEditMode ? "Cancel Mode ✕" : "Edit Profile 📝"}
+                {isEditMode ? `${t("cancelEdit")} ✕` : `${t("editProfile")} 📝`}
               </button>
             </div>
 
@@ -240,7 +264,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold uppercase text-[#2A2218] tracking-wider">Full Name</label>
+                <label className="text-[11px] font-bold uppercase text-[#2A2218] tracking-wider">{t("name")}</label>
                 <input
                   type="text"
                   value={fullName}
@@ -289,6 +313,29 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
                 </select>
               </div>
 
+              {/* Preferred language — independent of Edit mode; applies immediately. */}
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label className="text-[11px] font-bold uppercase text-[#2A2218] tracking-wider flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-[#C2703D]" />
+                  {t("preferredLanguage")}
+                </label>
+                <select
+                  value={locale}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                  disabled={isLangPending}
+                  className="w-full p-3 bg-[#F4EFE3] border border-[#D4C5B0] rounded-xl text-xs text-[#2A2218] focus:outline-none focus:border-[#C2703D] transition-colors disabled:opacity-60 appearance-none cursor-pointer"
+                >
+                  {LANGS.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.native}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-[#6B5744] mt-0.5 font-dm">
+                  {isLangPending ? `${tLang("changed")}…` : t("preferredLanguageHint")}
+                </p>
+              </div>
+
             </div>
 
             {/* Tactile saving actions drawer panel element */}
@@ -299,7 +346,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
                   disabled={loading}
                   className="min-h-[44px] bg-[#C2703D] hover:bg-[#A0522D] text-white font-syne font-bold text-xs uppercase tracking-wider rounded-xl shadow-md px-6 py-2.5 transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {loading ? "Synchronizing Meta Vector..." : "Commit Changes Safe ✓"}
+                  {loading ? t("saving") : `${t("saveChanges")} ✓`}
                 </button>
               </div>
             )}

@@ -6,76 +6,73 @@ import {
   Leaf,
   Zap,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-const features = [
-  {
-    title: "Green Credits System",
-    description:
-      "Earn digital credits for every kg you recycle. Redeem them for rewards, discounts, or donate to environmental causes.",
-    icon: <Award className="h-6 w-6" />,
-    color: "text-terra",
-    bgColor: "bg-terra/10",
-    glowClass: "glow-terra",
-  },
-  {
-    title: "Real-Time Impact Tracking",
-    description:
-      "Monitor your CO₂ savings, recycled materials, and community impact with beautiful, live dashboards.",
-    icon: <BarChart3 className="h-6 w-6" />,
-    color: "text-clay",
-    bgColor: "bg-clay/10",
-    glowClass: "",
-  },
-  {
-    title: "Eco-Level Gamification",
-    description:
-      "Progress from Seedling to Earth Guardian. Unlock badges, climb leaderboards, and compete with your neighborhood.",
-    icon: <Leaf className="h-6 w-6" />,
-    color: "text-sage-deep",
-    bgColor: "bg-sage/10",
-    glowClass: "glow-sage",
-  },
-  {
-    title: "Verified Collector Network",
-    description:
-      "Our collectors are vetted and tracked. Every pickup is logged, verified, and fully transparent.",
-    icon: <ShieldCheck className="h-6 w-6" />,
-    color: "text-bark",
-    bgColor: "bg-sand/20",
-    glowClass: "",
-  },
-  {
-    title: "Community Rankings",
-    description:
-      "See how your household, neighborhood, or city stacks up. Collective action drives collective impact.",
-    icon: <Users className="h-6 w-6" />,
-    color: "text-sage-deep",
-    bgColor: "bg-sage/10",
-    glowClass: "",
-  },
-  {
-    title: "Instant Scheduling",
-    description:
-      "Book a pickup in under 30 seconds. Choose waste type, set date and time, and you're done.",
-    icon: <Zap className="h-6 w-6" />,
-    color: "text-terra",
-    bgColor: "bg-terra/10",
-    glowClass: "glow-terra",
-  },
-];
+export default async function FeaturesSection() {
+  const t = await getTranslations("features");
 
-export default function FeaturesSection() {
+  // Visual config stays here; copy comes from translations and is mapped onto it.
+  const features = [
+    {
+      title: t("f1Title"),
+      description: t("f1Desc"),
+      icon: <Award className="h-6 w-6" />,
+      color: "text-terra",
+      bgColor: "bg-terra/10",
+      glowClass: "glow-terra",
+    },
+    {
+      title: t("f2Title"),
+      description: t("f2Desc"),
+      icon: <BarChart3 className="h-6 w-6" />,
+      color: "text-clay",
+      bgColor: "bg-clay/10",
+      glowClass: "",
+    },
+    {
+      title: t("f3Title"),
+      description: t("f3Desc"),
+      icon: <Leaf className="h-6 w-6" />,
+      color: "text-sage-deep",
+      bgColor: "bg-sage/10",
+      glowClass: "glow-sage",
+    },
+    {
+      title: t("f4Title"),
+      description: t("f4Desc"),
+      icon: <ShieldCheck className="h-6 w-6" />,
+      color: "text-bark",
+      bgColor: "bg-sand/20",
+      glowClass: "",
+    },
+    {
+      title: t("f5Title"),
+      description: t("f5Desc"),
+      icon: <Users className="h-6 w-6" />,
+      color: "text-sage-deep",
+      bgColor: "bg-sage/10",
+      glowClass: "",
+    },
+    {
+      title: t("f6Title"),
+      description: t("f6Desc"),
+      icon: <Zap className="h-6 w-6" />,
+      color: "text-terra",
+      bgColor: "bg-terra/10",
+      glowClass: "glow-terra",
+    },
+  ];
+
   return (
     <section className="py-20 relative z-10">
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center mb-12">
           <h2 className="font-[family-name:var(--font-cormorant)] text-3xl font-semibold sm:text-4xl text-bark">
-            Everything You Need to{" "}
-            <span className="text-gradient-green font-semibold">Go Green</span>
+            {t("titlePrefix")}{" "}
+            <span className="text-gradient-green font-semibold">{t("titleHighlight")}</span>
           </h2>
           <p className="mt-2 text-sm text-smoke max-w-xl mx-auto font-[family-name:var(--font-dm)]">
-            A full-featured platform designed to make sustainable living
-            effortless and rewarding.
+            {t("subtitle")}
           </p>
         </div>
 

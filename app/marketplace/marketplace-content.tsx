@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import {
@@ -19,24 +20,34 @@ import type { RedemptionOrder } from "@/lib/types";
 import type { MarketplaceItemView } from "./page";
 
 const TIER_ORDER = ["seedling", "sapling", "perk", "forest", "legendary"] as const;
-const TIER_LABELS: Record<string, string> = {
-  seedling: "Seedling",
-  sapling: "Sapling",
-  perk: "Perks",
-  forest: "Forest",
-  legendary: "Legendary",
+// tier id → marketplace message key for its label
+const TIER_LABEL_KEYS: Record<string, string> = {
+  seedling: "tierSeedling",
+  sapling: "tierSapling",
+  perk: "tierPerk",
+  forest: "tierForest",
+  legendary: "tierLegendary",
 };
 
 // Item art comes from this bucket once uploaded; null filename → neutral placeholder.
 const ITEM_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/marketplace-items`;
 
-const ERROR_MESSAGES: Record<string, string> = {
-  insufficient_credits: "You don't have enough credits for this.",
-  locked_level: "You haven't reached the required level yet.",
-  locked_badge: "You don't have the required badge yet.",
-  out_of_stock: "This item just went out of stock.",
-  inactive: "This item is no longer available.",
-  not_authenticated: "Your session expired — please log in again.",
+// RPC error code → marketplace message key
+const ERROR_KEYS: Record<string, string> = {
+  insufficient_credits: "errInsufficientCredits",
+  locked_level: "errLockedLevel",
+  locked_badge: "errLockedBadge",
+  out_of_stock: "errOutOfStock",
+  inactive: "errInactive",
+  not_authenticated: "errNotAuthenticated",
+};
+
+// order status → marketplace message key for its label
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  pending: "statusPending",
+  dispatched: "statusDispatched",
+  delivered: "statusDelivered",
+  cancelled: "statusCancelled",
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -65,6 +76,7 @@ export default function MarketplaceContent({
 }: Props) {
   const router = useRouter();
   const supabase = createClient();
+  const t = useTranslations("marketplace");
   const [balance, setBalance] = useState(initialBalance);
   const [orders, setOrders] = useState<RedemptionOrder[]>(initialOrders);
   const [confirmItem, setConfirmItem] = useState<MarketplaceItemView | null>(null);
@@ -85,19 +97,20 @@ export default function MarketplaceContent({
     setRedeeming(false);
 
     if (error) {
-      toast.error("Redemption failed. Please try again.");
+      toast.error(t("redeemFailed"));
       return;
     }
     const res = data as { success: boolean; new_balance?: number; error?: string };
     if (!res.success) {
-      toast.error(ERROR_MESSAGES[res.error ?? ""] ?? "Could not redeem this item.");
+      const key = ERROR_KEYS[res.error ?? ""];
+      toast.error(key ? t(key) : t("redeemGeneric"));
       setConfirmItem(null);
       return;
     }
 
     setBalance(res.new_balance ?? balance - item.cost_credits);
     setConfirmItem(null);
-    toast.success(`Redeemed ${item.name}! See "My Redemptions" below.`);
+    toast.success(t("redeemSuccess", { name: item.name }));
     await refreshOrders();
     router.refresh();
   };
@@ -108,13 +121,13 @@ export default function MarketplaceContent({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6">
         <div>
           <span className="t-label text-sage-deep flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5" /> Rewards
+            <Sparkles className="h-3.5 w-3.5" /> {t("eyebrow")}
           </span>
           <h1 className="font-[family-name:var(--font-syne)] text-2xl md:text-3xl font-bold text-bark tracking-tight mt-1">
-            Trashium Marketplace
+            {t("title")}
           </h1>
           <p className="mt-1 text-sm text-smoke">
-            Spend your Green Credits on eco-merch and perks.
+            {t("subtitle")}
           </p>
         </div>
         <div className="t-glass-card px-5 py-3 flex items-center gap-3">
@@ -122,16 +135,16 @@ export default function MarketplaceContent({
             <Coins className="h-5 w-5" />
           </div>
           <div>
-            <p className="t-label text-smoke">Your balance</p>
+            <p className="t-label text-smoke">{t("yourBalance")}</p>
             <p className="font-[family-name:var(--font-jetbrains)] text-xl font-bold text-bark leading-tight">
-              {balance.toLocaleString()} <span className="text-xs text-smoke font-normal">credits</span>
+              {balance.toLocaleString()} <span className="text-xs text-smoke font-normal">{t("credits")}</span>
             </p>
           </div>
         </div>
       </div>
 
       {!gateUnlocked ? (
-        <LockedHero balance={balance} pickupsCompleted={pickupsCompleted} />
+        <LockedHero balance={balance} pickupsCompleted={pickupsCompleted} t={t} />
       ) : (
         <>
           {TIER_ORDER.map((tier) => {
@@ -140,7 +153,7 @@ export default function MarketplaceContent({
             return (
               <section key={tier} className="mb-10">
                 <h2 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark mb-4 flex items-center gap-2">
-                  {TIER_LABELS[tier]}
+                  {t(TIER_LABEL_KEYS[tier])}
                   <span className="text-xs font-normal text-smoke">({tierItems.length})</span>
                 </h2>
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -150,6 +163,7 @@ export default function MarketplaceContent({
                       item={item}
                       balance={balance}
                       onRedeem={() => setConfirmItem(item)}
+                      t={t}
                     />
                   ))}
                 </div>
@@ -157,7 +171,7 @@ export default function MarketplaceContent({
             );
           })}
 
-          <MyRedemptions orders={orders} />
+          <MyRedemptions orders={orders} t={t} />
         </>
       )}
 
@@ -166,11 +180,14 @@ export default function MarketplaceContent({
         <DialogContent className="bg-linen border-sand/35 font-[family-name:var(--font-dm)]">
           <DialogHeader>
             <DialogTitle className="font-[family-name:var(--font-syne)] text-xl font-bold text-bark">
-              Confirm redemption
+              {t("confirmTitle")}
             </DialogTitle>
             <DialogDescription className="text-sm text-smoke">
               {confirmItem
-                ? `Redeem ${confirmItem.name} for ${confirmItem.cost_credits.toLocaleString()} credits?`
+                ? t("confirmQuestion", {
+                    name: confirmItem.name,
+                    cost: confirmItem.cost_credits.toLocaleString(),
+                  })
                 : ""}
             </DialogDescription>
           </DialogHeader>
@@ -178,18 +195,18 @@ export default function MarketplaceContent({
           {confirmItem && (
             <div className="rounded-xl border border-sand/40 bg-linen/60 p-4 text-sm text-bark space-y-1.5">
               <div className="flex justify-between">
-                <span className="text-smoke">Cost</span>
-                <span className="font-semibold">{confirmItem.cost_credits.toLocaleString()} credits</span>
+                <span className="text-smoke">{t("cost")}</span>
+                <span className="font-semibold">{confirmItem.cost_credits.toLocaleString()} {t("credits")}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-smoke">Balance after</span>
+                <span className="text-smoke">{t("balanceAfter")}</span>
                 <span className="font-semibold">
-                  {(balance - confirmItem.cost_credits).toLocaleString()} credits
+                  {(balance - confirmItem.cost_credits).toLocaleString()} {t("credits")}
                 </span>
               </div>
               {confirmItem.perk_type === "payout_boost" && (
                 <p className="text-xs text-sage-deep pt-1">
-                  Applies +{confirmItem.perk_value}% to your next pickup payout.
+                  {t("payoutBoostNote", { value: confirmItem.perk_value })}
                 </p>
               )}
             </div>
@@ -202,7 +219,7 @@ export default function MarketplaceContent({
               onClick={() => setConfirmItem(null)}
               className="border-sand/40 hover:bg-sand/10 text-bark font-semibold rounded-full px-5"
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <button
               type="button"
@@ -210,7 +227,7 @@ export default function MarketplaceContent({
               onClick={() => confirmItem && handleRedeem(confirmItem)}
               className="btn-terra text-xs px-6 py-2.5 border-0 cursor-pointer disabled:opacity-50"
             >
-              {redeeming ? "Redeeming…" : "Confirm redemption"}
+              {redeeming ? t("redeeming") : t("confirmRedemption")}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -219,14 +236,18 @@ export default function MarketplaceContent({
   );
 }
 
+type TFn = ReturnType<typeof useTranslations>;
+
 function ItemCard({
   item,
   balance,
   onRedeem,
+  t,
 }: {
   item: MarketplaceItemView;
   balance: number;
   onRedeem: () => void;
+  t: TFn;
 }) {
   return (
     <div
@@ -262,7 +283,7 @@ function ItemCard({
           <Coins className="h-3.5 w-3.5" />
           {item.cost_credits.toLocaleString()}
         </span>
-        <span className="text-[10px] text-smoke">balance {balance.toLocaleString()}</span>
+        <span className="text-[10px] text-smoke">{t("balanceLabel")} {balance.toLocaleString()}</span>
       </div>
 
       {item.redeemable ? (
@@ -271,24 +292,24 @@ function ItemCard({
           onClick={onRedeem}
           className="btn-terra text-xs px-4 py-2 border-0 cursor-pointer w-full"
         >
-          Redeem
+          {t("redeem")}
         </button>
       ) : (
         <button
           type="button"
           disabled
-          title={item.lockReason ?? "Locked"}
+          title={item.lockReason ?? t("locked")}
           className="w-full text-xs px-4 py-2 rounded-full border border-sand/40 bg-sand/10 text-smoke flex items-center justify-center gap-1.5 cursor-not-allowed"
         >
           <Lock className="h-3 w-3" />
-          {item.lockReason ?? "Locked"}
+          {item.lockReason ?? t("locked")}
         </button>
       )}
     </div>
   );
 }
 
-function LockedHero({ balance, pickupsCompleted }: { balance: number; pickupsCompleted: number }) {
+function LockedHero({ balance, pickupsCompleted, t }: { balance: number; pickupsCompleted: number; t: TFn }) {
   const creditsOk = balance >= 500;
   const pickupOk = pickupsCompleted >= 1;
   return (
@@ -297,27 +318,27 @@ function LockedHero({ balance, pickupsCompleted }: { balance: number; pickupsCom
         <Lock className="h-7 w-7" />
       </div>
       <h2 className="font-[family-name:var(--font-syne)] text-xl font-bold text-bark">
-        The marketplace unlocks soon
+        {t("lockedTitle")}
       </h2>
       <p className="text-sm text-smoke mt-2 max-w-md">
-        Earn a little more impact to open the rewards catalog. You need both of these:
+        {t("lockedSubtitle")}
       </p>
 
       <div className="mt-6 w-full max-w-sm space-y-3 text-left">
         <GateRow
           done={creditsOk}
-          label="Reach 500 Green Credits"
-          detail={creditsOk ? "Done" : `${balance.toLocaleString()} / 500`}
+          label={t("gateCredits")}
+          detail={creditsOk ? t("gateDone") : `${balance.toLocaleString()} / 500`}
         />
         <GateRow
           done={pickupOk}
-          label="Complete at least 1 pickup"
-          detail={pickupOk ? "Done" : `${pickupsCompleted} / 1`}
+          label={t("gatePickup")}
+          detail={pickupOk ? t("gateDone") : `${pickupsCompleted} / 1`}
         />
       </div>
 
       <Link href="/dashboard" className="btn-terra text-xs px-6 py-2.5 border-0 mt-7">
-        Go to dashboard
+        {t("goToDashboard")}
       </Link>
     </div>
   );
@@ -333,25 +354,25 @@ function GateRow({ done, label, detail }: { done: boolean; label: string; detail
   );
 }
 
-function MyRedemptions({ orders }: { orders: RedemptionOrder[] }) {
+function MyRedemptions({ orders, t }: { orders: RedemptionOrder[]; t: TFn }) {
   return (
     <section className="mt-4">
       <h2 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark mb-4 flex items-center gap-2">
-        <Package className="h-4 w-4" /> My Redemptions
+        <Package className="h-4 w-4" /> {t("myRedemptions")}
       </h2>
       {orders.length === 0 ? (
         <p className="text-sm text-smoke t-glass-card p-6">
-          No redemptions yet. Redeem an item above and it&apos;ll show up here.
+          {t("noRedemptions")}
         </p>
       ) : (
         <div className="t-glass-card p-2 sm:p-4 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-[10px] font-bold uppercase tracking-wider text-smoke border-b border-sand/25">
-                <th className="py-2.5 px-3 text-left">Item</th>
-                <th className="py-2.5 px-3 text-left">Cost</th>
-                <th className="py-2.5 px-3 text-left">Date</th>
-                <th className="py-2.5 px-3 text-left">Status</th>
+                <th className="py-2.5 px-3 text-left">{t("colItem")}</th>
+                <th className="py-2.5 px-3 text-left">{t("colCost")}</th>
+                <th className="py-2.5 px-3 text-left">{t("colDate")}</th>
+                <th className="py-2.5 px-3 text-left">{t("colStatus")}</th>
               </tr>
             </thead>
             <tbody>
@@ -374,7 +395,7 @@ function MyRedemptions({ orders }: { orders: RedemptionOrder[] }) {
                         STATUS_STYLES[o.status] ?? "bg-sand/20 text-smoke border-sand/40"
                       }`}
                     >
-                      {o.status}
+                      {STATUS_LABEL_KEYS[o.status] ? t(STATUS_LABEL_KEYS[o.status]) : o.status}
                     </span>
                   </td>
                 </tr>

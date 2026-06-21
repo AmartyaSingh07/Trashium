@@ -2,6 +2,7 @@
 
 import AnimatedCounter from "@/components/ui/animated-counter";
 import { Recycle, Wind, Users, Award } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface StatItem {
   label: string;
@@ -22,9 +23,10 @@ interface ImpactCounterProps {
 }
 
 export default function ImpactCounter({ stats }: ImpactCounterProps) {
+  const t = useTranslations("impact");
   const data: StatItem[] = [
     {
-      label: "Kg Plastic Saved",
+      label: t("kgCollected"),
       value: stats?.total_kg_recycled ?? 12450,
       suffix: "+",
       icon: <Recycle className="h-6 w-6" />,
@@ -32,7 +34,7 @@ export default function ImpactCounter({ stats }: ImpactCounterProps) {
       bgColor: "bg-sage/15",
     },
     {
-      label: "CO₂ Offset (kg)",
+      label: t("co2Saved"),
       value: stats?.total_co2_saved ?? 8930,
       suffix: "+",
       icon: <Wind className="h-6 w-6" />,
@@ -40,7 +42,7 @@ export default function ImpactCounter({ stats }: ImpactCounterProps) {
       bgColor: "bg-clay/15",
     },
     {
-      label: "Households Joined",
+      label: t("householdsJoined"),
       value: stats?.total_households ?? 342,
       suffix: "+",
       icon: <Users className="h-6 w-6" />,
@@ -48,7 +50,7 @@ export default function ImpactCounter({ stats }: ImpactCounterProps) {
       bgColor: "bg-sand/25",
     },
     {
-      label: "Green Credits Earned",
+      label: t("creditsEarned"),
       value: stats?.total_green_credits ?? 28750,
       suffix: "+",
       icon: <Award className="h-6 w-6" />,
@@ -62,10 +64,10 @@ export default function ImpactCounter({ stats }: ImpactCounterProps) {
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center mb-12">
           <h2 className="font-[family-name:var(--font-cormorant)] text-3xl font-semibold sm:text-4xl text-bark">
-            Our Global <span className="text-gradient-terra font-semibold">Impact</span>
+            {t("titlePrefix")} <span className="text-gradient-terra font-semibold">{t("titleHighlight")}</span>
           </h2>
           <p className="mt-2 text-sm text-smoke font-[family-name:var(--font-dm)]">
-            Real-time metrics from our growing community of conscious recyclers
+            {t("subtitle")}
           </p>
         </div>
 

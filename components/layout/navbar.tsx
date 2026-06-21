@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import {
   Navbar as ResizableNavbar,
@@ -16,15 +17,30 @@ import {
   MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
 import { LogOut } from "lucide-react";
+import PWAInstallButton from "@/components/ui/pwa-install-button";
+import LanguageSwitcher from "@/components/ui/language-switcher";
 import type { User } from "@supabase/supabase-js";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations("nav");
+  const tc = useTranslations("common");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
+  // Mirror ResizableNavbar's collapse threshold so we can hide the desktop
+  // install button when the bar shrinks to its compact pill (avoids overlap
+  // with the centered nav links).
+  const [navCollapsed, setNavCollapsed] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setNavCollapsed(window.scrollY > 100);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -156,30 +172,30 @@ export default function Navbar() {
   // Build role-aware navigation items
   const navItems = useMemo(() => {
     if (!user) {
-      return [{ name: "Home", link: "/", active: pathname === "/" }];
+      return [{ name: t("home"), link: "/", active: pathname === "/" }];
     }
     const currentRole = role || "household";
     if (currentRole === "admin" || isAdminByEmail) {
       return [
-        { name: "Home", link: "/", active: pathname === "/" },
-        { name: "Admin Hub", link: "/admin", active: pathname === "/admin" },
+        { name: t("home"), link: "/", active: pathname === "/" },
+        { name: t("adminHub"), link: "/admin", active: pathname === "/admin" },
       ];
     }
     if (currentRole === "crew" || currentRole === "collector") {
       return [
-        { name: "Home", link: "/", active: pathname === "/" },
-        { name: "CrewHub", link: "/crew", active: pathname === "/crew" },
+        { name: t("home"), link: "/", active: pathname === "/" },
+        { name: t("crewHub"), link: "/crew", active: pathname === "/crew" },
       ];
     }
     // Default to household
     return [
-      { name: "Home", link: "/", active: pathname === "/" },
-      { name: "Dashboard", link: "/dashboard", active: pathname === "/dashboard" },
-      { name: "Live Tracking", link: "/dashboard/tracking", active: pathname === "/dashboard/tracking" },
-      { name: "Marketplace", link: "/marketplace", active: pathname === "/marketplace" },
-      { name: "My Profile", link: "/profile", active: pathname === "/profile" },
+      { name: t("home"), link: "/", active: pathname === "/" },
+      { name: t("dashboard"), link: "/dashboard", active: pathname === "/dashboard" },
+      { name: t("liveTracking"), link: "/dashboard/tracking", active: pathname === "/dashboard/tracking" },
+      { name: t("marketplace"), link: "/marketplace", active: pathname === "/marketplace" },
+      { name: t("myProfile"), link: "/profile", active: pathname === "/profile" },
     ];
-  }, [user, role, isAdminByEmail, pathname]);
+  }, [user, role, isAdminByEmail, pathname, t]);
 
   // Client-side navigation handler for NavItems
   const handleNavClick = (link: string) => {
@@ -194,11 +210,16 @@ export default function Navbar() {
           <NavbarLogo />
           <NavItems items={navItems} onItemClick={handleNavClick} />
           <div className="flex items-center gap-3">
+            {/* On the compact (scrolled) pill, collapse to an icon-only button so
+                it never overlaps the centered nav links. Mobile keeps its own
+                full-width button below. */}
+            <LanguageSwitcher iconOnly={navCollapsed} />
+            <PWAInstallButton iconOnly={navCollapsed} />
             {user ? (
               <>
                 {verifying && !isAdmin && (
                   <span className="text-[10px] text-terra animate-pulse font-mono uppercase tracking-wider">
-                    Verifying…
+                    {tc("verifying")}
                   </span>
                 )}
                 <NavbarButton
@@ -208,7 +229,7 @@ export default function Navbar() {
                   className="gap-2"
                 >
                   <LogOut className="h-3.5 w-3.5" />
-                  Logout
+                  {tc("logout")}
                 </NavbarButton>
               </>
             ) : (
@@ -218,14 +239,14 @@ export default function Navbar() {
                   variant="secondary"
                   onClick={() => router.push("/login")}
                 >
-                  Login
+                  {tc("login")}
                 </NavbarButton>
                 <NavbarButton
                   as="button"
                   variant="primary"
                   onClick={() => router.push("/signup")}
                 >
-                  Join the Movement
+                  {tc("joinMovement")}
                 </NavbarButton>
               </>
             )}
@@ -262,6 +283,8 @@ export default function Navbar() {
             ))}
 
             <div className="flex w-full flex-col gap-3 mt-2 pt-4 border-t border-terra/10">
+              <LanguageSwitcher fullWidth />
+              <PWAInstallButton className="w-full" buttonClassName="w-full justify-center" />
               {user ? (
                 <NavbarButton
                   as="button"
@@ -273,7 +296,7 @@ export default function Navbar() {
                   className="w-full justify-start gap-2"
                 >
                   <LogOut className="h-3.5 w-3.5" />
-                  Logout
+                  {tc("logout")}
                 </NavbarButton>
               ) : (
                 <>
@@ -286,7 +309,7 @@ export default function Navbar() {
                     variant="secondary"
                     className="w-full"
                   >
-                    Login
+                    {tc("login")}
                   </NavbarButton>
                   <NavbarButton
                     as="button"
@@ -297,7 +320,7 @@ export default function Navbar() {
                     variant="primary"
                     className="w-full"
                   >
-                    Join the Movement
+                    {tc("joinMovement")}
                   </NavbarButton>
                 </>
               )}

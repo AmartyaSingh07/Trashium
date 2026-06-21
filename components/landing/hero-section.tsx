@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import BrandLockup from "@/components/ui/BrandLockup";
 
-export default function HeroSection() {
+export default async function HeroSection() {
+  const t = await getTranslations("hero");
   return (
     <section className="relative overflow-hidden min-h-[90vh] flex items-center justify-center z-10">
       <div className="relative mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
@@ -13,22 +15,20 @@ export default function HeroSection() {
           {/* Badge */}
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-terra/20 bg-terra/5 px-4 py-1.5 t-label text-terra animate-fade-up">
             <Sparkles className="h-3.5 w-3.5" />
-            Climate-Tech for Every Household
+            {t("badge")}
           </div>
 
           {/* Heading */}
           <h1 className="font-[family-name:var(--font-cormorant)] text-5xl font-semibold tracking-tight sm:text-6xl lg:text-7xl xl:text-8xl text-bark animate-fade-up-delay-1">
-            Turning{" "}
-            <span className="text-gradient-green font-semibold">Waste</span>{" "}
-            into{" "}
-            <span className="text-gradient-terra font-semibold">Worth</span>
+            {t("headlineTurning")}{" "}
+            <span className="text-gradient-green font-semibold">{t("headlineWaste")}</span>{" "}
+            {t("headlineInto")}{" "}
+            <span className="text-gradient-terra font-semibold">{t("headlineWorth")}</span>
           </h1>
 
           {/* Subtext */}
           <p className="mx-auto mt-6 max-w-2xl text-base text-smoke leading-relaxed sm:text-lg font-[family-name:var(--font-dm)] animate-fade-up-delay-2">
-            Trashium connects households with recycling hubs. Schedule waste
-            pickups, earn digital Green Credits, and track your real
-            environmental impact — all from one platform.
+            {t("subheadline")}
           </p>
 
           {/* CTAs */}
@@ -37,7 +37,7 @@ export default function HeroSection() {
               <button
                 className="btn-terra text-xs px-8 py-3.5 gap-2 border-0 cursor-pointer"
               >
-                Join the Movement
+                {t("ctaPrimary")}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </Link>
@@ -45,7 +45,7 @@ export default function HeroSection() {
               <button
                 className="btn-ghost-terra text-xs px-8 py-3.5 border-terra/40 text-terra cursor-pointer"
               >
-                Learn How It Works
+                {t("ctaSecondary")}
               </button>
             </Link>
           </div>
@@ -54,15 +54,15 @@ export default function HeroSection() {
           <div className="mt-16 flex items-center justify-center gap-8 text-smoke font-[family-name:var(--font-dm)] animate-fade-up-delay-4">
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
               <div className="h-2 w-2 rounded-full bg-sage animate-pulse" />
-              Eco-Verified
+              {t("trustEcoVerified")}
             </div>
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
               <div className="h-2 w-2 rounded-full bg-terra animate-pulse" />
-              Reward-Backed
+              {t("trustRewardBacked")}
             </div>
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
               <div className="h-2 w-2 rounded-full bg-clay animate-pulse" />
-              Community-Driven
+              {t("trustCommunityDriven")}
             </div>
           </div>
         </div>

@@ -16,9 +16,13 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   pickups_completed INTEGER NOT NULL DEFAULT 0,
   avatar_url TEXT,
   operating_zone TEXT, -- crew/collector home sector (one of OPERATIONAL_SECTORS); NULL for households/admin
+  preferred_language TEXT DEFAULT 'en'
+    CHECK (preferred_language IN ('en','hi','bn','ta','te','mr','gu','kn','ml','or','pa')), -- i18n UI language (migration 0006)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+-- Index for language-distribution analytics (migration 0006)
+CREATE INDEX IF NOT EXISTS idx_profiles_lang ON public.profiles(preferred_language);
 
 -- RLS Policies for Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

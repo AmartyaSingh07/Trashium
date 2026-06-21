@@ -1,49 +1,49 @@
 import { CalendarCheck, Truck, Award } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-const steps = [
-  {
-    step: "01",
-    title: "Schedule a Pickup",
-    description:
-      "Choose your waste type, set a date, and request a doorstep pickup in seconds.",
-    icon: <CalendarCheck className="h-7 w-7" />,
-    color: "text-sage-deep",
-    bgColor: "bg-sage/10",
-    borderColor: "border-sand/20",
-  },
-  {
-    step: "02",
-    title: "We Collect & Recycle",
-    description:
-      "Our verified collectors pick up your waste and deliver it to certified recycling hubs.",
-    icon: <Truck className="h-7 w-7" />,
-    color: "text-terra",
-    bgColor: "bg-terra/10",
-    borderColor: "border-sand/20",
-  },
-  {
-    step: "03",
-    title: "Earn Green Credits",
-    description:
-      "Get rewarded with digital credits based on weight and type. Level up your eco-rank!",
-    icon: <Award className="h-7 w-7" />,
-    color: "text-clay",
-    bgColor: "bg-clay/10",
-    borderColor: "border-sand/20",
-  },
-];
+export default async function HowItWorks() {
+  const t = await getTranslations("howItWorks");
 
-export default function HowItWorks() {
+  // Visual config stays here; copy comes from translations and is mapped onto it.
+  const steps = [
+    {
+      step: "01",
+      title: t("step1Title"),
+      description: t("step1Desc"),
+      icon: <CalendarCheck className="h-7 w-7" />,
+      color: "text-sage-deep",
+      bgColor: "bg-sage/10",
+      borderColor: "border-sand/20",
+    },
+    {
+      step: "02",
+      title: t("step2Title"),
+      description: t("step2Desc"),
+      icon: <Truck className="h-7 w-7" />,
+      color: "text-terra",
+      bgColor: "bg-terra/10",
+      borderColor: "border-sand/20",
+    },
+    {
+      step: "03",
+      title: t("step3Title"),
+      description: t("step3Desc"),
+      icon: <Award className="h-7 w-7" />,
+      color: "text-clay",
+      bgColor: "bg-clay/10",
+      borderColor: "border-sand/20",
+    },
+  ];
+
   return (
     <section id="how-it-works" className="py-20 bg-linen/50 border-b border-sand/20 relative z-10">
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center mb-12">
           <h2 className="font-[family-name:var(--font-cormorant)] text-3xl font-semibold sm:text-4xl text-bark">
-            How <span className="text-gradient-terra font-semibold">Trashium</span> Works
+            {t("titleHow")} <span className="text-gradient-terra font-semibold">Trashium</span> {t("titleWorks")}
           </h2>
           <p className="mt-2 text-sm text-smoke max-w-xl mx-auto font-[family-name:var(--font-dm)]">
-            Three simple steps to make a real impact on the environment — and
-            earn rewards while you&apos;re at it.
+            {t("subtitle")}
           </p>
         </div>
 

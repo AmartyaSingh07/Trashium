@@ -1,23 +1,39 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Separator } from "@/components/ui/separator";
 
-const footerLinks = {
-  Platform: [
-    { label: "How it Works", href: "/#how-it-works" },
-  ],
-  Company: [
-    { label: "About Us", href: "#" },
-    { label: "Careers", href: "#" },
-    { label: "Blog", href: "#" },
-  ],
-  Legal: [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
-    { label: "Cookie Policy", href: "#" },
-  ],
-};
-
 export default function Footer() {
+  const t = useTranslations("footer");
+
+  // Built from translations: group titles + link labels are localized, hrefs stay
+  // as English route slugs (per plan §8 — do not translate route paths).
+  const footerLinks: { title: string; links: { label: string; href: string }[] }[] = [
+    {
+      title: t("platform"),
+      links: [{ label: t("howItWorks"), href: "/#how-it-works" }],
+    },
+    {
+      title: t("company"),
+      links: [
+        { label: t("about"), href: "/about" },
+        { label: t("careers"), href: "/careers" },
+        { label: t("blog"), href: "#" },
+      ],
+    },
+    {
+      title: t("legal"),
+      links: [
+        { label: t("privacyPolicy"), href: "/privacy-policy" },
+        { label: t("termsOfService"), href: "/terms-of-service" },
+        { label: t("cookiePolicy"), href: "/cookie-policy" },
+      ],
+    },
+  ];
+
+  const howItWorksLabel = t("howItWorks");
+
   return (
     <footer className="border-t border-terra/10 bg-linen/90 backdrop-blur-md relative z-10">
       <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
@@ -34,20 +50,19 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm text-smoke leading-relaxed font-[family-name:var(--font-dm)]">
-              Turning waste into worth. Join the movement towards a sustainable
-              future, one conscious choice at a time.
+              {t("tagline")}
             </p>
           </div>
 
           {/* Link Groups */}
-          {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title} className="flex flex-col gap-3">
+          {footerLinks.map((group) => (
+            <div key={group.title} className="flex flex-col gap-3">
               <h3 className="t-label text-bark font-bold tracking-wider">
-                {title}
+                {group.title}
               </h3>
               <ul className="space-y-2">
-                {links.map((link) => {
-                  const isHowItWorks = link.label === "How it Works";
+                {group.links.map((link) => {
+                  const isHowItWorks = link.label === howItWorksLabel;
                   return (
                     <li key={link.label}>
                       <Link
@@ -72,13 +87,12 @@ export default function Footer() {
 
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-xs text-smoke font-[family-name:var(--font-dm)]">
-            © {new Date().getFullYear()} Trashium. All rights
-            reserved. Final Year B.Tech Capstone.
+            © {new Date().getFullYear()} {t("copyright")}
           </p>
           <div className="flex items-center gap-1.5 text-xs text-smoke font-[family-name:var(--font-dm)]">
-            <span>Crafted with care for</span>
+            <span>{t("craftedWith")}</span>
             <span className="text-terra animate-pulse">✦</span>
-            <span>our shared environment</span>
+            <span>{t("sharedEnvironment")}</span>
           </div>
         </div>
       </div>
