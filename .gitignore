@@ -3,6 +3,8 @@
 # dependencies
 /node_modules
 /.pnp
+ml/.venv/
+ml/**/__pycache__/
 .pnp.*
 .yarn/*
 !.yarn/patches
