@@ -7,6 +7,7 @@ import {
   Zap,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 
 export default async function FeaturesSection() {
   const t = await getTranslations("features");
@@ -66,7 +67,7 @@ export default async function FeaturesSection() {
   return (
     <section className="py-20 relative z-10">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="text-center mb-12">
+        <Reveal className="text-center mb-12">
           <h2 className="font-[family-name:var(--font-cormorant)] text-3xl font-semibold sm:text-4xl text-bark">
             {t("titlePrefix")}{" "}
             <span className="text-gradient-green font-semibold">{t("titleHighlight")}</span>
@@ -74,11 +75,11 @@ export default async function FeaturesSection() {
           <p className="mt-2 text-sm text-smoke max-w-xl mx-auto font-[family-name:var(--font-dm)]">
             {t("subtitle")}
           </p>
-        </div>
+        </Reveal>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
-            <div
+            <StaggerItem
               key={feature.title}
               className="group t-glass-card p-6 border-sand/25 hover:shadow-[var(--t-shadow-md)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
             >
@@ -95,9 +96,9 @@ export default async function FeaturesSection() {
                   {feature.description}
                 </p>
               </div>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </div>
     </section>
   );

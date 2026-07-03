@@ -1,5 +1,6 @@
 import { CalendarCheck, Truck, Award } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 
 export default async function HowItWorks() {
   const t = await getTranslations("howItWorks");
@@ -38,18 +39,18 @@ export default async function HowItWorks() {
   return (
     <section id="how-it-works" className="py-20 bg-linen/50 border-b border-sand/20 relative z-10">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="text-center mb-12">
+        <Reveal className="text-center mb-12">
           <h2 className="font-[family-name:var(--font-cormorant)] text-3xl font-semibold sm:text-4xl text-bark">
             {t("titleHow")} <span className="text-gradient-terra font-semibold">Trashium</span> {t("titleWorks")}
           </h2>
           <p className="mt-2 text-sm text-smoke max-w-xl mx-auto font-[family-name:var(--font-dm)]">
             {t("subtitle")}
           </p>
-        </div>
+        </Reveal>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <Stagger className="grid gap-6 md:grid-cols-3">
           {steps.map((step, i) => (
-            <div
+            <StaggerItem
               key={step.step}
               className="group relative overflow-hidden t-glass-card p-8 border-sand/25 hover:shadow-[var(--t-shadow-lg)] transition-all duration-300 hover:-translate-y-1"
             >
@@ -73,9 +74,9 @@ export default async function HowItWorks() {
               {i < steps.length - 1 && (
                 <div className="hidden md:block absolute top-1/2 -right-3 w-6 h-px bg-sand/30 z-10" />
               )}
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </div>
     </section>
   );

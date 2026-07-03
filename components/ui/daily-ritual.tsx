@@ -14,7 +14,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { StreakCard } from "@/components/ui/streak-card"
-import { CountUp } from "@/components/ui/count-up"
+import { AnimatedNumber } from "@/components/ui/animated-number"
 import type { StreakPeriod } from "@/components/ui/streak-calendar"
 
 interface DailyRitualProps {
@@ -200,7 +200,7 @@ export function DailyRitual({
                 disabled={!clickable}
                 aria-label={`${s.label}${s.done ? " — done" : ""}`}
                 className={cn(
-                  "flex flex-col items-center gap-1 rounded-xl border p-3 text-center transition-all",
+                  "flex flex-col items-center gap-1 rounded-xl border p-3 text-center transition-all t-focus-ring",
                   s.done
                     ? "border-[#8FA37E]/40 bg-[#8FA37E]/10"
                     : "border-[#D4C5B0]/50 bg-[#EDE5D8]/40",
@@ -235,7 +235,7 @@ export function DailyRitual({
           <Snowflake className="h-7 w-7 shrink-0 text-[#5E7C8A]" aria-hidden="true" />
           <div>
             <p className="font-[family-name:var(--font-jetbrains)] text-lg font-bold leading-none text-bark">
-              <CountUp value={freezes} className="t-countup" /> <span className="text-xs font-medium text-[#6B5744]">{freezes === 1 ? "shield" : "shields"}</span>
+              <AnimatedNumber value={freezes} className="t-countup" /> <span className="text-xs font-medium text-[#6B5744]">{freezes === 1 ? "shield" : "shields"}</span>
             </p>
             <p className="font-dm text-[10px] text-[#6B5744]">Protects a missed day</p>
           </div>

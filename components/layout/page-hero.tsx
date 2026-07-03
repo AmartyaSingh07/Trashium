@@ -14,6 +14,10 @@ export default function PageHero({
   highlight?: string;
   subtitle: string;
 }) {
+  // Above-the-fold entrance stays on CSS (never <Reveal> — would flash on hydration).
+  // Upgrade only the timing function to the signature botanical ease, scoped here via
+  // an inline longhand so the shared .animate-fade-up utilities stay untouched.
+  const botanicalEase = { animationTimingFunction: "var(--ease-botanical)" };
   return (
     <section className="relative overflow-hidden border-b border-sand/20 bg-linen/40">
       {/* soft terra wash behind the type for depth */}
@@ -26,14 +30,14 @@ export default function PageHero({
         }}
       />
       <div className="relative mx-auto max-w-4xl px-6 py-20 text-center lg:py-28">
-        <p className="t-label animate-fade-up mb-4 text-terra">{eyebrow}</p>
-        <h1 className="animate-fade-up-delay-1 font-[family-name:var(--font-cormorant)] text-4xl font-semibold leading-[1.05] text-bark sm:text-5xl lg:text-6xl">
+        <p style={botanicalEase} className="t-label animate-fade-up mb-4 text-terra">{eyebrow}</p>
+        <h1 style={botanicalEase} className="animate-fade-up-delay-1 font-[family-name:var(--font-cormorant)] text-4xl font-semibold leading-[1.05] text-bark sm:text-5xl lg:text-6xl">
           {title}{" "}
           {highlight && (
             <span className="text-gradient-terra font-semibold">{highlight}</span>
           )}
         </h1>
-        <p className="animate-fade-up-delay-2 mx-auto mt-6 max-w-2xl font-[family-name:var(--font-dm)] text-base leading-relaxed text-smoke">
+        <p style={botanicalEase} className="animate-fade-up-delay-2 mx-auto mt-6 max-w-2xl font-[family-name:var(--font-dm)] text-base leading-relaxed text-smoke">
           {subtitle}
         </p>
       </div>

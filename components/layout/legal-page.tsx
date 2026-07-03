@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import PageShell from "@/components/layout/page-shell";
+import { Reveal } from "@/components/motion";
 
 export type LegalSection = {
   id: string;
@@ -68,17 +69,21 @@ export default async function LegalPage({
               id={s.id}
               className="scroll-mt-28 border-sand/20 py-8 first:pt-0 [&:not(:last-child)]:border-b"
             >
-              <h2 className="mb-4 flex items-baseline gap-3 font-[family-name:var(--font-syne)] text-xl font-bold text-bark">
-                <span className="font-[family-name:var(--font-jetbrains)] text-sm font-medium text-terra/70">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                {s.heading}
-              </h2>
-              <div className="space-y-4">{s.body}</div>
+              {/* Anchor id + border stay on <section>; Reveal wraps the inner
+                  content so #anchor scroll-to keeps working. */}
+              <Reveal>
+                <h2 className="mb-4 flex items-baseline gap-3 font-[family-name:var(--font-syne)] text-xl font-bold text-bark">
+                  <span className="font-[family-name:var(--font-jetbrains)] text-sm font-medium text-terra/70">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {s.heading}
+                </h2>
+                <div className="space-y-4">{s.body}</div>
+              </Reveal>
             </section>
           ))}
 
-          <div className="mt-10 rounded-2xl border border-sand/30 bg-parchment/50 p-6">
+          <Reveal className="mt-10 rounded-2xl border border-sand/30 bg-parchment/50 p-6">
             <h3 className="font-[family-name:var(--font-syne)] text-base font-bold text-bark">
               {t("questionsTitle")}
             </h3>
@@ -99,7 +104,7 @@ export default async function LegalPage({
               </Link>
               .
             </p>
-          </div>
+          </Reveal>
         </article>
       </div>
     </PageShell>

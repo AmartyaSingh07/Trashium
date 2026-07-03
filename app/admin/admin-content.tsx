@@ -41,6 +41,7 @@ import MarketplaceAdmin from "@/components/admin/marketplace-admin";
 import CrewHubAssignment from "@/components/admin/crew-hub-assignment";
 import PayoutOverride from "@/components/admin/payout-override";
 import PriceGrid from "@/components/admin/price-grid";
+import { Reveal } from "@/components/motion";
 import { OPERATIONAL_SECTORS } from "@/lib/constants";
 import type {
   PickupRequest,
@@ -376,7 +377,7 @@ export default function AdminContent({
 
       {/* Unified Analytical Overview and Monitoring Desk Panel */}
       {userRole === "admin" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 w-full max-w-7xl mx-auto mb-10">
+        <Reveal className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 w-full max-w-7xl mx-auto mb-10">
           {/* MOUNT THE ECOSYSTEM OVERVIEW DECK (Left Block) */}
           <div className="w-full t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.15)] backdrop-blur-md shadow-sm">
             <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-4">
@@ -405,7 +406,7 @@ export default function AdminContent({
                       <td className="py-2.5 px-3 font-medium text-clay font-mono">
                         ₹{totalPayoutCommitted.toFixed(2)}
                       </td>
-                      <td className="py-2.5 px-3 text-emerald-700 font-semibold">
+                      <td className="py-2.5 px-3 text-sage-deep font-semibold">
                         {pickups.length} requests
                       </td>
                     </tr>
@@ -416,7 +417,7 @@ export default function AdminContent({
                       <td className="py-2.5 px-3 font-semibold text-bark font-mono">
                         {avgPickupsPerUser.toFixed(1)} / user
                       </td>
-                      <td className="py-2.5 px-3 text-emerald-700 font-semibold">
+                      <td className="py-2.5 px-3 text-sage-deep font-semibold">
                         {distinctUsers} households
                       </td>
                     </tr>
@@ -427,7 +428,7 @@ export default function AdminContent({
                       <td className="py-2.5 px-3 font-semibold text-bark font-mono">
                         {pendingCount} pending
                       </td>
-                      <td className={`py-2.5 px-3 font-semibold ${pendingCount > 0 ? "text-amber-700" : "text-emerald-700"}`}>
+                      <td className={`py-2.5 px-3 font-semibold ${pendingCount > 0 ? "text-terra" : "text-sage-deep"}`}>
                         {pendingCount > 0 ? "Needs review" : "Clear"}
                       </td>
                     </tr>
@@ -450,11 +451,11 @@ export default function AdminContent({
                     <div className="flex flex-col gap-0.5 text-[#6B5744]">
                       <p className="text-[11px]">Processed: <span className="font-mono font-bold text-[#2A2218]">{s.kg.toFixed(0)} kg</span></p>
                       <p className="text-[11px] font-mono">
-                        <span className="text-amber-700">{s.pending} pending</span>
+                        <span className="text-terra">{s.pending} pending</span>
                         {" · "}
                         <span className="text-clay">{s.active} active</span>
                         {" · "}
-                        <span className="text-emerald-700">{s.done} done</span>
+                        <span className="text-sage-deep">{s.done} done</span>
                       </p>
                     </div>
                   </div>
@@ -471,7 +472,7 @@ export default function AdminContent({
               </h2>
               <button
                 onClick={handleExportSectorSummary}
-                className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 flex items-center gap-1 shadow-sm"
+                className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 flex items-center gap-1 shadow-sm t-focus-ring"
               >
                 📥 Export Summary
               </button>
@@ -504,7 +505,7 @@ export default function AdminContent({
                           key={p.id}
                           className={`border-b border-sand/15 transition-all text-xs ${
                             hasDelay
-                              ? "bg-red-50 text-red-700 border-red-100 animate-pulse text-xs font-semibold px-2 py-1 rounded"
+                              ? "bg-destructive/10 text-destructive border-destructive/20 animate-pulse text-xs font-semibold px-2 py-1 rounded"
                               : "hover:bg-linen/60 text-[#6B5744]"
                           }`}
                         >
@@ -535,7 +536,7 @@ export default function AdminContent({
               </table>
             </div>
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Payout estimator + override (left) and price-grid monitor (right) */}

@@ -14,6 +14,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
 import SiteLoadGate from '@/components/ui/site-load-gate';
 import ServiceWorkerRegister from '@/components/ui/sw-register';
+import GsapProvider from '@/components/motion/gsap-provider';
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -118,7 +119,12 @@ export default async function RootLayout({
 
           {/* LAYER 2 - All page content. z-index: 10, scrolls normally. */}
           <div className="relative z-10">
-            {children}
+            {/* Motion foundation (S1): mounts GSAP + ScrollTrigger once and
+                publishes the reduced-motion flag. Returns children directly
+                (no wrapper DOM), so this route stays pixel-identical. */}
+            <GsapProvider>
+              {children}
+            </GsapProvider>
           </div>
 
           {/* First-open splash - kinetic loader, once per session, fades after hydration */}

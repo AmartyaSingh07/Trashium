@@ -1,8 +1,11 @@
 "use client";
 
-import AnimatedCounter from "@/components/ui/animated-counter";
+import { useEffect, useRef, useState } from "react";
 import { Recycle, Wind, Users, Award } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion";
+import { useMotion } from "@/components/motion/gsap-provider";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 interface StatItem {
   label: string;
@@ -24,6 +27,35 @@ interface ImpactCounterProps {
 
 export default function ImpactCounter({ stats }: ImpactCounterProps) {
   const t = useTranslations("impact");
+  const { reduced } = useMotion();
+
+  // NumberFlow renders its value immediately and animates on change — it does not
+  // count up from 0 on mount. So hold the cards at 0 until the section scrolls into
+  // view, then set the targets once (reproduces the old IntersectionObserver count-up).
+  // Reduced motion: reveal immediately so a number never sits stuck at 0.
+  const sectionRef = useRef<HTMLElement>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    if (reduced) {
+      setInView(true);
+      return;
+    }
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [reduced]);
+
   const data: StatItem[] = [
     {
       label: t("kgCollected"),
@@ -60,23 +92,22 @@ export default function ImpactCounter({ stats }: ImpactCounterProps) {
   ];
 
   return (
-    <section className="py-20 bg-parchment/90 border-y border-sand/35 relative z-10">
+    <section ref={sectionRef} className="py-20 bg-parchment/90 border-y border-sand/35 relative z-10">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="text-center mb-12">
+        <Reveal className="text-center mb-12">
           <h2 className="font-[family-name:var(--font-cormorant)] text-3xl font-semibold sm:text-4xl text-bark">
             {t("titlePrefix")} <span className="text-gradient-terra font-semibold">{t("titleHighlight")}</span>
           </h2>
           <p className="mt-2 text-sm text-smoke font-[family-name:var(--font-dm)]">
             {t("subtitle")}
           </p>
-        </div>
+        </Reveal>
 
-        <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-          {data.map((stat, i) => (
-            <div
+        <Stagger className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+          {data.map((stat) => (
+            <StaggerItem
               key={stat.label}
               className="group relative overflow-hidden t-glass-card bg-linen/30 hover:bg-linen/60 border-sand/30 hover:shadow-[var(--t-shadow-md)] p-6 flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1"
-              style={{ animationDelay: `${i * 100}ms` }}
             >
               <div
                 className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 ${stat.bgColor} ${stat.color}`}
@@ -84,7 +115,7 @@ export default function ImpactCounter({ stats }: ImpactCounterProps) {
                 {stat.icon}
               </div>
               <div className={`text-3xl font-extrabold tracking-tight sm:text-4xl font-[family-name:var(--font-jetbrains)] ${stat.color}`}>
-                <AnimatedCounter end={stat.value} suffix={stat.suffix} />
+                <AnimatedNumber value={inView ? stat.value : 0} suffix={stat.suffix} className="tabular-nums" />
               </div>
               <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-smoke font-[family-name:var(--font-dm)]">
                 {stat.label}
@@ -92,9 +123,9 @@ export default function ImpactCounter({ stats }: ImpactCounterProps) {
 
               {/* Subtle accent border on hover */}
               <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-transparent via-terra/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </div>
     </section>
   );

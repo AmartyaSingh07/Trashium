@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import type { TileRatesBySector } from "@/lib/pricing";
+import { Stagger, StaggerItem } from "@/components/motion";
 
 interface RecyclableTier {
   id: string;
@@ -104,8 +105,8 @@ export default function FlippingRates({
         </div>
       )}
 
-      <div className="flex flex-wrap justify-center gap-6 md:gap-8 lg:gap-10 mx-auto">
-        {recyclableTiers.map((item, i) => {
+      <Stagger className="flex flex-wrap justify-center gap-6 md:gap-8 lg:gap-10 mx-auto">
+        {recyclableTiers.map((item) => {
           const imageUrl =
             supabaseUrl +
             "/storage/v1/object/public/flipping-rate-tiles/" +
@@ -117,10 +118,9 @@ export default function FlippingRates({
           const backLabel = sector ? rateLabel + middot + sector : rateLabel;
 
           return (
-            <div
+            <StaggerItem
               key={item.id}
-              className="animate-fade-up group [perspective:1200px] cursor-pointer w-[200px] h-[212px]"
-              style={{ animationDelay: i * 55 + "ms" }}
+              className="group [perspective:1200px] cursor-pointer w-[200px] h-[212px]"
             >
               <div className="relative w-full h-full transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
                 <div className="absolute inset-0 w-full h-full rounded-[20px] p-5 [backface-visibility:hidden] bg-gradient-to-br from-[#F4EFE3]/70 to-[#EDE5D8]/40 border border-[rgba(194,112,61,0.18)] backdrop-blur-md flex flex-col justify-between shadow-[0_8px_24px_-12px_rgba(42,34,24,0.35)] overflow-hidden">
@@ -168,10 +168,10 @@ export default function FlippingRates({
                   </div>
                 </div>
               </div>
-            </div>
+            </StaggerItem>
           );
         })}
-      </div>
+      </Stagger>
     </section>
   );
 }

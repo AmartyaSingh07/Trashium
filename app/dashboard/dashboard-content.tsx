@@ -15,6 +15,7 @@ import type { Profile, PickupRequest, ResolvedBadge, LeaderboardEntry, DailyStat
 import { DailyRitual } from "@/components/ui/daily-ritual";
 import { AchievementBadge, AchievementCard, AchievementUnlocked, type UserAchievement } from 'ui.trophy';
 import { LeaderboardCard } from "@/components/ui/leaderboard-card";
+import { Reveal } from "@/components/motion";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -431,7 +432,7 @@ export default function DashboardContent({
       {/* Welcome Header */}
       <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-6 pb-4 relative z-10 min-h-[auto] animate-fade-up">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-950 leading-tight block py-1">
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-bark leading-tight block py-1">
             {td("greeting")},{" "}
             <span className="text-gradient-terra font-semibold">{fullName}</span>{" "}
             <span className="inline-flex items-center justify-center h-8 w-8 relative align-middle ml-1 animate-float" title={activeTier.rank}>
@@ -478,7 +479,7 @@ export default function DashboardContent({
       </div>
 
       {/* Eco Level + Recent Pickups */}
-      <div className="grid gap-6 lg:grid-cols-3 animate-fade-up-delay-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1 flex flex-col gap-6">
           {/* "Your Grove" — one cohesive gamification cluster: eco-level, streak, badges, ways-to-earn */}
           <div className="flex items-center gap-2.5 animate-fade-up-delay-1">
@@ -639,19 +640,19 @@ export default function DashboardContent({
           )}
         </div>
 
-        <div className="lg:col-span-2 t-glass-card p-6 flex flex-col gap-4">
+        <Reveal className="lg:col-span-2 t-glass-card p-6 flex flex-col gap-4">
           <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark">
             {td("recentPickups")}
           </h3>
           <RecentPickups pickups={pickups} onCancel={handleCancelPickup} onReschedule={handleReschedulePickup} />
-        </div>
+        </Reveal>
       </div>
 
 
 
       {/* Leaderboard segment (Household role gate) — real households only, ranked by Green Credits */}
       {isHousehold && (
-        <div className="mt-8 animate-fade-up-delay-3">
+        <Reveal className="mt-8">
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark inline-flex items-center gap-2">
@@ -711,7 +712,7 @@ export default function DashboardContent({
               className="t-glass-card rounded-xl p-6 shadow-sm border border-[rgba(194,112,61,0.18)] bg-[#EDE5D8]/40 backdrop-blur-md"
             />
           )}
-        </div>
+        </Reveal>
       )}
 
       {/* Eco-Knowledge Quiz Modal Overlay */}

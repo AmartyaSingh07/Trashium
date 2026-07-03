@@ -136,7 +136,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
             onItemClick?.(item.link);
           }}
           className={cn(
-            "relative px-4 py-2 text-sm cursor-pointer transition-colors duration-200 pointer-events-auto",
+            "t-focus-ring relative px-4 py-2 text-sm cursor-pointer transition-colors duration-200 pointer-events-auto",
             "font-[family-name:var(--font-dm)] font-medium tracking-wide uppercase text-[0.6875rem] leading-none",
             item.active
               ? "text-terra"
@@ -224,7 +224,7 @@ export const MobileNavMenu = ({
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className={cn(
             "absolute inset-x-0 top-16 z-50 flex w-full flex-col items-start justify-start gap-4 rounded-2xl bg-linen/98 backdrop-blur-xl px-5 py-6 border border-terra/12 shadow-[0_8px_32px_rgba(42,34,24,0.12)]",
             className,
@@ -289,7 +289,7 @@ export const NavbarButton = ({
   | React.ComponentPropsWithoutRef<"button">
 )) => {
   const baseStyles =
-    "px-4 py-2 rounded-lg text-sm font-bold relative cursor-pointer hover:-translate-y-0.5 transition-all duration-200 inline-flex items-center justify-center gap-2 font-[family-name:var(--font-syne)] text-xs uppercase tracking-wider";
+    "t-focus-ring px-4 py-2 rounded-lg text-sm font-bold relative cursor-pointer hover:-translate-y-0.5 transition-all duration-200 inline-flex items-center justify-center gap-2 font-[family-name:var(--font-syne)] text-xs uppercase tracking-wider";
 
   const variantStyles = {
     primary:

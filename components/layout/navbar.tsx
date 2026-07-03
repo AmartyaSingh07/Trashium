@@ -272,7 +272,7 @@ export default function Navbar() {
                 key={`mobile-link-${idx}`}
                 href={item.link}
                 onClick={() => setMobileOpen(false)}
-                className={`relative w-full py-2 font-[family-name:var(--font-dm)] text-[0.6875rem] font-medium uppercase tracking-wide transition-colors duration-200 ${
+                className={`t-focus-ring relative w-full py-2 font-[family-name:var(--font-dm)] text-[0.6875rem] font-medium uppercase tracking-wide transition-colors duration-200 ${
                   item.active
                     ? "text-terra border-l-2 border-terra pl-3"
                     : "text-bark/70 hover:text-terra pl-3"

@@ -1,0 +1,35 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Line-ending policy. Fixes the CRLF flip that made every file look fully changed.
+# The repo stores LF and checks out LF everywhere, regardless of the machine's
+# core.autocrlf. Line endings are cosmetic to JS/TS/CSS/JSON — this does NOT change
+# how the app runs.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Default: treat everything as text, auto-detect, normalize to LF in repo + working tree.
+* text=auto eol=lf
+
+# Windows-only scripts must stay CRLF (defensive — normally gitignored under .venv/node_modules).
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Shell scripts must stay LF (explicit).
+*.sh   text eol=lf
+
+# ── Binary assets: never normalized, never diffed as text ────────────────────
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.eot   binary
+*.pdf   binary
+*.mp4   binary
+*.webm  binary
+*.mp3   binary
+# NOTE: .svg is intentionally left as text (it's XML; LF-safe and diff-friendly).

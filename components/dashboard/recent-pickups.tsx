@@ -108,7 +108,7 @@ export default function RecentPickups({ pickups, onCancel, onReschedule }: Recen
                     setRescheduleDate("");
                     setRescheduleTimeSlot("");
                   }}
-                  className="text-xs font-semibold text-[#C2703D] hover:text-[#B35E39] transition-colors cursor-pointer bg-transparent border-0 px-0"
+                  className="text-xs font-semibold text-[#C2703D] hover:text-[#B35E39] transition-colors cursor-pointer bg-transparent border-0 px-0 t-focus-ring"
                 >
                   Reschedule
                 </button>
@@ -120,7 +120,7 @@ export default function RecentPickups({ pickups, onCancel, onReschedule }: Recen
                 <button
                   type="button"
                   onClick={() => onCancel(pickup.id, pickup)}
-                  className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors cursor-pointer bg-transparent border-0 px-0"
+                  className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors cursor-pointer bg-transparent border-0 px-0 t-focus-ring"
                 >
                   Cancel
                 </button>

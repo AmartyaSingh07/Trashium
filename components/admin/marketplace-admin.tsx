@@ -192,7 +192,7 @@ export default function MarketplaceAdmin({ initialItems, initialOrders, users, b
           </h2>
           <button
             onClick={openNew}
-            className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 flex items-center gap-1 shadow-sm"
+            className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 flex items-center gap-1 shadow-sm t-focus-ring"
           >
             <Plus className="h-3 w-3" /> Add Item
           </button>
@@ -223,10 +223,10 @@ export default function MarketplaceAdmin({ initialItems, initialOrders, users, b
                   <td className="py-2 px-3">
                     <button
                       onClick={() => toggleActive(it)}
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border cursor-pointer ${
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border cursor-pointer t-focus-ring ${
                         it.is_active
-                          ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                          : "bg-red-100 text-red-700 border-red-300"
+                          ? "bg-sage/15 text-sage-deep border-sage/40"
+                          : "bg-destructive/10 text-destructive border-destructive/30"
                       }`}
                     >
                       {it.is_active ? "Active" : "Off"}
@@ -334,7 +334,7 @@ export default function MarketplaceAdmin({ initialItems, initialOrders, users, b
           </div>
           <button
             onClick={award}
-            className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 shadow-sm"
+            className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all active:scale-95 cursor-pointer border-0 shadow-sm t-focus-ring"
           >
             Award
           </button>
@@ -419,7 +419,7 @@ export default function MarketplaceAdmin({ initialItems, initialOrders, users, b
             <Button type="button" variant="outline" onClick={() => setForm(null)} className="border-sand/40 text-bark font-semibold rounded-full px-5">
               Cancel
             </Button>
-            <button type="button" disabled={saving} onClick={saveItem} className="btn-terra text-xs px-6 py-2.5 border-0 cursor-pointer disabled:opacity-50">
+            <button type="button" disabled={saving} onClick={saveItem} className="btn-terra text-xs px-6 py-2.5 border-0 cursor-pointer disabled:opacity-50 t-focus-ring">
               {saving ? "Saving…" : "Save item"}
             </button>
           </DialogFooter>

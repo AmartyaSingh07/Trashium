@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { toast } from "sonner";
+import { Reveal } from "@/components/motion";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 const OptimizedRouteMap = dynamic(() => import("@/components/maps/OptimizedRouteMap"), { ssr: false });
@@ -89,7 +90,14 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
     const zone = profile.operating_zone || "all";
     const channel = supabase.channel(`tracking:${zone}`);
     trackingChannelRef.current = channel;
+
+    // Gate broadcasts on the WS channel having joined. send() before SUBSCRIBED
+    // falls back to a REST POST (deprecated) — skip those early pings; the next
+    // GPS fix arrives in ~3s. Any non-SUBSCRIBED status flips this back off.
+    let isJoined = false;
+
     channel.subscribe((status) => {
+      isJoined = status === "SUBSCRIBED";
       if (status === "SUBSCRIBED") {
         setIsBroadcasting(true);
       }
@@ -100,6 +108,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
     if (typeof window !== "undefined" && navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
         (position) => {
+          if (!isJoined) return; // WS-only; skip pre-join/post-drop pings (no REST fallback)
           channel.send({
             type: "broadcast",
             event: "telemetry_ping",
@@ -207,7 +216,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
         
         {/* Dynamic Network Status Banner */}
         {isOffline && (
-          <div className="mb-6 w-full p-3 bg-amber-600 text-white rounded-xl font-mono text-xs font-bold text-center animate-pulse shadow-sm">
+          <div className="mb-6 w-full p-3 bg-amber-warm text-bark rounded-xl font-mono text-xs font-bold text-center animate-pulse shadow-sm">
             ⚠️ OFFLINE LOGISTICS CACHE ACTIVE — Serving cached data from local device layers.
           </div>
         )}
@@ -242,15 +251,15 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
 
         {/* Quick Analytical Overview Row */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="t-glass-card rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
+          <div className="t-glass-card t-lift rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
             <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Assigned Runs</span>
             <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 text-[#C2703D]">{totalCount}</span>
           </div>
-          <div className="t-glass-card rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
+          <div className="t-glass-card t-lift rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
             <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Remaining Pickups</span>
-            <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 text-amber-700">{pendingCount}</span>
+            <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 text-clay">{pendingCount}</span>
           </div>
-          <div className="t-glass-card rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
+          <div className="t-glass-card t-lift rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
             <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Cleared runs</span>
             <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 text-[#4A6741]">{completedCount}</span>
           </div>
@@ -278,14 +287,14 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
             </div>
 
             {route.deferred.length > 0 && (
-              <p className="mt-3 text-[11px] font-mono text-amber-700">
+              <p className="mt-3 text-[11px] font-mono text-clay">
                 ⚠️ {route.deferred.length} pickup(s) deferred to next run (over truck capacity / stop limit).
               </p>
             )}
           </div>
 
             {/* Pickup Requests Ledger Table */}
-            <div className="w-full mt-6 t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.15)] shadow-sm animate-fadeIn">
+            <Reveal className="w-full mt-6 t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.15)] shadow-sm">
               <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-4 flex items-center gap-2">
                 📋 Pickup Requests
               </h2>
@@ -318,11 +327,11 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                         </td>
                         <td className="py-3.5 px-3">
                           <span className={`text-[10px] font-mono uppercase font-bold tracking-tight px-2 py-1 rounded border ${
-                            p.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                            p.status === 'completed' ? 'bg-moss/12 text-moss border-moss/30' :
                             p.status === 'collected' ? 'bg-[#8FA37E]/10 text-[#4A6741] border-[#8FA37E]/30' :
-                            p.status === 'accepted' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                            p.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
-                            'bg-amber-50 text-amber-700 border-amber-200'
+                            p.status === 'accepted' ? 'bg-terra/10 text-terra border-terra/30' :
+                            p.status === 'cancelled' ? 'bg-destructive/10 text-destructive border-destructive/30' :
+                            'bg-amber-warm/15 text-clay border-amber-warm/30'
                           }`}>
                             {p.status === 'completed' ? 'processed' : p.status}
                           </span>
@@ -330,7 +339,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                         <td className="py-3.5 px-3 text-right">
                           <button
                             onClick={() => { setSelectedPickup(p); setIsActionModalOpen(true); }}
-                            className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-xs font-bold px-3 py-1.5 rounded-lg font-syne uppercase tracking-wider min-h-[36px]"
+                            className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-xs font-bold px-3 py-1.5 rounded-lg font-syne uppercase tracking-wider min-h-[36px] t-focus-ring"
                           >
                             Report Impurities ⚠️
                           </button>
@@ -340,10 +349,10 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Reveal>
 
             {/* 2. MOUNT THE MIGRATE ON-SITE PRICE ESTIMATOR */}
-            <div className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.18)] shadow-sm mt-6">
+            <Reveal className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.18)] shadow-sm mt-6">
               <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-3 flex items-center gap-2">
                 <img src={`${LEVEL_BUCKET_BASE}/price-estimator.png`} alt="" className="h-7 w-7 object-contain" loading="lazy" />
                 Price Estimator
@@ -434,7 +443,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                   {estResult ? `₹ ${estResult.userPayoutTotal.toFixed(2)}` : "₹ Dynamic Sync"}
                 </span>
               </div>
-            </div>
+            </Reveal>
           </div>
 
 
@@ -451,7 +460,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                 <h3 className="font-syne font-bold text-base text-[#2A2218]">Manifest Operations: Run #{selectedPickup.id.substring(0, 8)}</h3>
                 <p className="text-xs text-[#6B5744] mt-0.5 font-mono">Current Operational State: <span className="uppercase font-bold text-[#C2703D]">{selectedPickup.status}</span></p>
               </div>
-              <button onClick={() => { setIsActionModalOpen(false); setSelectedPickup(null); }} className="text-sm font-bold text-[#6B5744] hover:text-red-600 transition-colors">✕</button>
+              <button onClick={() => { setIsActionModalOpen(false); setSelectedPickup(null); }} className="text-sm font-bold text-[#6B5744] hover:text-destructive transition-colors t-focus-ring">✕</button>
             </div>
 
             {/* Step-by-Step Logistics State Actions Stack */}
@@ -460,28 +469,28 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
               
               <button
                 onClick={() => updatePickupStatus(selectedPickup.id, "accepted")}
-                className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-blue-600 text-white rounded-xl transition-all hover:bg-blue-800 min-h-[44px]"
+                className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-terra text-white rounded-xl transition-all hover:bg-[#A0522D] min-h-[44px] t-focus-ring"
               >
                 1. Accept Assignment 🟢
               </button>
-              
+
               <button
                 onClick={() => updatePickupStatus(selectedPickup.id, "collected")}
-                className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-[#8FA37E] text-white rounded-xl transition-all hover:bg-[#4A6741] min-h-[44px]"
+                className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-[#8FA37E] text-white rounded-xl transition-all hover:bg-[#4A6741] min-h-[44px] t-focus-ring"
               >
                 2. Mark Load Collected ✓
               </button>
-              
+
               <button
                 onClick={() => updatePickupStatus(selectedPickup.id, "completed")}
-                className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-emerald-600 text-white rounded-xl transition-all hover:bg-emerald-800 min-h-[44px]"
+                className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-sage-deep text-white rounded-xl transition-all hover:bg-moss min-h-[44px] t-focus-ring"
               >
                 3. Mark Load Processed 📦
               </button>
-              
+
               <button
                 onClick={() => updatePickupStatus(selectedPickup.id, "cancelled")}
-                className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-red-50 text-red-700 border border-red-200 rounded-xl transition-all hover:bg-red-100 min-h-[44px]"
+                className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-destructive/10 text-destructive border border-destructive/30 rounded-xl transition-all hover:bg-destructive/20 min-h-[44px] t-focus-ring"
               >
                 4. Cancel Collection Run ✕
               </button>

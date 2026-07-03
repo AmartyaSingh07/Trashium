@@ -14,6 +14,7 @@ import {
 import { getTranslations } from "next-intl/server";
 import PageShell from "@/components/layout/page-shell";
 import PageHero from "@/components/layout/page-hero";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 
 export const metadata: Metadata = {
   title: "Careers — Trashium",
@@ -52,7 +53,7 @@ export default async function CareersPage() {
 
       {/* Stage note */}
       <section className="mx-auto max-w-4xl px-6 py-12">
-        <div className="rounded-2xl border border-amber-warm/30 bg-amber-warm/8 p-6 sm:p-8">
+        <Reveal className="rounded-2xl border border-amber-warm/30 bg-amber-warm/8 p-6 sm:p-8">
           <div className="flex items-start gap-4">
             <Sparkles className="mt-0.5 h-6 w-6 shrink-0 text-clay" />
             <div>
@@ -64,21 +65,21 @@ export default async function CareersPage() {
               </p>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* Why work with us */}
       <section className="border-y border-sand/20 bg-linen/50 py-16">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="mb-10">
+          <Reveal className="mb-10">
             <p className="t-label mb-3 text-terra">{t("whyEyebrow")}</p>
             <h2 className="font-[family-name:var(--font-cormorant)] text-2xl font-semibold text-bark sm:text-3xl">
               {t("whyTitle")}
             </h2>
-          </div>
-          <div className="grid gap-6 md:grid-cols-3">
+          </Reveal>
+          <Stagger className="grid gap-6 md:grid-cols-3">
             {reasons.map((r) => (
-              <div
+              <StaggerItem
                 key={r.title}
                 className="t-glass-card border-sand/25 p-7"
               >
@@ -88,23 +89,23 @@ export default async function CareersPage() {
                 <p className="mt-2 font-[family-name:var(--font-dm)] text-sm leading-relaxed text-smoke">
                   {r.body}
                 </p>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       {/* Areas */}
       <section className="mx-auto max-w-5xl px-6 py-16">
-        <div className="mb-10">
+        <Reveal className="mb-10">
           <p className="t-label mb-3 text-terra">{t("areasEyebrow")}</p>
           <h2 className="font-[family-name:var(--font-cormorant)] text-2xl font-semibold text-bark sm:text-3xl">
             {t("areasTitle")}
           </h2>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        </Reveal>
+        <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {roles.map((r) => (
-            <div
+            <StaggerItem
               key={r.area}
               className="group rounded-2xl border border-sand/25 bg-parchment/50 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-terra/30"
             >
@@ -117,14 +118,14 @@ export default async function CareersPage() {
               <p className="mt-2 font-[family-name:var(--font-dm)] text-xs leading-relaxed text-smoke">
                 {r.body}
               </p>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </section>
 
       {/* Contact / apply */}
       <section className="border-t border-sand/20 bg-linen/60 py-16">
-        <div className="mx-auto max-w-3xl px-6 text-center">
+        <Reveal className="mx-auto max-w-3xl px-6 text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-terra/10 text-terra">
             <Mail className="h-7 w-7" />
           </div>
@@ -145,7 +146,7 @@ export default async function CareersPage() {
               {t("contactSecondary")}
             </Link>
           </div>
-        </div>
+        </Reveal>
       </section>
     </PageShell>
   );

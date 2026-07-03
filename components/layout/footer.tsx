@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Separator } from "@/components/ui/separator";
+import { Reveal } from "@/components/motion";
 
 export default function Footer() {
   const t = useTranslations("footer");
@@ -37,10 +38,10 @@ export default function Footer() {
   return (
     <footer className="border-t border-terra/10 bg-linen/90 backdrop-blur-md relative z-10">
       <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+        <Reveal className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4 group">
+            <Link href="/" className="t-focus-ring flex items-center gap-2 mb-4 group">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-terra/10 transition-transform group-hover:scale-105">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/brand/trashium-icon-static.svg" alt="" className="h-5 w-5" />
@@ -69,8 +70,8 @@ export default function Footer() {
                         href={link.href}
                         className={
                           isHowItWorks
-                            ? "text-slate-600 hover:text-emerald-600 transition-colors duration-150 text-sm text-left block py-1 font-[family-name:var(--font-dm)]"
-                            : "text-sm text-smoke transition-colors hover:text-terra font-[family-name:var(--font-dm)]"
+                            ? "t-focus-ring text-smoke hover:text-terra transition-colors duration-150 text-sm text-left block py-1 font-[family-name:var(--font-dm)]"
+                            : "t-focus-ring text-sm text-smoke transition-colors hover:text-terra font-[family-name:var(--font-dm)]"
                         }
                       >
                         {link.label}
@@ -81,7 +82,7 @@ export default function Footer() {
               </ul>
             </div>
           ))}
-        </div>
+        </Reveal>
 
         <Separator className="my-8 bg-sand/35" />
 

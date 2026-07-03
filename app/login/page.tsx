@@ -59,7 +59,7 @@ export default function LoginPage() {
             <div className="relative z-10">
               <Link
                 href="/"
-                className="mb-6 inline-flex items-center gap-2 text-sm text-[#C2703D] hover:text-terra-deep transition-colors"
+                className="t-focus-ring mb-6 inline-flex items-center gap-2 text-sm text-[#C2703D] hover:text-terra-deep transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
                 {t("backToHome")}
@@ -125,7 +125,7 @@ export default function LoginPage() {
               {t("noAccount")}{" "}
               <Link
                 href="/signup"
-                className="font-semibold text-terra hover:underline"
+                className="t-focus-ring font-semibold text-terra hover:underline"
               >
                 {t("signUpLink")}
               </Link>

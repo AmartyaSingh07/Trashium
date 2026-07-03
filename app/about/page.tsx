@@ -13,6 +13,7 @@ import {
 import { getTranslations } from "next-intl/server";
 import PageShell from "@/components/layout/page-shell";
 import PageHero from "@/components/layout/page-hero";
+import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 
 export const metadata: Metadata = {
   title: "About Us — Trashium",
@@ -48,7 +49,7 @@ export default async function AboutPage() {
 
       {/* What it is */}
       <section className="mx-auto max-w-4xl px-6 py-16">
-        <div className="t-glass-card border-sand/25 p-8 sm:p-10">
+        <Reveal className="t-glass-card border-sand/25 p-8 sm:p-10">
           <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-terra/10 text-terra">
             <Recycle className="h-6 w-6" />
           </div>
@@ -58,19 +59,21 @@ export default async function AboutPage() {
           <p className="mt-4 font-[family-name:var(--font-dm)] text-base leading-relaxed text-smoke">
             {t("whatBody")}
           </p>
-        </div>
+        </Reveal>
       </section>
 
       {/* The problem */}
       <section className="border-y border-sand/20 bg-linen/50 py-16">
         <div className="mx-auto max-w-4xl px-6">
-          <p className="t-label mb-3 text-terra">{t("problemEyebrow")}</p>
-          <h2 className="font-[family-name:var(--font-cormorant)] text-2xl font-semibold text-bark sm:text-3xl">
-            {t("problemTitle")}
-          </h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <Reveal>
+            <p className="t-label mb-3 text-terra">{t("problemEyebrow")}</p>
+            <h2 className="font-[family-name:var(--font-cormorant)] text-2xl font-semibold text-bark sm:text-3xl">
+              {t("problemTitle")}
+            </h2>
+          </Reveal>
+          <Stagger className="mt-8 grid gap-4 sm:grid-cols-2">
             {problems.map((p, i) => (
-              <div
+              <StaggerItem
                 key={i}
                 className="flex gap-4 rounded-2xl border border-sand/25 bg-parchment/50 p-5"
               >
@@ -80,46 +83,46 @@ export default async function AboutPage() {
                 <p className="font-[family-name:var(--font-dm)] text-sm leading-relaxed text-smoke">
                   {p}
                 </p>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       {/* Mission & vision */}
       <section className="mx-auto max-w-4xl px-6 py-16">
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-2xl border border-terra/20 bg-terra/5 p-8">
+        <Stagger className="grid gap-6 md:grid-cols-2">
+          <StaggerItem className="rounded-2xl border border-terra/20 bg-terra/5 p-8">
             <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark">
               {t("missionTitle")}
             </h3>
             <p className="mt-3 font-[family-name:var(--font-dm)] text-sm leading-relaxed text-smoke">
               {t("missionBody")}
             </p>
-          </div>
-          <div className="rounded-2xl border border-sage/25 bg-sage/8 p-8">
+          </StaggerItem>
+          <StaggerItem className="rounded-2xl border border-sage/25 bg-sage/8 p-8">
             <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark">
               {t("visionTitle")}
             </h3>
             <p className="mt-3 font-[family-name:var(--font-dm)] text-sm leading-relaxed text-smoke">
               {t("visionBody")}
             </p>
-          </div>
-        </div>
+          </StaggerItem>
+        </Stagger>
       </section>
 
       {/* How it works */}
       <section className="border-y border-sand/20 bg-linen/50 py-16">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="mb-10 text-center">
+          <Reveal className="mb-10 text-center">
             <p className="t-label mb-3 text-terra">{t("howEyebrow")}</p>
             <h2 className="font-[family-name:var(--font-cormorant)] text-2xl font-semibold text-bark sm:text-3xl">
               {t("howTitle")}
             </h2>
-          </div>
-          <div className="grid gap-6 md:grid-cols-3">
+          </Reveal>
+          <Stagger className="grid gap-6 md:grid-cols-3">
             {steps.map((s) => (
-              <div
+              <StaggerItem
                 key={s.title}
                 className="t-glass-card border-sand/25 p-7 transition-transform duration-300 hover:-translate-y-1"
               >
@@ -132,15 +135,15 @@ export default async function AboutPage() {
                 <p className="mt-2 font-[family-name:var(--font-dm)] text-sm leading-relaxed text-smoke">
                   {s.body}
                 </p>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       {/* Circular economy + impact */}
       <section className="mx-auto max-w-5xl px-6 py-16">
-        <div className="mb-10">
+        <Reveal className="mb-10">
           <p className="t-label mb-3 text-terra">{t("circularEyebrow")}</p>
           <h2 className="max-w-2xl font-[family-name:var(--font-cormorant)] text-2xl font-semibold text-bark sm:text-3xl">
             {t("circularTitle")}
@@ -148,10 +151,10 @@ export default async function AboutPage() {
           <p className="mt-4 max-w-2xl font-[family-name:var(--font-dm)] text-base leading-relaxed text-smoke">
             {t("circularBody")}
           </p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
+        </Reveal>
+        <Stagger className="grid gap-6 md:grid-cols-3">
           {impact.map((s) => (
-            <div
+            <StaggerItem
               key={s.title}
               className="rounded-2xl border border-sand/25 bg-parchment/50 p-7"
             >
@@ -164,15 +167,15 @@ export default async function AboutPage() {
               <p className="mt-2 font-[family-name:var(--font-dm)] text-sm leading-relaxed text-smoke">
                 {s.body}
               </p>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </section>
 
       {/* Field survey */}
       <section className="border-y border-sand/20 bg-linen/50 py-16">
         <div className="mx-auto max-w-4xl px-6">
-          <div className="flex flex-col gap-8 md:flex-row md:items-start">
+          <Reveal className="flex flex-col gap-8 md:flex-row md:items-start">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-terra/10 text-terra">
               <MapPin className="h-7 w-7" />
             </div>
@@ -188,13 +191,13 @@ export default async function AboutPage() {
                 {t("surveyBody2")}
               </p>
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Academic background */}
       <section className="mx-auto max-w-4xl px-6 py-16">
-        <div className="rounded-2xl border border-sand/30 bg-parchment/50 p-8 sm:p-10">
+        <Reveal className="rounded-2xl border border-sand/30 bg-parchment/50 p-8 sm:p-10">
           <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-clay/10 text-clay">
             <GraduationCap className="h-6 w-6" />
           </div>
@@ -204,12 +207,12 @@ export default async function AboutPage() {
           <p className="mt-4 font-[family-name:var(--font-dm)] text-base leading-relaxed text-smoke">
             {t("academicBody")}
           </p>
-        </div>
+        </Reveal>
       </section>
 
       {/* CTA */}
       <section className="border-t border-sand/20 bg-linen/60 py-16">
-        <div className="mx-auto max-w-3xl px-6 text-center">
+        <Reveal className="mx-auto max-w-3xl px-6 text-center">
           <h2 className="font-[family-name:var(--font-cormorant)] text-3xl font-semibold text-bark sm:text-4xl">
             {t("ctaTitle")}
           </h2>
@@ -224,7 +227,7 @@ export default async function AboutPage() {
               {t("ctaSecondary")}
             </Link>
           </div>
-        </div>
+        </Reveal>
       </section>
     </PageShell>
   );

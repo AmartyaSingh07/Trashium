@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 import { setLanguage } from "@/app/actions/language";
 import { OPERATIONAL_SECTORS } from "@/lib/constants";
 import { getTier, getLevelNumber, getTierIconFilename } from "@/lib/gamification";
+import { AnimatedNumber } from "@/components/ui/animated-number";
+import { Stagger } from "@/components/motion";
 import type { User } from "@supabase/supabase-js";
 import type { ResolvedBadge } from "@/lib/types";
 import type { ProfileWithZone } from "./page";
@@ -61,28 +63,11 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
   const [phone, setPhone] = useState(initialPhone);
   const [zone, setZone] = useState(initialProfile.operating_zone);
 
-  // Animated Points Counter State Engine
+  // Roll the credits up from 0 to the real balance once on mount — NumberFlow drives the
+  // animation (and snaps straight to the final value under reduced motion).
   const [displayedCredits, setDisplayedCredits] = useState(0);
-
   useEffect(() => {
-    let start = 0;
-    const end = initialProfile.green_credits;
-    if (end === 0) return;
-    
-    const duration = 1200; // Count-up time in milliseconds
-    const increment = Math.ceil(end / (duration / 16));
-    
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setDisplayedCredits(end);
-        clearInterval(timer);
-      } else {
-        setDisplayedCredits(start);
-      }
-    }, 16);
-
-    return () => clearInterval(timer);
+    setDisplayedCredits(initialProfile.green_credits);
   }, [initialProfile.green_credits]);
 
   // Gamification milestone calculation engine (Level caps out at 1000 points)
@@ -102,10 +87,10 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
     label: `${tierData.rank} · Level ${levelNumber}`,
     style:
       levelNumber >= 16
-        ? "text-emerald-700 bg-emerald-100 border-emerald-300"
+        ? "text-moss bg-moss/12 border-moss/40"
         : levelNumber >= 7
         ? "text-[#4A6741] bg-[#8FA37E]/20 border-[#8FA37E]/40"
-        : "text-amber-800 bg-amber-100 border-amber-300",
+        : "text-clay bg-amber-warm/18 border-amber-warm/40",
     iconUrl: `${cdnLevelBase}/${getTierIconFilename(tierData.rank)}`,
   };
 
@@ -216,7 +201,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
             <div className="w-full mt-6 pt-5 border-t border-[rgba(194,112,61,0.12)] flex flex-col items-center">
               <span className="text-xs uppercase font-bold text-[#6B5744] tracking-wider">Ecosystem Green Credits Balance</span>
               <span className="text-4xl font-mono font-bold text-[#4A6741] tracking-tight mt-1">
-                {displayedCredits} <span className="text-xs font-dm font-normal text-[#6B5744]">pts</span>
+                <AnimatedNumber value={displayedCredits} /> <span className="text-xs font-dm font-normal text-[#6B5744]">pts</span>
               </span>
               <p className="text-[11px] text-[#6B5744] mt-2 font-mono italic text-center">
                 ✨ Earn {pointsToNextLevel} more credits to trigger next eco tier checkpoint.
@@ -250,7 +235,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
               <button
                 type="button"
                 onClick={() => setIsEditMode(!isEditMode)}
-                className={`font-syne font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-xl border transition-all ${
+                className={`font-syne font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-xl border transition-all t-focus-ring ${
                   isEditMode
                     ? "bg-[#2A2218] text-white border-black"
                     : "bg-[#F4EFE3] text-[#2A2218] border-[#D4C5B0] hover:bg-[#EDE5D8]"
@@ -281,7 +266,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
                   type="email"
                   value={userAuth.email}
                   disabled
-                  className="w-full p-3 bg-[#F4EFE3]/50 border border-[#D4C5B0]/40 rounded-xl text-xs text-neutral-500 cursor-not-allowed select-none"
+                  className="w-full p-3 bg-[#F4EFE3]/50 border border-[#D4C5B0]/40 rounded-xl text-xs text-smoke cursor-not-allowed select-none"
                 />
               </div>
 
@@ -344,7 +329,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
                 <button
                   type="submit"
                   disabled={loading}
-                  className="min-h-[44px] bg-[#C2703D] hover:bg-[#A0522D] text-white font-syne font-bold text-xs uppercase tracking-wider rounded-xl shadow-md px-6 py-2.5 transition-all disabled:opacity-50 cursor-pointer"
+                  className="min-h-[44px] bg-[#C2703D] hover:bg-[#A0522D] text-white font-syne font-bold text-xs uppercase tracking-wider rounded-xl shadow-md px-6 py-2.5 transition-all disabled:opacity-50 cursor-pointer t-focus-ring"
                 >
                   {loading ? t("saving") : `${t("saveChanges")} ✓`}
                 </button>
@@ -363,7 +348,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
           {badges.length === 0 ? (
             <p className="font-dm text-xs text-[#6B5744] py-8 text-center">Badges are unavailable right now — please refresh in a moment.</p>
           ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <Stagger className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {badges.map((badge) => {
               const earned = badge.state === "earned";
               const inProgress = badge.state === "in-progress";
@@ -377,6 +362,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
               return (
                 <div
                   key={badge.id}
+                  data-stagger-item
                   tabIndex={0}
                   aria-label={`${badge.title} — ${earned ? "earned" : inProgress ? `${badge.pct}% complete` : "locked"}`}
                   className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center text-center relative group min-h-[160px] outline-none focus-visible:ring-2 focus-visible:ring-[#8FA37E] ${cardStyle}`}
@@ -441,7 +427,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
                 </div>
               );
             })}
-          </div>
+          </Stagger>
           )}
         </div>
 

@@ -402,6 +402,43 @@
   }
 }
 
+/* ── S1: MOTION TOKENS — single source for the Editorial Botanical motion language ── */
+:root {
+  /* Signature easing (already used inline by t-rise/t-ring-fill — now canonical) */
+  --ease-botanical: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-botanical-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Durations — "growth, not flash": slow, organic */
+  --motion-fast:   0.4s;
+  --motion-base:   0.7s;
+  --motion-slow:   1.1s;
+
+  /* Reveal travel distances */
+  --motion-rise:   24px;   /* default reveal translateY */
+  --motion-rise-sm: 12px;
+
+  /* Stagger cadence */
+  --motion-stagger: 0.08s;
+}
+
+/* Unified hover/focus language — OPT-IN utilities, applied per element in later sessions.
+   Nothing here changes a component's look until a class is added to it. */
+@layer utilities {
+  .t-lift {
+    transition: transform var(--motion-fast) var(--ease-botanical),
+                box-shadow var(--motion-fast) var(--ease-botanical);
+  }
+  .t-lift:hover { transform: translateY(-2px); box-shadow: var(--t-shadow-lg); }
+  .t-lift:active { transform: translateY(0); }
+
+  /* Consistent keyboard-focus ring across the redesign (terra, token-driven) */
+  .t-focus-ring:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: var(--radius);
+  }
+}
+
 /* ═══════════════════════════════════════════════════════
    KINETIC TYPOGRAPHY LOADER (components/ui/loading-animation.tsx)
    Full-screen route-loading overlay. Bark backdrop, linen type.

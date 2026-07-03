@@ -141,18 +141,18 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-mono text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md shadow-lg transition-all duration-500 ${
                 isConnected
                   ? "bg-[#EDE5D8]/90 border-[#8FA37E]/40 text-[#4A6741]"
-                  : "bg-[#EDE5D8]/90 border-amber-300/40 text-amber-700"
+                  : "bg-[#EDE5D8]/90 border-amber-warm/40 text-clay"
               }`}
             >
               <span className="relative flex h-2 w-2">
                 <span
                   className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                    isConnected ? "animate-ping bg-[#4A6741]" : "bg-amber-500"
+                    isConnected ? "animate-ping bg-[#4A6741]" : "bg-amber-warm"
                   }`}
                 />
                 <span
                   className={`relative inline-flex rounded-full h-2 w-2 ${
-                    isConnected ? "bg-[#4A6741]" : "bg-amber-500"
+                    isConnected ? "bg-[#4A6741]" : "bg-amber-warm"
                   }`}
                 />
               </span>
@@ -162,7 +162,7 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
 
           {/* ── Bottom-left ETA & Dispatch Status Card (Glassmorphism) ── */}
           {crewLocation && (
-            <div className="absolute bottom-6 left-6 z-[1000] max-w-sm animate-fade-up">
+            <div className="absolute bottom-6 left-6 z-[1000] max-w-sm animate-fade-up" style={{ animationTimingFunction: "var(--ease-botanical)" }}>
               <div className="rounded-2xl p-5 bg-[#EDE5D8]/90 backdrop-blur-md border border-[#C2703D]/30 shadow-2xl">
                 {/* Header row with truck icon & status */}
                 <div className="flex items-start gap-4">
@@ -222,7 +222,7 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
           {/* ── Waiting State (no crew location yet) ── */}
           {!crewLocation && isConnected && (
             <div className="absolute inset-0 flex items-center justify-center z-[999] pointer-events-none">
-              <div className="bg-[#EDE5D8]/95 backdrop-blur-md border border-[#C2703D]/20 rounded-2xl p-8 shadow-2xl text-center max-w-xs animate-fade-up pointer-events-auto">
+              <div className="bg-[#EDE5D8]/95 backdrop-blur-md border border-[#C2703D]/20 rounded-2xl p-8 shadow-2xl text-center max-w-xs animate-fade-up pointer-events-auto" style={{ animationTimingFunction: "var(--ease-botanical)" }}>
                 <div className="text-4xl mb-3">📡</div>
                 <h3 className="font-syne font-bold text-base text-[#2A2218]">
                   Awaiting Crew Telemetry

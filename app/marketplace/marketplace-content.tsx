@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Lock, Sparkles, Coins, CheckCircle2, Package } from "lucide-react";
+import { Reveal, Stagger } from "@/components/motion";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 import type { RedemptionOrder } from "@/lib/types";
 import type { MarketplaceItemView } from "./page";
 
@@ -50,11 +52,14 @@ const STATUS_LABEL_KEYS: Record<string, string> = {
   cancelled: "statusCancelled",
 };
 
+// Earthy status vocabulary (mirrors globals.css .status-pending/accepted/completed): the
+// warm→sage→deep-green progression encodes the fulfilment journey; cancelled uses the
+// palette's own --destructive (not Tailwind red).
 const STATUS_STYLES: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800 border-amber-300",
-  dispatched: "bg-sky-100 text-sky-800 border-sky-300",
-  delivered: "bg-emerald-100 text-emerald-800 border-emerald-300",
-  cancelled: "bg-red-100 text-red-700 border-red-300",
+  pending: "bg-amber-warm/15 text-clay border-amber-warm/30",
+  dispatched: "bg-sage/15 text-sage-deep border-sage/30",
+  delivered: "bg-moss/12 text-moss border-moss/30",
+  cancelled: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
 interface Props {
@@ -137,7 +142,7 @@ export default function MarketplaceContent({
           <div>
             <p className="t-label text-smoke">{t("yourBalance")}</p>
             <p className="font-[family-name:var(--font-jetbrains)] text-xl font-bold text-bark leading-tight">
-              {balance.toLocaleString()} <span className="text-xs text-smoke font-normal">{t("credits")}</span>
+              <AnimatedNumber value={balance} /> <span className="text-xs text-smoke font-normal">{t("credits")}</span>
             </p>
           </div>
         </div>
@@ -156,7 +161,7 @@ export default function MarketplaceContent({
                   {t(TIER_LABEL_KEYS[tier])}
                   <span className="text-xs font-normal text-smoke">({tierItems.length})</span>
                 </h2>
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <Stagger className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {tierItems.map((item) => (
                     <ItemCard
                       key={item.id}
@@ -166,7 +171,7 @@ export default function MarketplaceContent({
                       t={t}
                     />
                   ))}
-                </div>
+                </Stagger>
               </section>
             );
           })}
@@ -206,7 +211,7 @@ export default function MarketplaceContent({
               </div>
               {confirmItem.perk_type === "payout_boost" && (
                 <p className="text-xs text-sage-deep pt-1">
-                  {t("payoutBoostNote", { value: confirmItem.perk_value })}
+                  {t("payoutBoostNote", { value: confirmItem.perk_value ?? 0 })}
                 </p>
               )}
             </div>
@@ -225,7 +230,7 @@ export default function MarketplaceContent({
               type="button"
               disabled={redeeming}
               onClick={() => confirmItem && handleRedeem(confirmItem)}
-              className="btn-terra text-xs px-6 py-2.5 border-0 cursor-pointer disabled:opacity-50"
+              className="btn-terra text-xs px-6 py-2.5 border-0 cursor-pointer disabled:opacity-50 t-focus-ring"
             >
               {redeeming ? t("redeeming") : t("confirmRedemption")}
             </button>
@@ -251,7 +256,8 @@ function ItemCard({
 }) {
   return (
     <div
-      className={`t-glass-card p-5 flex flex-col gap-3 ${
+      data-stagger-item
+      className={`t-glass-card t-lift p-5 flex flex-col gap-3 ${
         item.redeemable ? "" : "opacity-80"
       }`}
     >
@@ -290,7 +296,7 @@ function ItemCard({
         <button
           type="button"
           onClick={onRedeem}
-          className="btn-terra text-xs px-4 py-2 border-0 cursor-pointer w-full"
+          className="btn-terra text-xs px-4 py-2 border-0 cursor-pointer w-full t-focus-ring"
         >
           {t("redeem")}
         </button>
@@ -337,7 +343,7 @@ function LockedHero({ balance, pickupsCompleted, t }: { balance: number; pickups
         />
       </div>
 
-      <Link href="/dashboard" className="btn-terra text-xs px-6 py-2.5 border-0 mt-7">
+      <Link href="/dashboard" className="btn-terra text-xs px-6 py-2.5 border-0 mt-7 t-focus-ring">
         {t("goToDashboard")}
       </Link>
     </div>
@@ -356,7 +362,7 @@ function GateRow({ done, label, detail }: { done: boolean; label: string; detail
 
 function MyRedemptions({ orders, t }: { orders: RedemptionOrder[]; t: TFn }) {
   return (
-    <section className="mt-4">
+    <Reveal as="section" className="mt-4">
       <h2 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark mb-4 flex items-center gap-2">
         <Package className="h-4 w-4" /> {t("myRedemptions")}
       </h2>
@@ -404,6 +410,6 @@ function MyRedemptions({ orders, t }: { orders: RedemptionOrder[]; t: TFn }) {
           </table>
         </div>
       )}
-    </section>
+    </Reveal>
   );
 }

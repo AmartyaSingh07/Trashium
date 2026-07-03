@@ -53,3 +53,9 @@ next-env.d.ts
 
 # academic deliverables (large binaries, not app source)
 *.pdf
+
+# Claude Code / Cowork local tooling — local settings + installed skills, not app source
+# (also avoids committing .claude/skills/karpathy-guidelines/SKILL.md, which is currently
+#  throwing a filesystem I/O error on this drive)
+.claude/settings.local.json
+.claude/skills/

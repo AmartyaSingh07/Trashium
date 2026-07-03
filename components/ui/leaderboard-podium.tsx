@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Crown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { CountUp } from "@/components/ui/count-up"
+import { AnimatedNumber } from "@/components/ui/animated-number"
 
 // Types (inlined)
 interface LeaderboardRanking {
@@ -227,7 +227,7 @@ const LeaderboardPodium = React.forwardRef<
 
               {/* Value */}
               {showValue && (
-                <CountUp
+                <AnimatedNumber
                   value={ranking.value}
                   className={cn(
                     "t-countup text-muted-foreground",

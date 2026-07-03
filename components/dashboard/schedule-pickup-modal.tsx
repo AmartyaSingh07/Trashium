@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CalendarPlus, Loader2, Sparkles } from "lucide-react";
-import { CountUp } from "@/components/ui/count-up";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 import { estimateMultiQuote } from "@/lib/estimate";
 import type { EstimateResult, RiskLevel } from "@/lib/estimator-types";
 import { WASTE_CATALOG, toEntries, totalKg, dominantBucket } from "@/lib/waste-items";
@@ -220,7 +220,7 @@ export default function SchedulePickupModal({
         render={
           <Button
             size="lg"
-            className="btn-terra h-12 px-8 text-base font-semibold gap-2 border-0"
+            className="btn-terra h-12 px-8 text-base font-semibold gap-2 border-0 t-lift t-focus-ring"
           />
         }
       >
@@ -450,7 +450,7 @@ export default function SchedulePickupModal({
             {estResult ? (
               <>
                 <p className="font-[family-name:var(--font-jetbrains)] text-3xl font-bold text-[#4A6741] leading-none">
-                  ₹<CountUp value={estResult.userPayoutTotal} format={(n) => n.toFixed(2)} />
+                  ₹<AnimatedNumber value={estResult.userPayoutTotal} format={{ minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false }} />
                 </p>
                 <p className="text-[11px] text-[#8C7A63] mt-1">
                   ₹{estResult.userPayoutPerKg.toFixed(2)}/kg · logistics ₹{estResult.logisticsPerKg.toFixed(2)}/kg · {estResult.distanceKm} km

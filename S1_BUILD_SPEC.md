@@ -9,29 +9,43 @@
 
 ---
 
-## ⚠️ MANDATORY DESIGN SKILLS — applies to EVERY session (S1–S6)
+## ⚠️ MANDATORY SKILLS — applies to EVERY session (S1–S6)
 
 Before writing or restyling any UI in any session, the implementer **must** invoke the
-following design skills. This is a standing guardrail, not optional polish.
+following skills: four **design** skills plus one always-on **code-quality** skill
+(`/karpathy-guidelines`). This is a standing guardrail, not optional polish.
 
-| Skill | Where it runs | Who invokes |
-|---|---|---|
-| `/frontend-design` (anthropic-skills) | Available in this Cowork session | The Cowork agent invokes it directly before producing UI. |
-| `/impeccable` | VS Code Claude Code extension only (installed from GitHub) | **You must run it** in the VS Code extension — it is NOT loaded in the Cowork session. |
-| `/gpt-taste` | VS Code Claude Code extension only (installed from GitHub) | **You must run it** in the VS Code extension. |
-| `/ui-ux-pro-max` | VS Code Claude Code extension only (installed from GitHub) | **You must run it** in the VS Code extension. |
+| Skill | Lane | Where it runs | Who invokes |
+|---|---|---|---|
+| `/frontend-design` (anthropic-skills) | Design — generate | Available in this Cowork session | The Cowork agent invokes it directly before producing UI. |
+| `/gpt-taste` | Design — taste | VS Code extension only (GitHub-installed) | **You must run it** in the VS Code extension. |
+| `/impeccable` | Design — craft | VS Code extension only (GitHub-installed) | **You must run it** in the VS Code extension — it is NOT loaded in Cowork. |
+| `/ui-ux-pro-max` | Design — UX audit | VS Code extension only (GitHub-installed) | **You must run it** in the VS Code extension. |
+| `/karpathy-guidelines` | **Code quality (cross-cutting, always on)** | VS Code extension only (GitHub-installed) | **You must run it** in the VS Code extension on every session's code. |
 
 **Rule:** `/frontend-design` is invoked by the agent in-session before any component is built
-or restyled. The three GitHub-installed skills (`/impeccable`, `/gpt-taste`, `/ui-ux-pro-max`)
-live in the VS Code Claude Code extension and are **not available in this Cowork session**, so
-they must be run by you there to review/refine the output. No UI session is considered complete
-until all four have been applied. These supplement — never override — the hard constraints
-(identical palette, identical props/data flow, reduced-motion, i18n key reuse).
+or restyled. The four GitHub-installed skills (`/gpt-taste`, `/impeccable`, `/ui-ux-pro-max`,
+`/karpathy-guidelines`) live in the VS Code Claude Code extension and are **not available in this
+Cowork session**, so they must be run by you there to review/refine the output. No session is
+considered complete until all five have been applied. These supplement — never override — the hard
+constraints (identical palette, identical props/data flow, reduced-motion, i18n key reuse).
 
-### How the four skills complement each other (avoid conflicting edits)
+**`/karpathy-guidelines` is always on and cross-cutting.** It is a *code-quality* lane, not a design
+opinion — it reviews the **implementation** (simplicity, readability, small clear functions, honest
+naming, no premature abstraction, no dead code), never the visuals. It runs on every session's code
+alongside the four design skills, never in place of them, and is bound by the same hard constraints.
 
-They run in a **pipeline**, each owning a distinct layer, so they refine the same output instead
-of fighting over it. Order matters: build first, then taste, then polish, then audit.
+> **THEME IS FROZEN.** The existing terra/sage/linen/bark earthy palette in `app/globals.css`
+> stays **byte-for-byte identical** across all sessions. None of the skills may change colors,
+> fonts, or the core theme — they change execution, layout, motion, spacing, craft, and code quality
+> *within* the existing tokens only. Any color/theme suggestion from any skill is auto-rejected.
+
+### How the five skills complement each other (avoid conflicting edits)
+
+The four design skills run in a **pipeline**, each owning a distinct layer, so they refine the same
+output instead of fighting over it. Order matters: build → taste → polish → audit. `/karpathy-guidelines`
+sits **across** that pipeline as a code-quality lane on the resulting code — orthogonal to the visuals,
+so it never competes with the design skills for the same decision.
 
 | Stage | Skill | Owns (its lane) | Must NOT touch |
 |---|---|---|---|
@@ -39,9 +53,10 @@ of fighting over it. Order matters: build first, then taste, then polish, then a
 | 2. Taste pass | `/gpt-taste` | Aesthetic judgment — spacing rhythm, type hierarchy, restraint, "does this feel premium" | Functional logic, data wiring |
 | 3. Craft pass | `/impeccable` | Pixel-craft — alignment, optical balance, micro-spacing, hover/focus detail, motion timing feel | Palette tokens, layout structure decided in stage 1 |
 | 4. UX audit | `/ui-ux-pro-max` | Usability, accessibility, flow, state coverage (empty/loading/error), responsive correctness | Visual taste already settled above |
+| Cross-cutting | `/karpathy-guidelines` | Code quality of the implementation — simplicity, readability, small clear functions, honest naming, no premature abstraction, deleting dead code | Visual output, palette, props/data flow, and the **intentional** shared foundation (`components/motion/*`, `AnimatedNumber`) |
 
 **Conflict-resolution rules (so they "complement, not break"):**
-1. **Hard constraints win over all four skills, always.** If any skill suggests a palette change,
+1. **Hard constraints win over all five skills, always.** If any skill suggests a palette change,
    a prop/data-flow change, an i18n key invented for existing copy, or a motion that ignores
    reduced-motion → **reject that suggestion**, keep the constraint. The skills serve the redesign;
    they don't get to redefine it.
@@ -54,15 +69,24 @@ of fighting over it. Order matters: build first, then taste, then polish, then a
    skill for that surface and let the relevant ones carry it. Applying a skill where it has nothing
    to add is how you get churn — don't force all four onto every element, force them onto every
    *session* across the elements that need them.
-4. **One reconciliation at the end.** After all four have run on a route, do a single consolidation
+4. **One reconciliation at the end.** After all skills have run on a route, do a single consolidation
    pass: if two suggestions genuinely conflict, the one closer to a hard constraint or to usability
    (stage 4) wins over pure aesthetics (stages 2–3). Record the call in the session checkpoint.
+5. **`/karpathy-guidelines` is a separate code-quality lane, not a design opinion.** It reviews the
+   *implementation* the design skills produced — never the visuals. Two guardrails keep it
+   complementary: (a) it may **not** change props/data flow, the palette, or i18n keys in the name of
+   simplicity (hard constraints win); (b) it may **not** dissolve the **intentional** shared motion
+   foundation (`components/motion/*`, `AnimatedNumber`) — those abstractions are deliberately reused
+   across S2–S6, so "fewer files" is not "simpler" here. It simplifies *within* components and wiring.
 
 **Note on S1 specifically:** S1 ships **no visible UI** (the provider is a transparent
 pass-through; primitives are applied to elements only in S2–S6). So in S1, `/frontend-design`
-informs the *primitive API ergonomics and motion-token feel*, and the three VS Code skills have
+informs the *primitive API ergonomics and motion-token feel*, and the design VS Code skills have
 little surface to act on — they come fully into force from **S2 (Landing)** onward where real
-components are restyled. They are listed here because the rule is standing across all sessions.
+components are restyled. `/karpathy-guidelines` is the exception: S1 *is* code (the motion
+primitives S2–S6 build on), so it is worth running once over `components/motion/*` and
+`animated-number.tsx` now — clean, simple foundations pay off six sessions deep. They are all
+listed here because the rule is standing across all sessions.
 
 ---
 
@@ -227,19 +251,29 @@ since no primitive is applied to any element yet. (This is the S1 verification c
 
 All are `"use client"`, all consume `MotionContext`, all no-op to final state under reduced-motion.
 
+> **Post-S2 foundation update (2026-07-01):** two changes landed after S1's checkpoint, same public
+> API: (1) props finalized `y → rise`, `Stagger` `gap → interval`; (2) reveal mechanism switched from
+> `gsap.from` to `gsap.set`(hidden) + `ScrollTrigger.create({ onEnter → gsap.to(natural) })` with an
+> `if (st.progress > 0) reveal()` guard for already-in-view elements. Reason: `gsap.from` re-applies
+> its hidden from-state under React StrictMode double-invoke and on `ScrollTrigger.refresh()`, stranding
+> elements stuck at opacity 0. The provider also now calls `ScrollTrigger.refresh()` on `fonts.ready` /
+> `load` / a 500ms settle timer to fix stale start positions after font-swap reflow.
+
 **`<Reveal>`** — reveal-on-scroll wrapper.
 ```tsx
-<Reveal as="div" y={24} delay={0} once>{children}</Reveal>
+<Reveal as="div" rise={24} delay={0} once>{children}</Reveal>
 ```
-- GSAP `from` (opacity 0, y `--motion-rise`) triggered by ScrollTrigger when element enters viewport.
+- `gsap.set`(opacity 0, y `--motion-rise`) then `gsap.to`(natural) on viewport entry via
+  `ScrollTrigger.create({ onEnter })`, with an `st.progress > 0` fallback so already-in-view elements
+  still reveal. (Not `gsap.from` — see the update note above.)
 - `once` (default true) → plays a single time. Eased with `--ease-botanical`.
-- Reduced-motion → renders children at final opacity/position, no trigger.
+- Reduced-motion → renders children at final opacity/position, no trigger, no `set`.
 
 **`<Stagger>` / `<StaggerItem>`** — staggered group reveal.
 ```tsx
-<Stagger gap={0.08}><StaggerItem>…</StaggerItem><StaggerItem>…</StaggerItem></Stagger>
+<Stagger interval={0.08}><StaggerItem>…</StaggerItem><StaggerItem>…</StaggerItem></Stagger>
 ```
-- One ScrollTrigger on the container; children animate with `--motion-stagger` cadence.
+- One ScrollTrigger on the container; children animate with `--motion-stagger` cadence (`interval`).
 - Reduced-motion → all items final-state immediately.
 
 **`<KineticHeading>`** — editorial per-word (or per-line) reveal for Cormorant display headings.
