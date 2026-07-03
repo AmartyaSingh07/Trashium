@@ -141,7 +141,8 @@ export default function MarketplaceContent({
           </div>
           <div>
             <p className="t-label text-smoke">{t("yourBalance")}</p>
-            <p className="font-[family-name:var(--font-jetbrains)] text-xl font-bold text-bark leading-tight">
+            {/* leading-normal: NumberFlow clips tall digits under a tight line-height */}
+            <p className="font-[family-name:var(--font-jetbrains)] text-xl font-bold text-bark leading-normal whitespace-nowrap">
               <AnimatedNumber value={balance} /> <span className="text-xs text-smoke font-normal">{t("credits")}</span>
             </p>
           </div>

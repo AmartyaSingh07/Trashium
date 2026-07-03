@@ -319,8 +319,8 @@ export default function AdminContent({
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 relative z-10 font-[family-name:var(--font-dm)]">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[rgba(194,112,61,0.15)] pb-2 mb-4 w-full">
-        <div className="flex items-center gap-3 mb-4 select-none">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[rgba(194,112,61,0.15)] pb-4 mb-6 w-full">
+        <div className="flex items-center gap-3 select-none">
           <div className="w-10 h-10 rounded-xl bg-[#EDE5D8]/80 border border-[rgba(194,112,61,0.18)] p-2 flex items-center justify-center shadow-sm">
             <img 
               src="https://fqbjjcbrxrokvdwkydze.supabase.co/storage/v1/object/public/gamification-levels/logo.png" 
@@ -388,7 +388,7 @@ export default function AdminContent({
               <h3 className="font-syne font-bold text-xs uppercase tracking-wider text-[#6B5744] mb-2">
                 Performance Analytics Matrix
               </h3>
-              <div className="rounded-xl border border-sand/25 overflow-hidden">
+              <div className="rounded-xl border border-sand/25 overflow-x-auto">
                 <table className="border-collapse w-full">
                   <thead>
                     <tr className="bg-[#EDE5D8]/50 border-b border-[#D4C5B0] text-[10px] font-bold uppercase tracking-wider text-[#6B5744]">

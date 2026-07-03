@@ -199,7 +199,8 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
             {/* High-Impact Credits Digital Counter Matrix ticker view */}
             <div className="w-full mt-6 pt-5 border-t border-[rgba(194,112,61,0.12)] flex flex-col items-center">
               <span className="text-xs uppercase font-bold text-[#6B5744] tracking-wider">Ecosystem Green Credits Balance</span>
-              <span className="text-4xl font-mono font-bold text-[#4A6741] tracking-tight mt-1">
+              {/* leading-normal + py: NumberFlow clips tall digits under a tight line-height */}
+              <span className="text-4xl font-mono font-bold text-[#4A6741] tracking-tight mt-1 leading-normal py-0.5">
                 <AnimatedNumber value={displayedCredits} /> <span className="text-xs font-dm font-normal text-[#6B5744]">pts</span>
               </span>
               <p className="text-[11px] text-[#6B5744] mt-2 font-mono italic text-center">

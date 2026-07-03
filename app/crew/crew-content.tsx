@@ -252,15 +252,15 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
         <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="t-glass-card t-lift rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
             <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Assigned Runs</span>
-            <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 text-[#C2703D]">{totalCount}</span>
+            <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 leading-normal text-[#C2703D]">{totalCount}</span>
           </div>
           <div className="t-glass-card t-lift rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
             <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Remaining Pickups</span>
-            <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 text-clay">{pendingCount}</span>
+            <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 leading-normal text-clay">{pendingCount}</span>
           </div>
           <div className="t-glass-card t-lift rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
             <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Cleared runs</span>
-            <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 text-[#4A6741]">{completedCount}</span>
+            <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 leading-normal text-[#4A6741]">{completedCount}</span>
           </div>
         </div>
 
