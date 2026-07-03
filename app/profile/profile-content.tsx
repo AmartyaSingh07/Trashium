@@ -6,8 +6,10 @@ import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { setLanguage } from "@/app/actions/language";
+import { toast } from "sonner";
 import { OPERATIONAL_SECTORS } from "@/lib/constants";
-import { getTier, getLevelNumber, getTierIconFilename } from "@/lib/gamification";
+import { getTier, getNextTier, getLevelNumber, getTierIconFilename } from "@/lib/gamification";
+import BotanicalSVG from "@/components/ui/BotanicalSVG";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { Stagger } from "@/components/motion";
 import type { User } from "@supabase/supabase-js";
@@ -70,17 +72,18 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
     setDisplayedCredits(initialProfile.green_credits);
   }, [initialProfile.green_credits]);
 
-  // Gamification milestone calculation engine (Level caps out at 1000 points)
+  // Gamification milestone progress — canonical 20-tier system (lib/gamification.ts)
   const currentPoints = initialProfile.green_credits;
-  const pointsToNextLevel = 1000 - (currentPoints % 1000);
-  const levelProgressPercentage = ((currentPoints % 1000) / 1000) * 100;
-  
+  const tierData = getTier(currentPoints);
+  const nextTierData = getNextTier(currentPoints);
+  const pointsToNextLevel = nextTierData ? nextTierData.minPoints - currentPoints : 0;
+  const levelProgressPercentage = nextTierData
+    ? ((currentPoints - tierData.minPoints) / (nextTierData.minPoints - tierData.minPoints)) * 100
+    : 100;
+
   // Mathematically synchronized circular geometry constants (Radius = 40)
   const circumference = 251.2;
   const strokeDashoffset = circumference - (circumference * levelProgressPercentage) / 100;
-
-  // Tier label/avatar sourced from the canonical 20-tier system (lib/gamification.ts).
-  const tierData = getTier(currentPoints);
   const levelNumber = getLevelNumber(currentPoints);
   const cdnLevelBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/gamification-levels`;
   const tier = {
@@ -97,10 +100,9 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
   // Safely declared image load error boundary state hook
   const [imgError, setImgError] = useState(false);
 
-  // Update the tier tracking effect:
+  // Reset the image error state whenever the tier icon changes.
   useEffect(() => {
     setImgError(false);
-    console.log("📍 Trashium Target Level URL:", tier.iconUrl);
   }, [tier.iconUrl]);
 
   // Synchronized Mutation Handler Pipeline
@@ -124,11 +126,12 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
 
       if (authError) throw authError;
 
-      alert("✨ Profile details and contact metadata synchronized successfully.");
+      // Neutral wording on purpose — persistence is pending verification (Tier 2 A3).
+      toast.success("Profile changes submitted.");
       setIsEditMode(false);
     } catch (err: any) {
       console.error("Profile transaction mismatch:", err);
-      alert(`Sync Error: ${err.message || "Unable to save parameters."}`);
+      toast.error(`Sync error: ${err.message || "Unable to save parameters."}`);
     } finally {
       setLoading(false);
     }
@@ -137,9 +140,9 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
   return (
     <div className="min-h-screen bg-[#F4EFE3] text-[#2A2218] font-dm p-4 sm:p-6 lg:p-8 relative overflow-hidden">
       
-      {/* Background decoration elements */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03] select-none flex items-center justify-center">
-        <span className="text-[40rem] font-bold font-syne">leaf</span>
+      {/* Background decoration — botanical line art (same asset as the auth pages) */}
+      <div className="absolute inset-0 pointer-events-none select-none flex items-center justify-center" aria-hidden>
+        <BotanicalSVG className="w-[36rem] h-[48rem] opacity-[0.06]" />
       </div>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10 mt-4">
@@ -169,11 +172,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
                     src={tier.iconUrl} 
                     alt={tier.label} 
                     className="w-full h-full object-contain filter drop-shadow-[0_2px_4px_rgba(42,34,24,0.15)] animate-fadeIn relative z-10"
-                    onLoad={() => console.log(`✅ Asset resolved successfully: ${tier.iconUrl}`)}
-                    onError={() => {
-                      console.error(`❌ Asset download rejected by network stream: ${tier.iconUrl}`);
-                      setImgError(true);
-                    }}
+                    onError={() => setImgError(true)}
                   />
                 ) : (
                   <div className="text-2xl animate-fadeIn select-none">🌱</div>
@@ -204,7 +203,9 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
                 <AnimatedNumber value={displayedCredits} /> <span className="text-xs font-dm font-normal text-[#6B5744]">pts</span>
               </span>
               <p className="text-[11px] text-[#6B5744] mt-2 font-mono italic text-center">
-                ✨ Earn {pointsToNextLevel} more credits to trigger next eco tier checkpoint.
+                {nextTierData
+                  ? `✨ Earn ${pointsToNextLevel.toLocaleString()} more credits to reach ${nextTierData.rank}.`
+                  : "🌳 Top tier reached — the whole forest looks up to you."}
               </p>
             </div>
           </div>
@@ -213,8 +214,8 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
           <div className="t-glass-card rounded-2xl p-5 bg-[#EDE5D8]/20 border border-[rgba(194,112,61,0.12)] flex flex-col gap-4">
             <span className="font-syne font-bold text-xs uppercase text-[#2A2218] tracking-wider border-b border-[rgba(194,112,61,0.08)] pb-2">🎯 Ecological Performance Matrix</span>
             {[
-              { text: "Estimated CO₂ Footprint Saved", val: `${(currentPoints * 0.42).toFixed(1)} kg`, icon: "🌍" },
-              { text: "Aggregated Scrap Sorted", val: `${(currentPoints * 0.1).toFixed(0)} kg`, icon: "📦" }
+              { text: "CO₂ Footprint Saved", val: `${Number(profile.co2_saved ?? 0).toFixed(1)} kg`, icon: "🌍" },
+              { text: "Aggregated Scrap Sorted", val: `${Number(profile.kg_recycled ?? 0).toFixed(1)} kg`, icon: "📦" }
             ].map((stat, idx) => (
               <div key={idx} className="flex justify-between items-center bg-[#F4EFE3]/60 p-3 rounded-xl border border-[#D4C5B0]/30">
                 <span className="text-xs text-[#6B5744] font-medium flex items-center gap-1.5"><span>{stat.icon}</span>{stat.text}</span>
