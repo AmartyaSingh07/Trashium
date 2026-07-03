@@ -21,6 +21,18 @@ export default async function AdminPage() {
     redirect("/login");
   }
 
+  // Role gate — only admins may load this page (the fetches below include every
+  // user's email, which must never ship in the RSC payload to non-admins).
+  const { data: callerProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (callerProfile?.role !== "admin") {
+    redirect("/dashboard");
+  }
+
   // Fetch price estimates (no recursive RLS on this table) + marketplace admin data
   const [{ data: priceEstimates }, { data: marketItems }, { data: orders }, { data: users }, { data: badges }] =
     await Promise.all([
