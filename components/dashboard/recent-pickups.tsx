@@ -2,6 +2,15 @@
 
 import { useState } from "react";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { PickupRequest } from "@/lib/types";
 
 const getDisplayWeight = (weightNum: number | string) => {
@@ -35,6 +44,7 @@ export default function RecentPickups({ pickups, onCancel, onReschedule }: Recen
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTimeSlot, setRescheduleTimeSlot] = useState("");
+  const [confirmCancel, setConfirmCancel] = useState<PickupRequest | null>(null);
   const selectedPickup = pickups.find(p => p.id === rescheduleId);
 
   if (pickups.length === 0) {
@@ -119,8 +129,8 @@ export default function RecentPickups({ pickups, onCancel, onReschedule }: Recen
               {onCancel && (
                 <button
                   type="button"
-                  onClick={() => onCancel(pickup.id, pickup)}
-                  className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors cursor-pointer bg-transparent border-0 px-0 t-focus-ring"
+                  onClick={() => setConfirmCancel(pickup)}
+                  className="text-xs font-semibold text-destructive hover:text-destructive/80 transition-colors cursor-pointer bg-transparent border-0 px-0 t-focus-ring"
                 >
                   Cancel
                 </button>
@@ -131,6 +141,42 @@ export default function RecentPickups({ pickups, onCancel, onReschedule }: Recen
 
         </div>
       ))}
+
+      {/* Cancel confirmation dialog (mirrors the marketplace redeem-confirm pattern) */}
+      <Dialog open={!!confirmCancel} onOpenChange={(open) => !open && setConfirmCancel(null)}>
+        <DialogContent className="bg-linen border-sand/35 font-[family-name:var(--font-dm)]">
+          <DialogHeader>
+            <DialogTitle className="font-[family-name:var(--font-syne)] text-xl font-bold text-bark">
+              Cancel this pickup?
+            </DialogTitle>
+            <DialogDescription className="text-sm text-smoke">
+              {confirmCancel
+                ? `${confirmCancel.waste_type} waste — ${new Date(confirmCancel.scheduled_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}${confirmCancel.time_slot ? ` (${confirmCancel.time_slot})` : ""}. This can't be undone.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmCancel(null)}
+              className="border-sand/40 hover:bg-sand/10 text-bark font-semibold rounded-full px-5"
+            >
+              Keep pickup
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                if (confirmCancel && onCancel) onCancel(confirmCancel.id, confirmCancel);
+                setConfirmCancel(null);
+              }}
+              className="text-xs font-semibold px-6 py-2.5 rounded-full bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/20 transition-colors cursor-pointer t-focus-ring"
+            >
+              Cancel pickup
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reschedule slide-over modal container */}
       {rescheduleId && selectedPickup && onReschedule && (
