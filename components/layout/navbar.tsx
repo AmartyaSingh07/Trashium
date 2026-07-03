@@ -34,12 +34,24 @@ export default function Navbar() {
   // install button when the bar shrinks to its compact pill (avoids overlap
   // with the centered nav links).
   const [navCollapsed, setNavCollapsed] = useState(false);
+  // Below xl the expanded bar is too tight for full-text lang/install buttons
+  // next to five centered links — go icon-only there too.
+  const [narrowDesktop, setNarrowDesktop] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setNavCollapsed(window.scrollY > 100);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+
+    const mq = window.matchMedia("(max-width: 1279px)");
+    const onMq = () => setNarrowDesktop(mq.matches);
+    onMq();
+    mq.addEventListener("change", onMq);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      mq.removeEventListener("change", onMq);
+    };
   }, []);
 
   const supabase = useMemo(() => createClient(), []);
@@ -205,8 +217,8 @@ export default function Navbar() {
             {/* On the compact (scrolled) pill, collapse to an icon-only button so
                 it never overlaps the centered nav links. Mobile keeps its own
                 full-width button below. */}
-            <LanguageSwitcher iconOnly={navCollapsed} />
-            <PWAInstallButton iconOnly={navCollapsed} />
+            <LanguageSwitcher iconOnly={navCollapsed || narrowDesktop} />
+            <PWAInstallButton iconOnly={navCollapsed || narrowDesktop} />
             {user ? (
               <>
                 {verifying && !isAdmin && (
