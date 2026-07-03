@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Lock, Check, ArrowRight, Recycle, HelpCircle, Truck, Gift, TrendingUp, Trophy, Sprout } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -34,7 +34,8 @@ interface DashboardContentProps {
   dailyStatus: DailyStatus | null;
 }
 
-const OPERATIONAL_SECTORS = ['Rishra', 'Howrah', 'Shyamnagar', 'Tarakeswar', 'Hugli-Chinsura'];
+import { OPERATIONAL_SECTORS } from "@/lib/constants";
+
 const UNASSIGNED_SECTOR = 'Unassigned';
 
 // RPC returns the raw pickup location (e.g. "Rishra, Kolkata"); fold it onto an operational sector.
@@ -86,8 +87,9 @@ export default function DashboardContent({
   const quizzesCorrectToday = daily.quizzes_correct;
   const quizStrikesUsed = daily.quiz_strikes;
 
-  // DYNAMIC PICKUP STREAK DETECTION (Task 1)
+  // DYNAMIC PICKUP STREAK DETECTION (Task 1) — cancelled pickups don't count
   const hasPickupToday = pickups.some(p => {
+    if (p.status === "cancelled") return false;
     const pickupDate = new Date(p.scheduled_date).toDateString();
     const todayDate = new Date().toDateString();
     return pickupDate === todayDate;
@@ -187,7 +189,6 @@ export default function DashboardContent({
       toast.error("Please select an answer first");
       return;
     }
-    setQuizSubmitted(true);
 
     const correct = selectedAnswer === currentQuestion.correct;
     const { data, error } = await supabase.rpc("log_daily_action", {
@@ -202,11 +203,14 @@ export default function DashboardContent({
         : res?.reason === "strike_cap"
           ? "No chances left — 2/2 strikes committed today."
           : "Couldn't submit. Try again.";
+      // Leave the quiz unsubmitted so the user can try again (or close).
       setQuizFeedbackText(msg);
       toast.error(msg);
       return;
     }
 
+    // Only lock the answers once the server accepted the action.
+    setQuizSubmitted(true);
     applyActionResult(res);
     if (correct) {
       const done = res.caps?.quizzes_correct ?? 0;
@@ -302,8 +306,9 @@ export default function DashboardContent({
   const currentStreak = daily.current_streak;
   const longestStreak = daily.longest_streak;
 
-  // Define achievements dynamically
-  const achievements: UserAchievement[] = [
+  // Define achievements dynamically (memoized so the unlock effect only fires on real stat changes,
+  // not on every render — the previous inline array + new Date() re-created it each render)
+  const achievements: UserAchievement[] = useMemo(() => [
     {
       id: "first-sorting",
       name: "First Sorting Milestone",
@@ -327,25 +332,28 @@ export default function DashboardContent({
       name: "Green Champion",
       description: "Earn 100 Green Credits by participating in eco-activities.",
       trigger: "metric",
-      achievedAt: greenCredits >= 100 ? new Date().toISOString() : null,
+      achievedAt: greenCredits >= 100 ? profile.created_at : null,
       progress: Math.min(100, Math.round((greenCredits / 100) * 100)),
       rarity: 15,
     },
-  ];
+  ], [profile.pickups_completed, profile.kg_recycled, profile.created_at, greenCredits]);
 
-  // Watch for real-time changes to unlock achievements
+  // Watch for real-time changes to unlock achievements. Reads the current unlocked list
+  // (in deps — no stale closure); the second pass after the state update finds nothing new.
   useEffect(() => {
-    achievements.forEach((ach) => {
-      if (ach.achievedAt !== null && !previouslyUnlockedIds.includes(ach.id)) {
-        setUnlockedAchievement(ach);
-        setShowUnlockToast(true);
-        setPreviouslyUnlockedIds((prev) => [...prev, ach.id]);
-        toast.success(`Achievement Unlocked: ${ach.name}! 🎉`, {
-          description: ach.description || "You've earned a new milestone badge."
-        });
-      }
+    const newly = achievements.filter(
+      (ach) => ach.achievedAt !== null && !previouslyUnlockedIds.includes(ach.id)
+    );
+    if (newly.length === 0) return;
+    setUnlockedAchievement(newly[newly.length - 1]);
+    setShowUnlockToast(true);
+    newly.forEach((ach) => {
+      toast.success(`Achievement Unlocked: ${ach.name}! 🎉`, {
+        description: ach.description || "You've earned a new milestone badge."
+      });
     });
-  }, [profile.pickups_completed, profile.kg_recycled, greenCredits]);
+    setPreviouslyUnlockedIds((prev) => [...prev, ...newly.map((a) => a.id)]);
+  }, [achievements, previouslyUnlockedIds]);
 
   // ─── Badge slice for the dashboard (earned first, then most-progressed) ──
   // Full grid + detail lives on /profile. Same evaluateBadges() data source.
@@ -740,7 +748,7 @@ export default function DashboardContent({
                   if (isCorrect) {
                     btnStyle += "bg-[#8FA37E]/15 border-[#8FA37E] text-[#4A6741]";
                   } else if (isSelected) {
-                    btnStyle += "bg-red-50 border-red-300 text-red-800";
+                    btnStyle += "bg-destructive/10 border-destructive/40 text-destructive";
                   } else {
                     btnStyle += "bg-[#EDE5D8]/20 border-[#D4C5B0]/20 text-smoke/60 cursor-not-allowed";
                   }
@@ -773,7 +781,7 @@ export default function DashboardContent({
                     🎉 {quizFeedbackText}
                   </div>
                 ) : (
-                  <div className="p-4 rounded-xl bg-red-50 text-red-700 border border-red-200 text-center font-[family-name:var(--font-dm)] text-xs font-semibold leading-relaxed">
+                  <div className="p-4 rounded-xl bg-destructive/10 text-destructive border border-destructive/30 text-center font-[family-name:var(--font-dm)] text-xs font-semibold leading-relaxed">
                     ❌ {quizFeedbackText}
                   </div>
                 )}
