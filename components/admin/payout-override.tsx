@@ -231,7 +231,7 @@ export default function PayoutOverride({
                     </button>
                   )}
                   {overrideBelowMin && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-700 border border-red-300">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-destructive/10 text-destructive border border-destructive/30">
                       override drops margin below ₹{MIN_MARGIN_PER_KG.toFixed(2)}/kg
                     </span>
                   )}

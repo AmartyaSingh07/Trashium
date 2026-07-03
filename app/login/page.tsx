@@ -44,7 +44,7 @@ export default function LoginPage() {
   return (
     <>
     {loading && <KineticTypographyLoader label={t("loggingIn")} />}
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-linen/50 hero-pattern">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-linen/50">
       <div className="w-full max-w-3xl overflow-hidden rounded-2xl t-glass-card animate-scale-in">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.1fr]">
 

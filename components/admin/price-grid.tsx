@@ -112,7 +112,7 @@ function CategoryBlock({
                     : "no estimate"
                 }
                 className={`py-2 px-2 text-right font-mono ${
-                  risk ? "bg-red-50 text-red-700 font-bold" : "text-[#2A2218]"
+                  risk ? "bg-destructive/10 text-destructive font-bold" : "text-[#2A2218]"
                 }`}
               >
                 {e ? `₹${Number(e.price_per_kg).toFixed(2)}` : "—"}

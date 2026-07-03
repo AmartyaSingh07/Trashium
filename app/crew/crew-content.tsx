@@ -12,13 +12,13 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 const OptimizedRouteMap = dynamic(() => import("@/components/maps/OptimizedRouteMap"), { ssr: false });
 
 import { optimizeRoute } from "@/lib/route-optimizer";
-import { DEFAULT_TRUCK, SECTOR_DEPOTS } from "@/lib/constants";
+import { DEFAULT_TRUCK, SECTOR_DEPOTS, OPERATIONAL_SECTORS } from "@/lib/constants";
 import { estimateMultiQuote } from "@/lib/estimate";
 import type { EstimateResult, RiskLevel } from "@/lib/estimator-types";
 import { WASTE_CATALOG, toEntries, totalKg } from "@/lib/waste-items";
 
 const LEVEL_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/gamification-levels`;
-const CREW_SECTORS = ["Rishra", "Howrah", "Shyamnagar", "Tarakeswar", "Hugli-Chinsura"];
+const CREW_SECTORS: readonly string[] = OPERATIONAL_SECTORS;
 
 interface PickupRequest {
   id: string;
@@ -152,7 +152,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
   // Asynchronous status mutation handler pipeline
   const updatePickupStatus = async (id: string, nextStatus: "accepted" | "collected" | "completed" | "cancelled") => {
     if (isOffline) {
-      alert("Operational offline safe-lock active. Cached mutations commit immediately upon reconnection.");
+      toast.error("Operational offline safe-lock active. Cached mutations commit immediately upon reconnection.");
       return;
     }
 

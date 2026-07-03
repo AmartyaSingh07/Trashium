@@ -107,7 +107,6 @@ export default function AdminContent({
       return;
     }
 
-    console.log("Success! Data received:", data);
     const normalizedData = (data || []).map((p: any) => ({
       ...p,
       location: normalizeSectorName(p.location)

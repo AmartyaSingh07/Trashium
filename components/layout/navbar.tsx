@@ -91,8 +91,6 @@ export default function Navbar() {
     async function fetchRoleWithRetry() {
       if (cancelled) return;
 
-      console.log(`Navbar: fetching role for ${user!.email} (attempt 1)`);
-
       const { data, error } = await supabase
         .from("profiles")
         .select("role")
@@ -111,7 +109,6 @@ export default function Navbar() {
 
       // If we got a role back, use it
       if (data?.role) {
-        console.log("Navbar: role resolved →", data.role);
         if (!cancelled) {
           setRole(data.role);
           setVerifying(false);
@@ -120,12 +117,9 @@ export default function Navbar() {
       }
 
       // Profile row hasn't synced yet — wait 3s and try one more time
-      console.warn("Navbar: profile row not found, retrying in 3s...");
       await new Promise((r) => setTimeout(r, 3000));
 
       if (cancelled) return;
-
-      console.log(`Navbar: fetching role for ${user!.email} (attempt 2 — final)`);
 
       const { data: retryData, error: retryError } = await supabase
         .from("profiles")
@@ -134,7 +128,6 @@ export default function Navbar() {
         .maybeSingle();
 
       if (retryError || !retryData?.role) {
-        console.warn("Navbar: retry failed, defaulting to household");
         if (!cancelled) {
           setRole("household");
           setVerifying(false);
@@ -142,7 +135,6 @@ export default function Navbar() {
         return;
       }
 
-      console.log("Navbar: role resolved on retry →", retryData.role);
       if (!cancelled) {
         setRole(retryData.role);
         setVerifying(false);

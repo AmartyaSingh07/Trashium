@@ -13,7 +13,7 @@ export default function StatusBadge({ status }: { status: string }) {
 
   if (status === 'cancelled') {
     return (
-      <span className="inline-flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-200 font-medium text-xs rounded px-2.5 py-1">
+      <span className="inline-flex items-center gap-1.5 bg-destructive/10 text-destructive border border-destructive/20 font-medium text-xs rounded px-2.5 py-1">
         <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
         Cancelled
       </span>

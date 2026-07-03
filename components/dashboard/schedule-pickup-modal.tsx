@@ -28,10 +28,10 @@ import { AnimatedNumber } from "@/components/ui/animated-number";
 import { estimateMultiQuote } from "@/lib/estimate";
 import type { EstimateResult, RiskLevel } from "@/lib/estimator-types";
 import { WASTE_CATALOG, toEntries, totalKg, dominantBucket } from "@/lib/waste-items";
+import { OPERATIONAL_SECTORS } from "@/lib/constants";
 
 const LEVEL_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/gamification-levels`;
 
-const OPERATIONAL_SECTORS = ['Rishra', 'Howrah', 'Shyamnagar', 'Tarakeswar', 'Hugli-Chinsura'];
 const TRASHIUM_PICKUP_SLOTS = [
   "08:00 AM - 09:00 AM",
   "09:30 AM - 10:30 AM",
