@@ -98,9 +98,8 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
 
     channel.subscribe((status) => {
       isJoined = status === "SUBSCRIBED";
-      if (status === "SUBSCRIBED") {
-        setIsBroadcasting(true);
-      }
+      // Mirror the join state onto the banner so it clears on CLOSED/CHANNEL_ERROR/TIMED_OUT.
+      setIsBroadcasting(isJoined);
     });
 
     let watchId: number | undefined;

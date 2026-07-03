@@ -54,9 +54,8 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
         }
       })
       .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          setIsConnected(true);
-        }
+        // Mirror the join state so the banner clears on CLOSED/CHANNEL_ERROR/TIMED_OUT.
+        setIsConnected(status === "SUBSCRIBED");
       });
 
     return () => {
