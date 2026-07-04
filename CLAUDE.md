@@ -77,7 +77,8 @@ python publish_to_supabase.py  # upsert to Supabase price_estimates table
 │   ├── admin/
 │   │   └── marketplace-admin.tsx # Admin: catalog CRUD, order status, award manual badge
 │   ├── maps/
-│   │   └── CrewRouteMap.tsx    # Leaflet map for collector route view
+│   │   ├── OptimizedRouteMap.tsx # Leaflet map for collector route view (active; NN + 2-opt route)
+│   │   └── CrewRouteMap.tsx      # legacy zone map — not imported anywhere
 │   ├── landing/                # Landing page sections
 │   ├── layout/                 # Shared layout parts (navbar, etc.)
 │   └── materials/              # Material/waste-type helper components
@@ -171,7 +172,7 @@ Auto-created on signup. Tracks eco gamification state.
 - `current_streak` (integer, default 0) — current consecutive active days
 - `longest_streak` (integer, default 0) — all-time streak high
 - `last_activity_date` (date) — date of the last logged action
-- `streak_freezes` (integer, default 0) — available freeze/shield count
+- `streak_freezes` (integer, default 1) — available freeze/shield count
 
 ### `pickup_requests`
 - `status` lifecycle: `pending → accepted → collected → completed` (or `cancelled`)
@@ -218,7 +219,7 @@ ML-generated pricing table. Unique on `(waste_type, area)`. Readable by all.
   - `user_id` (UUID, FK → profiles)
   - `milestone_days` (integer) — 3, 7, 14, or 30 days
 - **Daily logging and status run through RPC functions** (SECURITY DEFINER, public search path):
-  - `log_daily_action(p_action TEXT)` — processes the daily action (`login`, `segregate`, `quiz_correct`, `quiz_wrong`), increments credits (multiplied by current streak multiplier), claims milestone chests, awards shields, and updates the user streak. Call via `supabase.rpc('log_daily_action', { p_action })`.
+  - `log_daily_action(p_action TEXT)` — processes the daily action (`login`, `segregate`, `quiz_correct`, `quiz_strike`), increments credits (multiplied by current streak multiplier), claims milestone chests, awards shields, and updates the user streak. Call via `supabase.rpc('log_daily_action', { p_action })`.
   - `get_daily_status()` — returns today's activity state, streak statistics, and freezes count. Call via `supabase.rpc('get_daily_status')`.
   - `get_household_leaderboard()` — retrieves public leaderboard rows filtered to households and ranked by Green Credits. Call via `supabase.rpc('get_household_leaderboard')`.
 
@@ -328,8 +329,9 @@ rather than arbitrary color values. Base palette uses warm earth tones (`linen`,
    20-tier source of truth) — never hardcode threshold values. The 5-tier `ECO_LEVELS`/`getEcoLevel`
    in `lib/types.ts` is `@deprecated`. Badge unlocks use `lib/badges.ts`.
 
-7. **Leaflet maps require `"use client"`.** The `CrewRouteMap` and tracking map components
-   must never be rendered on the server. Use dynamic imports with `ssr: false` if needed.
+7. **Leaflet maps require `"use client"`.** The `OptimizedRouteMap` (active crew route map) and
+   tracking map components must never be rendered on the server. Use dynamic imports with
+   `ssr: false` if needed.
 
 8. **Never commit `.env.local`.** It is gitignored. The required env vars are
    `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
