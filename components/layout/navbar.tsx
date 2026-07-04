@@ -92,6 +92,7 @@ export default function Navbar() {
     let cancelled = false;
 
     if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear role state when auth user (external system) signs out
       setRole(null);
       setVerifying(false);
       return;

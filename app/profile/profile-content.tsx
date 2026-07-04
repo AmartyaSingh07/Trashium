@@ -69,6 +69,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
   // animation (and snaps straight to the final value under reduced motion).
   const [displayedCredits, setDisplayedCredits] = useState(0);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate mount-time 0→balance roll-up for the NumberFlow animation
     setDisplayedCredits(initialProfile.green_credits);
   }, [initialProfile.green_credits]);
 
@@ -102,6 +103,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
 
   // Reset the image error state whenever the tier icon changes.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the <img> error fallback when the tier icon URL changes
     setImgError(false);
   }, [tier.iconUrl]);
 
@@ -129,9 +131,9 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
       // Neutral wording on purpose — persistence is pending verification (Tier 2 A3).
       toast.success("Profile changes submitted.");
       setIsEditMode(false);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Profile transaction mismatch:", err);
-      toast.error(`Sync error: ${err.message || "Unable to save parameters."}`);
+      toast.error(`Sync error: ${(err as Error).message || "Unable to save parameters."}`);
     } finally {
       setLoading(false);
     }

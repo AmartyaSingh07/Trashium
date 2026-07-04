@@ -40,6 +40,7 @@ export default function OptimizedRouteMap({ stops, depot }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear the stale polyline before the async OSRM refetch resolves
     setRoadLine(null);
     if (waypoints.length < 2) return;
     fetchOsrmRoute(waypoints.map(([lat, lng]) => ({ lat, lng }))).then((line) => {

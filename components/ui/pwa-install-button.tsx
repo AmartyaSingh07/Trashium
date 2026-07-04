@@ -75,6 +75,7 @@ export default function PWAInstallButton({
   const [help, setHelp] = useState<HelpKind>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only mount gate + install-env detection; must run once after hydration
     setMounted(true);
     setIos(isIos());
     setInstalled(isStandalone());

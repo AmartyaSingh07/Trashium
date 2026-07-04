@@ -38,6 +38,7 @@ export default function ImpactCounter({ stats }: ImpactCounterProps) {
 
   useEffect(() => {
     if (reduced) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reduced-motion: reveal immediately so numbers never sit stuck at 0
       setInView(true);
       return;
     }

@@ -26,9 +26,10 @@ interface PickupRequest {
   time_slot: string;
   operating_zone: string;
   weight: number;
-  status: "pending" | "accepted" | "collected" | "completed" | "processed" | "cancelled";
+  status: "pending" | "accepted" | "collected" | "completed" | "cancelled";
   material_type?: string;
   user_address?: string;
+  notes?: string | null;
   latitude?: number;
   longitude?: number;
 }
@@ -152,7 +153,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
   // Asynchronous status mutation handler pipeline
   const updatePickupStatus = async (id: string, nextStatus: "accepted" | "collected" | "completed" | "cancelled") => {
     if (isOffline) {
-      toast.error("Operational offline safe-lock active. Cached mutations commit immediately upon reconnection.");
+      toast.error("You're offline — changes are blocked until you reconnect.");
       return;
     }
 
@@ -176,9 +177,27 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
     }
   };
 
-  const handleReportIssue = () => {
+  const handleReportIssue = async () => {
     if (!issueText.trim() || !selectedPickup) return;
-    toast.success("Incident report dispatched successfully.");
+    if (isOffline) {
+      toast.error("You're offline — changes are blocked until you reconnect.");
+      return;
+    }
+    const stamp = new Date().toISOString();
+    const prefix = selectedPickup.notes ? selectedPickup.notes + "\n" : "";
+    const entry = `[INCIDENT ${stamp}] ${issueText.trim()}`;
+    const { error } = await supabase
+      .from("pickup_requests")
+      .update({ notes: prefix + entry })
+      .eq("id", selectedPickup.id);
+    if (error) {
+      toast.error("Could not save the incident report. Please try again.");
+      return;
+    }
+    // keep local state in sync
+    setPickups(prev => prev.map(p => p.id === selectedPickup.id ? { ...p, notes: prefix + entry } : p));
+    setSelectedPickup(prev => prev ? { ...prev, notes: prefix + entry } : prev);
+    toast.success("Incident report saved.");
     setIssueText("");
     setIsActionModalOpen(false);
   };
@@ -193,6 +212,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
   const completedCount = pickups.filter(p => p.status === "completed" || p.status === "collected").length;
 
   // Client-side optimized collection route (NN + 2-opt, capacity-aware).
+  const missingCoords = pickups.filter(p => p.latitude == null || p.longitude == null).length;
   const stops = pickups
     .filter(p => p.latitude != null && p.longitude != null)
     .map(p => ({
@@ -204,7 +224,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
       address: p.user_address,
       material_type: p.material_type,
     }));
-  const depot = SECTOR_DEPOTS[pickups[0]?.operating_zone] ?? undefined;
+  const depot = SECTOR_DEPOTS[profile.operating_zone ?? "Howrah"] ?? SECTOR_DEPOTS["Howrah"];
   const route = optimizeRoute(stops, DEFAULT_TRUCK, depot);
 
   return (
@@ -216,7 +236,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
         {/* Dynamic Network Status Banner */}
         {isOffline && (
           <div className="mb-6 w-full p-3 bg-amber-warm text-bark rounded-xl font-mono text-xs font-bold text-center animate-pulse shadow-sm">
-            ⚠️ OFFLINE LOGISTICS CACHE ACTIVE — Serving cached data from local device layers.
+            ⚠️ OFFLINE — actions are blocked until you reconnect.
           </div>
         )}
 
@@ -290,6 +310,11 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                 ⚠️ {route.deferred.length} pickup(s) deferred to next run (over truck capacity / stop limit).
               </p>
             )}
+            {missingCoords > 0 && (
+              <p className="mt-3 text-[11px] font-mono text-clay">
+                ⚠️ {missingCoords} stop(s) without map coordinates (not routed).
+              </p>
+            )}
           </div>
 
             {/* Pickup Requests Ledger Table */}
@@ -332,7 +357,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                             p.status === 'cancelled' ? 'bg-destructive/10 text-destructive border-destructive/30' :
                             'bg-amber-warm/15 text-clay border-amber-warm/30'
                           }`}>
-                            {p.status === 'completed' ? 'processed' : p.status}
+                            {p.status}
                           </span>
                         </td>
                         <td className="py-3.5 px-3 text-right">

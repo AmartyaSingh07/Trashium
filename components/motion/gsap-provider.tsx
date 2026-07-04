@@ -77,6 +77,7 @@ export default function GsapProvider({
     // Keep the flag live if the user toggles the OS setting mid-session.
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
     const onChange = () => setReduced(mql.matches);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed the reduced-motion flag from matchMedia (external system) before subscribing
     setReduced(mql.matches);
     mql.addEventListener("change", onChange);
 

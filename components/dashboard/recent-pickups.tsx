@@ -62,7 +62,7 @@ export default function RecentPickups({ pickups, onCancel, onReschedule }: Recen
   }
 
   const canShowActions = (status: string) => {
-    return status === "pending" || status === "accepted" || status === "confirmed";
+    return status === "pending" || status === "accepted";
   };
 
   return (

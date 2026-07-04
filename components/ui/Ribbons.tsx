@@ -58,6 +58,7 @@ const Ribbons = ({
     }
 
     const scene = new Transform();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- OGL runtime line objects accrete fields imperatively; no useful TS shape
     const lines: any[] = [];
 
     const vertex = `
@@ -137,6 +138,7 @@ const Ribbons = ({
         0
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- OGL line object gains polyline/points fields after construction
       const line: any = {
         spring,
         friction,
@@ -171,6 +173,7 @@ const Ribbons = ({
     resize();
 
     const mouse = new Vec3();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- shared mouse/touch handler; union narrowing not worth it here
     function updateMouse(e: any) {
       if (!container) return;
       let x, y;

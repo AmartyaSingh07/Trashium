@@ -100,6 +100,7 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
 
     // ETA using average speed of 22 km/h with a traffic congestion factor of 1.35
     const minutes = (distance / 22) * 60 * 1.35;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- ETA derived from realtime GPS pings (external system); recomputed per ping
     setEstimatedMinutes(Math.max(1, Math.round(minutes)));
   }, [interpolatedCoords, userHome]);
 

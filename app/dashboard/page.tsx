@@ -52,7 +52,7 @@ export default async function DashboardPage() {
   };
 
   // Fetch recent pickups (for the Recent Pickups panel) + badge data, in parallel.
-  const DONE_STATUSES = ["collected", "processed", "completed"];
+  const DONE_STATUSES = ["completed"];
   const [{ data: pickups }, { data: badgeCatalog }, { data: userBadges }, { data: allPickups }, { data: leaderboard }, { data: dailyStatus }] =
     await Promise.all([
       supabase

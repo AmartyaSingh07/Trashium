@@ -48,9 +48,10 @@ create table if not exists public.pickup_requests (
   address           text,
   waste_type        text,
   estimated_weight  numeric,
-  status            text not null default 'pending',
-  -- NOTE (A5): live statuses in use are pending|accepted|collected|completed|cancelled.
-  -- No CHECK constraint yet — add one at deploy and align lib/types.ts + admin CSV.
+  status            text not null default 'pending'
+                      -- A5: canonical status vocabulary, enforced.
+                      constraint pickup_requests_status_check
+                      check (status in ('pending','accepted','collected','completed','cancelled')),
   scheduled_date    date,
   notes             text,
   estimated_price   numeric,
@@ -62,7 +63,8 @@ create table if not exists public.pickup_requests (
   payout_override   numeric,
   override_by       uuid references public.profiles(id),
   override_at       timestamptz,
-  waste_items       text[]
+  waste_items       text[],
+  credited_at       timestamptz  -- A4: earn-loop idempotency marker (set once, on completion)
 );
 
 create table if not exists public.global_impact (
@@ -560,6 +562,50 @@ create trigger on_auth_user_created
 create trigger tr_set_pickup_updated_at
   before update on public.pickup_requests
   for each row execute function public.update_modified_timestamp_column();
+
+-- ── A4: EARN LOOP ──────────────────────────────────────────────────────────
+-- On a pickup transitioning INTO 'completed', credit the household and roll up
+-- global_impact, exactly once (guarded by credited_at). Server-side only
+-- (CLAUDE.md rule 11). Reads the already-computed payout — never recomputes price
+-- (ML pricing is frozen). CO2_FACTOR = 1.05 matches the seeded co2_saved/kg ratio.
+CREATE OR REPLACE FUNCTION public.apply_pickup_completion()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_weight  numeric := COALESCE(NEW.estimated_weight, 0);
+  v_payout  numeric := COALESCE(NEW.payout_override, NEW.estimated_price, 0);
+  v_credits numeric := round(v_payout);   -- 1 credit per INR of authoritative payout
+  v_co2     numeric := v_weight * 1.05;   -- CO2_FACTOR
+BEGIN
+  IF NEW.status = 'completed'
+     AND (OLD.status IS DISTINCT FROM 'completed')
+     AND NEW.credited_at IS NULL THEN
+
+    UPDATE public.profiles
+      SET green_credits     = green_credits + v_credits,
+          kg_recycled       = kg_recycled + v_weight,
+          co2_saved         = co2_saved + v_co2,
+          pickups_completed = pickups_completed + 1
+      WHERE id = NEW.user_id;
+
+    UPDATE public.global_impact
+      SET total_kg_recycled = total_kg_recycled + v_weight,
+          total_co2_saved   = total_co2_saved + v_co2
+      WHERE id = 1;
+
+    NEW.credited_at := now();
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+-- BEFORE UPDATE OF status so NEW.credited_at persists in the same row write.
+create trigger tr_apply_pickup_completion
+  before update of status on public.pickup_requests
+  for each row execute function public.apply_pickup_completion();
 
 -- ── ROW LEVEL SECURITY (CURRENT DEV STATE — see DEPLOYMENT_SECURITY_CHECKLIST.md for production) ──
 -- Dev posture: RLS mostly OFF on purpose. Only the following are enabled live right now.

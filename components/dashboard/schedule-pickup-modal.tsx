@@ -28,7 +28,7 @@ import { AnimatedNumber } from "@/components/ui/animated-number";
 import { estimateMultiQuote } from "@/lib/estimate";
 import type { EstimateResult, RiskLevel } from "@/lib/estimator-types";
 import { WASTE_CATALOG, toEntries, totalKg, dominantBucket } from "@/lib/waste-items";
-import { OPERATIONAL_SECTORS } from "@/lib/constants";
+import { OPERATIONAL_SECTORS, SECTOR_DEPOTS } from "@/lib/constants";
 
 const LEVEL_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/gamification-levels`;
 
@@ -147,6 +147,9 @@ export default function SchedulePickupModal({
       });
       const estimatedPrice: number | null = q.userPayoutTotal;
 
+      // Sector-centre coordinates so the crew route map can plot the stop.
+      const depot = SECTOR_DEPOTS[form.location];
+
       const { error } = await supabase.from("pickup_requests").insert({
         user_id: currentUser.id,
         full_name: userName,
@@ -154,6 +157,8 @@ export default function SchedulePickupModal({
         waste_items: form.waste_items,
         estimated_weight: weight,
         location: form.location,
+        latitude: depot?.lat ?? null,
+        longitude: depot?.lng ?? null,
         address: form.address,
         scheduled_date: form.scheduled_date,
         time_slot: selectedTimeSlot,

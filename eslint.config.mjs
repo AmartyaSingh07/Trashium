@@ -15,6 +15,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // trashium-app/ is a separate nested project with its own eslint config — don't lint it from root.
     "trashium-app/**",
+    // Vendored agent/skill tooling — not app source; don't lint (removes ~132 files of noise).
+    ".claude/**",
+    ".agents/**",
   ]),
 ]);
 

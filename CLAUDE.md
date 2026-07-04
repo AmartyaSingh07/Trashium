@@ -174,7 +174,7 @@ Auto-created on signup. Tracks eco gamification state.
 - `streak_freezes` (integer, default 0) — available freeze/shield count
 
 ### `pickup_requests`
-- `status` lifecycle: `pending → confirmed → collected → processed` (or `cancelled`)
+- `status` lifecycle: `pending → accepted → collected → completed` (or `cancelled`)
 - `waste_type` — one of 7 types (see `WasteType` in `lib/types.ts`)
 - `location` — one of the operational sectors (see `OPERATIONAL_SECTORS`)
 - `estimated_price` — computed from `lib/pricing.ts` at scheduling time
@@ -239,7 +239,7 @@ ML-generated pricing table. Unique on `(waste_type, area)`. Readable by all.
 ```typescript
 type UserRole = "household" | "collector" | "admin";
 type WasteType = "Plastic" | "Paper" | "Glass" | "Metal" | "E-Waste" | "Organic" | "Mixed";
-type PickupStatus = "pending" | "confirmed" | "collected" | "processed" | "cancelled";
+type PickupStatus = "pending" | "accepted" | "collected" | "completed" | "cancelled";
 type EcoLevelName = "Seedling" | "Sapling" | "Young Tree" | "Urban Forest" | "Earth Guardian";
 
 // Operational sectors (West Bengal)

@@ -44,6 +44,7 @@ export default function LanguageSwitcher({
     if (code === locale) return;
     // Cookie (client) → instant; mirror to profile (server action) + refresh so
     // every server component re-renders with the new locale. No URL change.
+    // eslint-disable-next-line react-hooks/immutability -- intentional external write: cookie set inside an event handler, not during render
     document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
     startTransition(async () => {
       await setLanguage(code);

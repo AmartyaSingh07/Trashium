@@ -22,19 +22,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import {
   ClipboardList,
   Clock,
   CheckCircle,
-  MoreHorizontal,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import MarketplaceAdmin from "@/components/admin/marketplace-admin";
@@ -50,6 +43,13 @@ import type {
   MarketplaceItem,
   RedemptionOrder,
 } from "@/lib/types";
+
+const PICKUP_STATUSES: PickupStatus[] = ["pending", "accepted", "collected", "completed", "cancelled"];
+
+// Row shape from the PostgREST embed: '*, profiles!pickup_requests_user_id_fkey(full_name, email)'
+type AdminPickup = PickupRequest & {
+  profiles?: { full_name?: string | null; email?: string | null } | null;
+};
 
 type AdminOrder = RedemptionOrder & {
   profiles?: { full_name: string | null; email: string | null } | null;
@@ -88,7 +88,7 @@ export default function AdminContent({
   const supabase = createClient();
 
   const [pickups, setPickups] = useState<PickupRequest[]>([]);
-  const setRequests = (data: any) => setPickups(data);
+  const setRequests = (data: PickupRequest[]) => setPickups(data);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -107,7 +107,7 @@ export default function AdminContent({
       return;
     }
 
-    const normalizedData = (data || []).map((p: any) => ({
+    const normalizedData = (data || []).map((p: AdminPickup) => ({
       ...p,
       location: normalizeSectorName(p.location)
     }));
@@ -158,7 +158,7 @@ export default function AdminContent({
 
   // Evaluates crew arrival metrics against user-selected time slots
   const isTimeDiscrepancy = (pickup: PickupRequest) => {
-    if (!pickup.time_slot || (pickup.status !== "collected" && pickup.status !== "processed")) {
+    if (!pickup.time_slot || (pickup.status !== "collected" && pickup.status !== "completed")) {
       return false;
     }
     try {
@@ -194,7 +194,7 @@ export default function AdminContent({
     const rows = sectors.map(sector => {
       const sectorPickups = pickups.filter(p => p.location === sector);
       const total = sectorPickups.length;
-      const completed = sectorPickups.filter(p => p.status === "processed").length;
+      const completed = sectorPickups.filter(p => p.status === "completed").length;
       const weight = sectorPickups.reduce((sum, p) => sum + Number(p.estimated_weight || 0), 0);
       const discrepancies = sectorPickups.filter(isTimeDiscrepancy).length;
       return `${sector},${total},${completed},${weight},${discrepancies}`;
@@ -225,8 +225,8 @@ export default function AdminContent({
   ).length;
 
   // --- Real aggregates (replace former hardcoded analytics; no fabricated numbers) ---
-  const isDone = (s: string) => s === "completed" || s === "processed";
-  const isActive = (s: string) => s === "accepted" || s === "confirmed" || s === "collected";
+  const isDone = (s: string) => s === "completed";
+  const isActive = (s: string) => s === "accepted" || s === "collected";
   const authoritativePayout = (p: PickupRequest) => Number(p.payout_override ?? p.estimated_price ?? 0);
 
   const totalPayoutCommitted = pickups.reduce((sum, p) => sum + authoritativePayout(p), 0);
@@ -257,7 +257,7 @@ export default function AdminContent({
   // Filter pickups
   const filtered = pickups.filter((p) => {
     const matchesStatus = statusFilter === "all" || p.status === statusFilter;
-    const name = (p as any).profiles?.full_name || p.full_name || "";
+    const name = (p as AdminPickup).profiles?.full_name || p.full_name || "";
     const matchesSearch =
       !searchTerm ||
       name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -267,16 +267,7 @@ export default function AdminContent({
   });
 
   const handleStatusUpdate = async (selectedPickupId: string, newStatus: PickupStatus) => {
-    let mappedStatusValue = newStatus as string;
-    if (newStatus === "confirmed") {
-      mappedStatusValue = "accepted";
-    } else if (newStatus === "collected") {
-      mappedStatusValue = "collected";
-    } else if (newStatus === "processed") {
-      mappedStatusValue = "completed";
-    } else if (newStatus === "cancelled") {
-      mappedStatusValue = "cancelled";
-    }
+    const mappedStatusValue: string = newStatus; // canonical values already
 
     let error;
     if (mappedStatusValue === "cancelled") {
@@ -308,7 +299,7 @@ export default function AdminContent({
       if (mappedStatusValue === "cancelled") {
         setPickups(prev => prev.map(p => p.id === selectedPickupId ? { ...p, status: 'cancelled' } : p));
       } else {
-        setPickups(prev => prev.map(p => p.id === selectedPickupId ? { ...p, status: mappedStatusValue as any } : p));
+        setPickups(prev => prev.map(p => p.id === selectedPickupId ? { ...p, status: mappedStatusValue as PickupStatus } : p));
       }
 
       router.refresh();
@@ -518,13 +509,13 @@ export default function AdminContent({
                             {p.time_slot || "08:00 AM - 09:00 AM"}
                           </td>
                           <td className="py-2 px-3 font-mono text-[11px]">
-                            {p.status === "collected" || p.status === "processed"
+                            {p.status === "collected" || p.status === "completed"
                               ? new Date(p.updated_at).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })
                               : "Awaiting Crew..."}
                           </td>
                           <td className="py-2 px-3">
                             <span className="uppercase font-mono font-bold text-[10px]">
-                              {p.status === "processed" ? "completed" : p.status}
+                              {p.status}
                             </span>
                           </td>
                         </tr>
@@ -536,6 +527,106 @@ export default function AdminContent({
             </div>
           </div>
         </Reveal>
+      )}
+
+      {/* Pickup management: search/status filters + per-row status mutation */}
+      {userRole === "admin" && (
+        <Card className="mt-8 w-full max-w-7xl mx-auto">
+          <CardHeader>
+            <CardTitle className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218]">
+              Pickup Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <Input
+                placeholder="Search household, sector, or waste type…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="sm:max-w-xs"
+              />
+              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["all", ...PICKUP_STATUSES].map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="rounded-xl border border-sand/25 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="text-[10px] font-bold uppercase tracking-wider text-[#6B5744]">
+                    <TableHead>Household</TableHead>
+                    <TableHead>Sector</TableHead>
+                    <TableHead>Waste</TableHead>
+                    <TableHead>Weight</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <TableRow key={`skeleton-${i}`}>
+                        {Array.from({ length: 6 }).map((__, j) => (
+                          <TableCell key={j}>
+                            <div className="h-4 rounded bg-sand/40 motion-safe:animate-pulse" />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : filtered.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8 text-center text-xs text-smoke italic">
+                        No pickups match the current filters.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filtered.map((p) => (
+                      <TableRow key={p.id} className="text-xs text-[#6B5744]">
+                        <TableCell className="font-semibold">
+                          {(p as AdminPickup).profiles?.full_name ?? p.full_name ?? "—"}
+                        </TableCell>
+                        <TableCell>{p.location}</TableCell>
+                        <TableCell>{p.waste_type}</TableCell>
+                        <TableCell className="font-mono">{Number(p.estimated_weight || 0)} kg</TableCell>
+                        <TableCell>
+                          <StatusBadge status={p.status} />
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={p.status}
+                            onValueChange={(v: string | null) => {
+                              if (v && v !== p.status) handleStatusUpdate(p.id, v as PickupStatus);
+                            }}
+                          >
+                            <SelectTrigger size="sm" className="w-[130px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PICKUP_STATUSES.map((s) => (
+                                <SelectItem key={s} value={s}>
+                                  {s}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Payout estimator + override (left) and price-grid monitor (right) */}

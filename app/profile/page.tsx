@@ -55,7 +55,7 @@ export default async function ProfilePage() {
   };
 
   // ─── Badges: catalog + manual grants + signals derived from completed pickups ───
-  const DONE_STATUSES = ["collected", "processed", "completed"];
+  const DONE_STATUSES = ["completed"];
   const [{ data: badgeCatalog }, { data: userBadges }, { data: badgePickups }] =
     await Promise.all([
       supabase.from("badges").select("*").order("sort_order", { ascending: true }),

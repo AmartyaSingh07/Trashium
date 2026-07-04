@@ -28,11 +28,11 @@ export default function StatusBadge({ status }: { status: string }) {
     completed: { className: 'status-completed', label: 'Completed' },
   };
 
-  // Safe cast status with fallback to 'pending' if it's confirmed, collected, processed, etc.
+  // Fallback to 'pending' for any unknown status value.
   let mappedStatus: PickupStatus = 'pending';
-  if (status === 'accepted' || status === 'confirmed') {
+  if (status === 'accepted') {
     mappedStatus = 'accepted';
-  } else if (status === 'completed' || status === 'processed') {
+  } else if (status === 'completed') {
     mappedStatus = 'completed';
   }
 

@@ -19,9 +19,9 @@ export type WasteType =
 
 export type PickupStatus =
   | "pending"
-  | "confirmed"
+  | "accepted"
   | "collected"
-  | "processed"
+  | "completed"
   | "cancelled";
 
 export type AreaType = "Urban" | "Suburban" | "Rural" | "Rishra" | "Howrah" | "Shyamnagar" | "Tarakeswar" | "Hugli-Chinsura";

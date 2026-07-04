@@ -29,6 +29,7 @@ export default function SiteLoadGate() {
       window.sessionStorage?.getItem(SESSION_KEY) === '1';
 
     if (alreadyShown) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sessionStorage gate decided once on mount (client-only external read)
       setShow(false);
       return;
     }

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import CrewDashboardContent from "./crew-content";
 import { resolveHubSectors } from "@/lib/constants";
+import type { PickupRequest, PickupStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -35,15 +36,16 @@ export default async function CrewDashboardPage() {
     .order("scheduled_date", { ascending: true });
 
   // Map database properties to component schema
-  const mappedPickups = (pickups || []).map((p: any) => ({
+  const mappedPickups = (pickups || []).map((p: PickupRequest & { latitude?: number | null; longitude?: number | null }) => ({
     id: p.id,
     scheduled_date: p.scheduled_date,
     time_slot: p.time_slot || "08:00 AM - 09:00 AM",
     operating_zone: p.location,
     weight: Number(p.estimated_weight || 0),
-    status: p.status === "processed" ? "completed" : (p.status as any),
+    status: p.status as PickupStatus,
     material_type: p.waste_type,
     user_address: p.address,
+    notes: p.notes ?? null,
     latitude: p.latitude ?? undefined,
     longitude: p.longitude ?? undefined
   }));
