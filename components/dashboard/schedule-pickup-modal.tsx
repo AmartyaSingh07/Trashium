@@ -233,7 +233,7 @@ export default function SchedulePickupModal({
         Schedule a Pickup
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-md bg-linen border-sand/35 font-[family-name:var(--font-dm)]">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto bg-linen border-sand/35 font-[family-name:var(--font-dm)]">
         <DialogHeader>
           <DialogTitle className="font-[family-name:var(--font-syne)] text-xl font-bold text-bark">Schedule a Pickup</DialogTitle>
           <DialogDescription className="text-sm text-smoke font-[family-name:var(--font-dm)]">

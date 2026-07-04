@@ -308,24 +308,7 @@ export default function AdminContent({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10 relative z-10 font-[family-name:var(--font-dm)]">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[rgba(194,112,61,0.15)] pb-4 mb-6 w-full">
-        <div className="flex items-center gap-3 select-none">
-          <div className="w-10 h-10 rounded-xl bg-[#EDE5D8]/80 border border-[rgba(194,112,61,0.18)] p-2 flex items-center justify-center shadow-sm">
-            <img 
-              src="https://fqbjjcbrxrokvdwkydze.supabase.co/storage/v1/object/public/gamification-levels/logo.png" 
-              className="w-full h-full object-contain" 
-              alt="Trashium Admin Logo" 
-            />
-          </div>
-          <div>
-            <span className="text-[10px] font-mono tracking-widest uppercase text-[#8FA37E] font-bold block leading-none">Ecosystem Console</span>
-            <span className="font-syne font-bold text-xl text-[#2A2218] tracking-tight mt-0.5 block">Trashium Terminal</span>
-          </div>
-        </div>
-      </div>
-
+    <div className="max-w-7xl mx-auto px-6 pt-24 pb-10 relative z-10 font-[family-name:var(--font-dm)]">
       {/* Stats Bar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 w-full">
         <div className="t-glass-card p-6 transition-all duration-300 hover:shadow-[var(--t-shadow-md)]">

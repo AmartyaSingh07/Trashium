@@ -121,7 +121,7 @@ export default function MarketplaceContent({
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-6 py-10 relative z-10 font-[family-name:var(--font-dm)]">
+    <div className="mx-auto max-w-7xl px-6 pt-24 pb-10 relative z-10 font-[family-name:var(--font-dm)]">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6">
         <div>

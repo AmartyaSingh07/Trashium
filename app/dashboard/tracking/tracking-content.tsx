@@ -233,9 +233,9 @@ export default function TrackingContent({ userProfile }: TrackingContentProps) {
                   their route in the <span className="font-bold text-[#C2703D]">{userProfile.operating_zone}</span> sector.
                 </p>
                 <div className="mt-4 flex items-center justify-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C2703D] animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C2703D] animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C2703D] animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C2703D] motion-safe:animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C2703D] motion-safe:animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C2703D] motion-safe:animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
               </div>
             </div>

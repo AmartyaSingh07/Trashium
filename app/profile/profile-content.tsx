@@ -140,7 +140,7 @@ export default function ProfileContent({ profile, user, badges }: ProfileContent
   };
 
   return (
-    <div className="min-h-screen bg-[#F4EFE3] text-[#2A2218] font-dm p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[#F4EFE3] text-[#2A2218] font-dm p-4 sm:p-6 lg:p-8 pt-24 lg:pt-28 relative overflow-hidden">
       
       {/* Background decoration — botanical line art (same asset as the auth pages) */}
       <div className="absolute inset-0 pointer-events-none select-none flex items-center justify-center" aria-hidden>

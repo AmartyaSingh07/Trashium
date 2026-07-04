@@ -46,7 +46,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [issueText, setIssueText] = useState("");
   const [isOffline, setIsOffline] = useState(false);
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [, setIsBroadcasting] = useState(false);
   const trackingChannelRef = useRef<RealtimeChannel | null>(null);
   
   // On-Site scrap calculator — routes through the shared estimateQuote() contract (no hardcoded rates).
@@ -231,23 +231,12 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
     <div className="flex flex-col min-h-screen bg-[#F4EFE3]">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-10">
         
         {/* Dynamic Network Status Banner */}
         {isOffline && (
           <div className="mb-6 w-full p-3 bg-amber-warm text-bark rounded-xl font-mono text-xs font-bold text-center animate-pulse shadow-sm">
             ⚠️ OFFLINE — actions are blocked until you reconnect.
-          </div>
-        )}
-
-        {/* Live Broadcast Telemetry Status Indicator */}
-        {isBroadcasting && !isOffline && (
-          <div className="mb-6 w-full p-2.5 bg-[#8FA37E]/15 border border-[#8FA37E]/30 text-[#4A6741] rounded-xl font-mono text-[11px] font-bold text-center flex items-center justify-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4A6741] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#4A6741]"></span>
-            </span>
-            LIVE TELEMETRY STREAM ACTIVE — Broadcasting GPS to customers in {profile.operating_zone || "all zones"}
           </div>
         )}
 
