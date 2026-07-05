@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
+import { signupSchema } from "@/lib/schemas";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,24 +30,20 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (form.password !== form.confirmPassword) {
-      toast.error(t("passwordsNoMatch"));
-      return;
-    }
-
-    if (form.password.length < 6) {
-      toast.error(t("passwordTooShort"));
+    const parsed = signupSchema.safeParse(form);
+    if (!parsed.success) {
+      toast.error(t(parsed.error.issues[0].message));
       return;
     }
 
     setLoading(true);
 
     const { error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
+      email: parsed.data.email,
+      password: parsed.data.password,
       options: {
         data: {
-          full_name: form.full_name,
+          full_name: parsed.data.full_name,
         },
       },
     });

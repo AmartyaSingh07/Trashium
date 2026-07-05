@@ -130,6 +130,9 @@
     "welcomeBackToast": "Welcome back!",
     "passwordsNoMatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 6 characters",
+    "invalidEmail": "Enter a valid email address",
+    "nameRequired": "Please enter your name",
+    "passwordRequired": "Please enter your password",
     "accountCreatedToast": "Account created! Welcome to Trashium 🌱",
     "accountCreatedDesc": "You can now start scheduling pickups."
   },

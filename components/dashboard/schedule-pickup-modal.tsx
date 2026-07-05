@@ -29,6 +29,7 @@ import { estimateMultiQuote } from "@/lib/estimate";
 import type { EstimateResult, RiskLevel } from "@/lib/estimator-types";
 import { WASTE_CATALOG, toEntries, totalKg, dominantBucket } from "@/lib/waste-items";
 import { OPERATIONAL_SECTORS, SECTOR_DEPOTS } from "@/lib/constants";
+import { schedulePickupSchema } from "@/lib/schemas";
 
 const LEVEL_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/gamification-levels`;
 
@@ -125,8 +126,18 @@ export default function SchedulePickupModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const weight = totalKg(form.waste_items, form.item_kg);
-    if (!form.waste_items.length || weight <= 0 || !form.location || !form.scheduled_date || !selectedTimeSlot) {
-      toast.error("Add a weight for each material and fill in all required fields");
+    const validation = schedulePickupSchema.safeParse({
+      waste_items: form.waste_items,
+      weight,
+      location: form.location,
+      scheduled_date: form.scheduled_date,
+      time_slot: selectedTimeSlot,
+      address: form.address,
+      notes: form.notes,
+      pincode: form.pincode,
+    });
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
       return;
     }
 

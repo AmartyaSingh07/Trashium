@@ -130,6 +130,9 @@
     "welcomeBackToast": "वापस आपका स्वागत है!",
     "passwordsNoMatch": "पासवर्ड मेल नहीं खाते",
     "passwordTooShort": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
+    "invalidEmail": "एक मान्य ईमेल पता दर्ज करें",
+    "nameRequired": "कृपया अपना नाम दर्ज करें",
+    "passwordRequired": "कृपया अपना पासवर्ड दर्ज करें",
     "accountCreatedToast": "खाता बन गया! Trashium में आपका स्वागत है 🌱",
     "accountCreatedDesc": "अब आप पिकअप बुक करना शुरू कर सकते हैं।"
   },

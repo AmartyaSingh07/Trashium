@@ -130,6 +130,9 @@
     "welcomeBackToast": "আবার স্বাগতম!",
     "passwordsNoMatch": "পাসওয়ার্ড মিলছে না",
     "passwordTooShort": "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে",
+    "invalidEmail": "একটি বৈধ ইমেল ঠিকানা লিখুন",
+    "nameRequired": "অনুগ্রহ করে আপনার নাম লিখুন",
+    "passwordRequired": "অনুগ্রহ করে আপনার পাসওয়ার্ড লিখুন",
     "accountCreatedToast": "অ্যাকাউন্ট তৈরি হয়েছে! Trashium-এ স্বাগতম 🌱",
     "accountCreatedDesc": "এখন আপনি পিকআপ বুক করা শুরু করতে পারেন।"
   },
