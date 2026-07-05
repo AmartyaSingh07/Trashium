@@ -64,8 +64,30 @@ create table if not exists public.pickup_requests (
   override_by       uuid references public.profiles(id),
   override_at       timestamptz,
   waste_items       text[],
-  credited_at       timestamptz  -- A4: earn-loop idempotency marker (set once, on completion)
+  credited_at       timestamptz,  -- A4: earn-loop idempotency marker (set once, on completion)
+  -- Geo-tagged collection proof (captured by crew at the `collected` transition).
+  proof_photo_path  text,         -- object path within the public `pickup-proofs` bucket
+  proof_latitude    numeric,      -- crew capture coords (browser GPS fix)
+  proof_longitude   numeric,
+  proof_captured_at timestamptz,
+  proof_distance_m  numeric,      -- haversine distance to the household's booked coords
+  proof_verified    boolean       -- true when within PROOF_MATCH_RADIUS_M (lib/constants.ts)
 );
+
+-- Public bucket for geo-tagged crew collection photos. Public read keeps the
+-- demo simple (admin views via public URL); authenticated crew may insert.
+-- TODO(RLS, later): tighten to private + signed URLs at deploy — these photos
+-- reveal household locations. See DEPLOYMENT_SECURITY_CHECKLIST.md.
+insert into storage.buckets (id, name, public)
+  values ('pickup-proofs', 'pickup-proofs', true)
+  on conflict (id) do nothing;
+
+drop policy if exists trashium_proof_insert_policy on storage.objects;
+create policy trashium_proof_insert_policy on storage.objects
+  for insert to authenticated with check (bucket_id = 'pickup-proofs');
+drop policy if exists trashium_proof_select_policy on storage.objects;
+create policy trashium_proof_select_policy on storage.objects
+  for select to public using (bucket_id = 'pickup-proofs');
 
 create table if not exists public.global_impact (
   id                 integer primary key default 1,

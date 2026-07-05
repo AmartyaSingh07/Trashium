@@ -153,7 +153,7 @@ export const KineticTypographyLoader: React.FC<KineticTypographyLoaderProps> = (
       <h1
         ref={loaderTextRef}
         aria-hidden="true"
-        className="loader-text font-syne text-4xl font-extrabold whitespace-nowrap sm:text-6xl lg:text-8xl"
+        className="loader-text font-syne text-3xl font-extrabold whitespace-nowrap px-4 sm:text-5xl lg:text-7xl"
       />
       <span className="sr-only">{label}</span>
     </div>

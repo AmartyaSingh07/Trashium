@@ -59,6 +59,13 @@ export interface PickupRequest {
   payout_override?: number | null; // admin-set final payout; authoritative = payout_override ?? estimated_price
   override_by?: string | null;
   override_at?: string | null;
+  // Geo-tagged collection proof (captured by crew at the `collected` transition).
+  proof_photo_path?: string | null; // object path within the `pickup-proofs` bucket
+  proof_latitude?: number | null; // crew capture coords
+  proof_longitude?: number | null;
+  proof_captured_at?: string | null;
+  proof_distance_m?: number | null; // haversine distance to the household's booked coords
+  proof_verified?: boolean | null; // true when within PROOF_MATCH_RADIUS_M
   created_at: string;
   updated_at: string;
 }

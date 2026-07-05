@@ -194,6 +194,12 @@ ALTER FUNCTION public.update_modified_timestamp_column()   SET search_path = 'pu
 - [ ] **A5 — status vocabulary:** add a CHECK constraint on `pickup_requests.status`
   (`pending|accepted|collected|completed|cancelled`) and align `lib/types.ts` + the admin CSV/discrepancy code.
 - [ ] Keep `supabase_schema.sql` in sync (it was regenerated from live on 2026-07-03).
+- [ ] **`pickup-proofs` bucket:** currently **public** for demo simplicity (admin views geo-tagged
+  collection photos via public URL). These photos reveal **household locations**, so before production:
+  flip the bucket to **private**, drop the public `trashium_proof_select_policy`, and serve admin views
+  via short-lived **signed URLs** (`createSignedUrl`) minted server-side. Keep the authenticated-only
+  insert policy (`trashium_proof_insert_policy`) but scope it tighter (e.g. crew role, or path-prefixed to
+  the crew's own pickups) if RLS is enabled on `pickup_requests` writes.
 
 ---
 

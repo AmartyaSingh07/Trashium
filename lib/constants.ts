@@ -42,6 +42,18 @@ export function resolveHubSectors(zone: string | null | undefined): readonly str
   return [zone];
 }
 
+// -- Pickup proof (geo-tagged collection photo) -----------------------------
+
+/**
+ * Max distance (metres) between a crew's captured photo location and the
+ * household's booked coordinates for the proof to count as "verified at
+ * location". Beyond this, the proof is stored but flagged for admin review.
+ */
+export const PROOF_MATCH_RADIUS_M = 150;
+
+/** Public Storage bucket holding geo-tagged crew collection photos. */
+export const PICKUP_PROOFS_BUCKET = "pickup-proofs";
+
 // -- Phase 2: route optimization --------------------------------------------
 
 /** Default truck constraints used by the route optimizer (demo config). */

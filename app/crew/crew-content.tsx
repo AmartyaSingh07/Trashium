@@ -6,13 +6,15 @@ import { createClient } from "@/lib/supabase/client";
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Reveal } from "@/components/motion";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 const OptimizedRouteMap = dynamic(() => import("@/components/maps/OptimizedRouteMap"), { ssr: false });
 
 import { optimizeRoute } from "@/lib/route-optimizer";
-import { DEFAULT_TRUCK, SECTOR_DEPOTS, OPERATIONAL_SECTORS } from "@/lib/constants";
+import { DEFAULT_TRUCK, SECTOR_DEPOTS, OPERATIONAL_SECTORS, PROOF_MATCH_RADIUS_M, PICKUP_PROOFS_BUCKET } from "@/lib/constants";
+import { haversineMeters } from "@/lib/geo";
 import { estimateMultiQuote } from "@/lib/estimate";
 import type { EstimateResult, RiskLevel } from "@/lib/estimator-types";
 import { WASTE_CATALOG, toEntries, totalKg } from "@/lib/waste-items";
@@ -41,6 +43,7 @@ interface CrewDashboardProps {
 
 export default function CrewDashboardContent({ profile, initialPickups }: CrewDashboardProps) {
   const supabase = createClient();
+  const t = useTranslations("crew");
   const [pickups, setPickups] = useState<PickupRequest[]>(initialPickups);
   const [selectedPickup, setSelectedPickup] = useState<PickupRequest | null>(null);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
@@ -48,7 +51,112 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
   const [isOffline, setIsOffline] = useState(false);
   const [, setIsBroadcasting] = useState(false);
   const trackingChannelRef = useRef<RealtimeChannel | null>(null);
-  
+
+  // ── Geo-tagged collection proof (required to mark a pickup `collected`) ──
+  // Crew photographs the load at the doorstep; we capture the browser GPS fix
+  // (authoritative geo-tag — phone EXIF is unreliable/stripped) and compare it
+  // to the household's booked coords. Admin monitors verified/flagged proofs.
+  type ProofStatus = "idle" | "locating" | "ready" | "gpsFailed" | "uploading";
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
+  const [proofCoords, setProofCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [proofStatus, setProofStatus] = useState<ProofStatus>("idle");
+  const [proofDistance, setProofDistance] = useState<number | null>(null); // metres; null = no booked reference
+
+  const resetProof = () => {
+    setProofFile(null);
+    setProofPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
+    setProofCoords(null);
+    setProofStatus("idle");
+    setProofDistance(null);
+  };
+
+  const handleProofFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file after a retake
+    if (!file) return;
+
+    setProofFile(file);
+    setProofPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
+    setProofCoords(null);
+    setProofDistance(null);
+    setProofStatus("locating");
+
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      setProofStatus("gpsFailed");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setProofCoords({ lat, lng });
+        if (selectedPickup?.latitude != null && selectedPickup?.longitude != null) {
+          setProofDistance(haversineMeters({ lat, lng }, { lat: selectedPickup.latitude, lng: selectedPickup.longitude }));
+        } else {
+          setProofDistance(null); // no booked coords to verify against
+        }
+        setProofStatus("ready");
+      },
+      (err) => {
+        console.warn("Proof GPS: position unavailable –", err.message);
+        setProofStatus("gpsFailed");
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
+
+  // Gated `collected` transition: upload the geo-photo, then write status + proof
+  // columns in one update. Never touches the `completed` path (A4 credit trigger).
+  const handleCollectedWithProof = async () => {
+    if (!selectedPickup) return;
+    if (isOffline) { toast.error(t("toast.offline")); return; }
+    if (!proofFile || !proofCoords || proofStatus !== "ready") { toast.error(t("toast.gpsDenied")); return; }
+
+    const pickup = selectedPickup;
+    setProofStatus("uploading");
+
+    const rawExt = (proofFile.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const ext = rawExt || "jpg";
+    const path = `${pickup.id}/${Date.now()}.${ext}`;
+
+    const { error: upErr } = await supabase.storage
+      .from(PICKUP_PROOFS_BUCKET)
+      .upload(path, proofFile, { contentType: proofFile.type || "image/jpeg", upsert: true });
+    if (upErr) {
+      console.error(upErr);
+      setProofStatus("ready");
+      toast.error(t("toast.proofFailed"));
+      return;
+    }
+
+    const verified = proofDistance == null ? null : proofDistance <= PROOF_MATCH_RADIUS_M;
+    const { error } = await supabase
+      .from("pickup_requests")
+      .update({
+        status: "collected",
+        proof_photo_path: path,
+        proof_latitude: proofCoords.lat,
+        proof_longitude: proofCoords.lng,
+        proof_captured_at: new Date().toISOString(),
+        proof_distance_m: proofDistance == null ? null : Math.round(proofDistance),
+        proof_verified: verified,
+      })
+      .eq("id", pickup.id);
+    if (error) {
+      console.error(error);
+      setProofStatus("ready");
+      toast.error(t("toast.statusFailed"));
+      return;
+    }
+
+    setPickups((prev) => prev.map((p) => (p.id === pickup.id ? { ...p, status: "collected" } : p)));
+    setSelectedPickup((prev) => (prev && prev.id === pickup.id ? { ...prev, status: "collected" } : prev));
+    toast.success(t("toast.proofSaved"));
+    setIsActionModalOpen(false);
+    resetProof();
+  };
+
   // On-Site scrap calculator — routes through the shared estimateQuote() contract (no hardcoded rates).
   // Sector defaults to the crew's operating zone; the doorstep quality observation IS the risk input.
   const defaultSector = CREW_SECTORS.includes(profile.operating_zone || "") ? (profile.operating_zone as string) : "Howrah";
@@ -153,7 +261,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
   // Asynchronous status mutation handler pipeline
   const updatePickupStatus = async (id: string, nextStatus: "accepted" | "collected" | "completed" | "cancelled") => {
     if (isOffline) {
-      toast.error("You're offline — changes are blocked until you reconnect.");
+      toast.error(t("toast.offline"));
       return;
     }
 
@@ -170,9 +278,9 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
       setSelectedPickup(prev => prev && prev.id === id ? { ...prev, status: nextStatus } : prev);
       
       setIsActionModalOpen(false);
-      toast.success(`Pickup status updated to ${nextStatus}!`);
+      toast.success(t("toast.statusUpdated", { status: t(`status.${nextStatus}`) }));
     } else {
-      toast.error("Failed to update pickup status. Please try again.");
+      toast.error(t("toast.statusFailed"));
       console.error(error);
     }
   };
@@ -180,7 +288,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
   const handleReportIssue = async () => {
     if (!issueText.trim() || !selectedPickup) return;
     if (isOffline) {
-      toast.error("You're offline — changes are blocked until you reconnect.");
+      toast.error(t("toast.offline"));
       return;
     }
     const stamp = new Date().toISOString();
@@ -191,18 +299,18 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
       .update({ notes: prefix + entry })
       .eq("id", selectedPickup.id);
     if (error) {
-      toast.error("Could not save the incident report. Please try again.");
+      toast.error(t("toast.incidentFailed"));
       return;
     }
     // keep local state in sync
     setPickups(prev => prev.map(p => p.id === selectedPickup.id ? { ...p, notes: prefix + entry } : p));
     setSelectedPickup(prev => prev ? { ...prev, notes: prefix + entry } : prev);
-    toast.success("Incident report saved.");
+    toast.success(t("toast.incidentSaved"));
     setIssueText("");
     setIsActionModalOpen(false);
   };
 
-  const activeZone = profile.operating_zone || "All Regions";
+  const activeZone = profile.operating_zone || t("allRegions");
 
 
 
@@ -236,7 +344,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
         {/* Dynamic Network Status Banner */}
         {isOffline && (
           <div className="mb-6 w-full p-3 bg-amber-warm text-bark rounded-xl font-mono text-xs font-bold text-center animate-pulse shadow-sm">
-            ⚠️ OFFLINE — actions are blocked until you reconnect.
+            ⚠️ {t("offlineBanner")}
           </div>
         )}
 
@@ -244,15 +352,15 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[rgba(194,112,61,0.15)] pb-6">
           <div>
             <h1 className="font-syne font-bold text-xl text-[#2A2218] tracking-tight">
-              CrewHub
+              {t("title")}
             </h1>
             <p className="text-xs text-[#6B5744] mt-1">
-              Active Hub Operations Sector: <span className="font-bold text-[#C2703D]">{activeZone}</span>
+              {t("activeSector")} <span className="font-bold text-[#C2703D]">{activeZone}</span>
             </p>
           </div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs bg-[#8FA37E]/10 text-[#4A6741] font-bold border border-[#8FA37E]/30 rounded-full px-3 py-1.5 uppercase">
-              🛡️ {profile.role} terminal
+              🛡️ {t("roleTerminal", { role: profile.role })}
             </span>
           </div>
         </div>
@@ -260,15 +368,15 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
         {/* Quick Analytical Overview Row */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="t-glass-card t-lift rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
-            <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Assigned Runs</span>
+            <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">{t("statAssigned")}</span>
             <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 leading-normal text-[#C2703D]">{totalCount}</span>
           </div>
           <div className="t-glass-card t-lift rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
-            <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Remaining Pickups</span>
+            <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">{t("statRemaining")}</span>
             <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 leading-normal text-clay">{pendingCount}</span>
           </div>
           <div className="t-glass-card t-lift rounded-xl p-4 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.12)] backdrop-blur-md shadow-sm">
-            <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">Cleared runs</span>
+            <span className="text-xs font-semibold text-[#6B5744] block uppercase tracking-wider">{t("statCleared")}</span>
             <span className="text-lg sm:text-2xl font-mono font-bold block mt-1 leading-normal text-[#4A6741]">{completedCount}</span>
           </div>
         </div>
@@ -279,14 +387,14 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
           {/* Live Sequence Map */}
           <div className="t-glass-card rounded-2xl p-4 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.18)] shadow-sm">
             <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-3">
-              Live Optimized Collection Sequence Map
+              {t("mapTitle")}
             </h2>
             <div className="relative w-full h-[320px] rounded-2xl overflow-hidden shadow-md border border-[rgba(194,112,61,0.15)] bg-[#EDE5D8]/20">
               {/* Optimized visiting order (NN + 2-opt) plotted with an OSRM road polyline. */}
               <OptimizedRouteMap stops={route.sequence} depot={depot} />
 
               <div className="absolute top-3 right-3 z-[1000] font-mono font-bold text-[11px] text-[#F4EFE3] bg-[#2A2218]/90 backdrop-blur-md px-4 py-2.5 rounded-xl border border-[#C2703D]/30 shadow-xl flex items-center gap-2 select-none">
-                <span>{route.sequence.length} stops</span>
+                <span>{t("mapStops", { count: route.sequence.length })}</span>
                 <span className="text-[#C2703D]">·</span>
                 <span>{route.totalKm.toFixed(1)} km</span>
                 <span className="text-[#C2703D]">·</span>
@@ -296,12 +404,12 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
 
             {route.deferred.length > 0 && (
               <p className="mt-3 text-[11px] font-mono text-clay">
-                ⚠️ {route.deferred.length} pickup(s) deferred to next run (over truck capacity / stop limit).
+                ⚠️ {t("deferredNote", { count: route.deferred.length })}
               </p>
             )}
             {missingCoords > 0 && (
               <p className="mt-3 text-[11px] font-mono text-clay">
-                ⚠️ {missingCoords} stop(s) without map coordinates (not routed).
+                ⚠️ {t("missingCoordsNote", { count: missingCoords })}
               </p>
             )}
           </div>
@@ -309,17 +417,17 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
             {/* Pickup Requests Ledger Table */}
             <Reveal className="w-full mt-6 t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/40 border border-[rgba(194,112,61,0.15)] shadow-sm">
               <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-4 flex items-center gap-2">
-                📋 Pickup Requests
+                📋 {t("requestsTitle")}
               </h2>
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left text-sm border-collapse">
                   <thead>
                     <tr className="border-b border-[rgba(194,112,61,0.15)] font-syne text-xs uppercase tracking-wider text-[#6B5744]">
-                      <th className="py-3 px-3">Address & Destination</th>
-                      <th className="py-3 px-3">Schedule Timeline</th>
-                      <th className="py-3 px-3">Weight Vector</th>
-                      <th className="py-3 px-3">Pipeline Status</th>
-                      <th className="py-3 px-3 text-right">Operational Flow</th>
+                      <th className="py-3 px-3">{t("colAddress")}</th>
+                      <th className="py-3 px-3">{t("colSchedule")}</th>
+                      <th className="py-3 px-3">{t("colWeight")}</th>
+                      <th className="py-3 px-3">{t("colStatus")}</th>
+                      <th className="py-3 px-3 text-right">{t("colActions")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[rgba(194,112,61,0.08)]">
@@ -327,7 +435,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                       <tr key={p.id} className="hover:bg-[#EDE5D8]/20 transition-colors">
                         <td className="py-3.5 px-3">
                           <div className="font-bold text-[#2A2218] text-sm">{p.operating_zone}</div>
-                          <div className="text-xs text-[#6B5744] mt-0.5 max-w-[200px] truncate">{p.user_address || "SKFGI Aggregation Drop Point"}</div>
+                          <div className="text-xs text-[#6B5744] mt-0.5 max-w-[200px] truncate">{p.user_address || t("dropPointFallback")}</div>
                         </td>
                         <td className="py-3.5 px-3">
                           <div className="text-xs font-semibold text-[#2A2218]">{p.scheduled_date}</div>
@@ -346,15 +454,15 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                             p.status === 'cancelled' ? 'bg-destructive/10 text-destructive border-destructive/30' :
                             'bg-amber-warm/15 text-clay border-amber-warm/30'
                           }`}>
-                            {p.status}
+                            {t(`status.${p.status}`)}
                           </span>
                         </td>
                         <td className="py-3.5 px-3 text-right">
                           <button
-                            onClick={() => { setSelectedPickup(p); setIsActionModalOpen(true); }}
+                            onClick={() => { resetProof(); setSelectedPickup(p); setIsActionModalOpen(true); }}
                             className="bg-[#C2703D] hover:bg-[#A0522D] text-white text-xs font-bold px-3 py-1.5 rounded-lg font-syne uppercase tracking-wider min-h-[36px] t-focus-ring"
                           >
-                            Report Impurities ⚠️
+                            {t("reportImpurities")} ⚠️
                           </button>
                         </td>
                       </tr>
@@ -368,20 +476,20 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
             <Reveal className="t-glass-card rounded-2xl p-6 bg-[#EDE5D8]/30 border border-[rgba(194,112,61,0.18)] shadow-sm mt-6">
               <h2 className="font-syne font-bold text-sm uppercase tracking-wider text-[#2A2218] mb-3 flex items-center gap-2">
                 <img src={`${LEVEL_BUCKET_BASE}/price-estimator.png`} alt="" className="h-7 w-7 object-contain" loading="lazy" />
-                Price Estimator
+                {t("estimatorTitle")}
               </h2>
-              <p className="text-xs text-[#6B5744] mb-4">Verify weights and calculate real-time custom Indian Rupee (₹) payouts directly at the doorstep if load discrepancies occur.</p>
+              <p className="text-xs text-[#6B5744] mb-4">{t("estimatorIntro")}</p>
 
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[11px] font-bold uppercase text-[#2A2218]">
-                    Material streams
+                    {t("materialStreams")}
                     {estItems.length > 0 && (
                       <span className="ml-1 font-normal normal-case text-[#8C7A63]">· {estItems.length} · {totalKg(estItems, estKg)} kg</span>
                     )}
                   </label>
-                  <p className="text-[11px] text-[#8C7A63] mb-1">Tick each stream in the load and weigh it — the payout adds up across all of them.</p>
-                  <div role="group" aria-label="Select material streams" className="max-h-52 overflow-y-auto rounded-lg border border-[#D4C5B0] bg-[#F4EFE3]">
+                  <p className="text-[11px] text-[#8C7A63] mb-1">{t("materialStreamsHint")}</p>
+                  <div role="group" aria-label={t("materialStreamsAria")} className="max-h-52 overflow-y-auto rounded-lg border border-[#D4C5B0] bg-[#F4EFE3]">
                     {WASTE_CATALOG.map((cat) => (
                       <div key={cat.category}>
                         <div className="sticky top-0 z-10 bg-[#F4EFE3] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#8C7A63] border-b border-[#D4C5B0]/60">
@@ -409,7 +517,7 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                                   placeholder="kg"
                                   value={estKg[it.label] ?? ""}
                                   onChange={(e) => setEstKg((p) => ({ ...p, [it.label]: e.target.value }))}
-                                  aria-label={`${it.label} weight in kilograms`}
+                                  aria-label={t("weightAria", { label: it.label })}
                                   className="w-16 shrink-0 rounded-md border border-[#D4C5B0] bg-white px-2 py-1 text-right text-xs text-[#2A2218] focus:border-[#C2703D] focus:outline-none"
                                 />
                               )}
@@ -423,19 +531,19 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold uppercase text-[#2A2218]">Quality Defect Risk</label>
+                    <label className="text-[11px] font-bold uppercase text-[#2A2218]">{t("qualityRisk")}</label>
                     <select
                       value={estRisk}
                       onChange={(e) => setEstRisk(e.target.value as RiskLevel)}
                       className="p-2.5 bg-[#F4EFE3] border border-[#D4C5B0] rounded-lg text-xs text-[#2A2218]"
                     >
-                      <option value="Low">Low — clean load</option>
-                      <option value="Medium">Medium — minor contamination</option>
-                      <option value="High">High — heavy defect / moisture</option>
+                      <option value="Low">{t("riskLow")}</option>
+                      <option value="Medium">{t("riskMedium")}</option>
+                      <option value="High">{t("riskHigh")}</option>
                     </select>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold uppercase text-[#2A2218]">Sector</label>
+                    <label className="text-[11px] font-bold uppercase text-[#2A2218]">{t("sector")}</label>
                     <select
                       value={estSector}
                       onChange={(e) => setEstSector(e.target.value)}
@@ -449,11 +557,11 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
 
               <div className="mt-4 pt-3 border-t border-[rgba(194,112,61,0.08)] flex justify-between items-center">
                 <span className="text-xs font-semibold text-[#6B5744]">
-                  Calculated Payout Estimation:
-                  {estResult && <span className="ml-2 font-normal text-[#8C7A63]">₹{estResult.userPayoutPerKg.toFixed(2)}/kg · {estResult.distanceKm}km logistics</span>}
+                  {t("payoutLabel")}
+                  {estResult && <span className="ml-2 font-normal text-[#8C7A63]">{t("payoutDetail", { rate: estResult.userPayoutPerKg.toFixed(2), km: estResult.distanceKm })}</span>}
                 </span>
                 <span className="font-mono text-sm font-bold text-[#4A6741] bg-[#8FA37E]/10 px-3 py-1 rounded">
-                  {estResult ? `₹ ${estResult.userPayoutTotal.toFixed(2)}` : "₹ Dynamic Sync"}
+                  {estResult ? `₹ ${estResult.userPayoutTotal.toFixed(2)}` : t("payoutPending")}
                 </span>
               </div>
             </Reveal>
@@ -470,62 +578,104 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
             {/* Modal Header Row */}
             <div className="flex justify-between items-start border-b border-[rgba(194,112,61,0.15)] pb-3">
               <div>
-                <h3 className="font-syne font-bold text-base text-[#2A2218]">Manifest Operations: Run #{selectedPickup.id.substring(0, 8)}</h3>
-                <p className="text-xs text-[#6B5744] mt-0.5 font-mono">Current Operational State: <span className="uppercase font-bold text-[#C2703D]">{selectedPickup.status}</span></p>
+                <h3 className="font-syne font-bold text-base text-[#2A2218]">{t("modalTitle", { id: selectedPickup.id.substring(0, 8) })}</h3>
+                <p className="text-xs text-[#6B5744] mt-0.5 font-mono">{t("modalState")} <span className="uppercase font-bold text-[#C2703D]">{t(`status.${selectedPickup.status}`)}</span></p>
               </div>
-              <button onClick={() => { setIsActionModalOpen(false); setSelectedPickup(null); }} className="text-sm font-bold text-[#6B5744] hover:text-destructive transition-colors t-focus-ring">✕</button>
+              <button onClick={() => { setIsActionModalOpen(false); setSelectedPickup(null); resetProof(); }} className="text-sm font-bold text-[#6B5744] hover:text-destructive transition-colors t-focus-ring">✕</button>
             </div>
 
             {/* Step-by-Step Logistics State Actions Stack */}
             <div className="flex flex-col gap-2.5">
-              <span className="font-syne font-bold text-[10px] uppercase tracking-widest text-[#6B5744]">Execute Flow Transitions</span>
+              <span className="font-syne font-bold text-[10px] uppercase tracking-widest text-[#6B5744]">{t("modalActionsHeading")}</span>
               
               <button
                 onClick={() => updatePickupStatus(selectedPickup.id, "accepted")}
                 className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-terra text-white rounded-xl transition-all hover:bg-[#A0522D] min-h-[44px] t-focus-ring"
               >
-                1. Accept Assignment 🟢
+                {t("actionAccept")} 🟢
               </button>
 
+              {/* Geo-tagged collection proof — required before marking collected */}
+              <div className="rounded-xl border border-[#D4C5B0] bg-[#EDE5D8]/50 p-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-syne font-bold text-[10px] uppercase tracking-widest text-[#6B5744]">📍 {t("proof.title")}</span>
+                  {proofStatus === "ready" && (
+                    proofDistance == null ? (
+                      <span className="text-[10px] font-mono font-bold text-clay">{t("proof.noReference")}</span>
+                    ) : proofDistance <= PROOF_MATCH_RADIUS_M ? (
+                      <span className="text-[10px] font-mono font-bold text-[#4A6741]">✓ {t("proof.verified")}</span>
+                    ) : (
+                      <span className="text-[10px] font-mono font-bold text-destructive">⚠ {t("proof.flagged", { meters: Math.round(proofDistance) })}</span>
+                    )
+                  )}
+                </div>
+                <p className="text-[11px] text-[#8C7A63]">{t("proof.hint")}</p>
+
+                {proofPreview && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={proofPreview} alt={t("proof.title")} className="w-full h-32 object-cover rounded-lg border border-[#D4C5B0]" />
+                )}
+
+                {proofStatus === "locating" && (
+                  <span className="text-[11px] font-mono text-clay motion-safe:animate-pulse">{t("proof.locating")}</span>
+                )}
+                {proofStatus === "gpsFailed" && (
+                  <span className="text-[11px] font-mono text-destructive">{t("proof.gpsFailed")}</span>
+                )}
+
+                <label className="w-full cursor-pointer font-syne font-bold text-xs uppercase tracking-wider p-2.5 bg-[#2A2218] text-white rounded-lg text-center min-h-[40px] flex items-center justify-center gap-1.5 t-focus-ring">
+                  {proofFile ? t("proof.retake") : t("proof.capture")} 📷
+                  <input type="file" accept="image/*" capture="environment" onChange={handleProofFile} className="hidden" />
+                </label>
+              </div>
+
               <button
-                onClick={() => updatePickupStatus(selectedPickup.id, "collected")}
-                className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-[#8FA37E] text-white rounded-xl transition-all hover:bg-[#4A6741] min-h-[44px] t-focus-ring"
+                onClick={handleCollectedWithProof}
+                disabled={proofStatus !== "ready"}
+                className={`w-full font-syne font-bold text-xs uppercase tracking-wider p-3 rounded-xl transition-all min-h-[44px] t-focus-ring ${
+                  proofStatus === "ready"
+                    ? "bg-[#8FA37E] text-white hover:bg-[#4A6741]"
+                    : "bg-[#8FA37E]/40 text-white/70 cursor-not-allowed"
+                }`}
               >
-                2. Mark Load Collected ✓
+                {proofStatus === "uploading" ? t("proof.uploading") : `${t("actionCollected")} ✓`}
               </button>
+              {proofStatus !== "ready" && (
+                <span className="text-[10px] text-[#8C7A63] -mt-1.5">{t("proof.required")}</span>
+              )}
 
               <button
                 onClick={() => updatePickupStatus(selectedPickup.id, "completed")}
                 className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-sage-deep text-white rounded-xl transition-all hover:bg-moss min-h-[44px] t-focus-ring"
               >
-                3. Mark Load Processed 📦
+                {t("actionProcessed")} 📦
               </button>
 
               <button
                 onClick={() => updatePickupStatus(selectedPickup.id, "cancelled")}
                 className="w-full font-syne font-bold text-xs uppercase tracking-wider p-3 bg-destructive/10 text-destructive border border-destructive/30 rounded-xl transition-all hover:bg-destructive/20 min-h-[44px] t-focus-ring"
               >
-                4. Cancel Collection Run ✕
+                {t("actionCancel")} ✕
               </button>
             </div>
 
             {/* Embedded Quality Impurities Dropdown Panel Section */}
             <div className="border-t border-[rgba(194,112,61,0.12)] pt-4">
               <label className="font-syne font-bold text-[10px] uppercase tracking-wider text-[#6B5744] block mb-1.5">
-                Log Quality Anomaly & AI Penalty Risk
+                {t("incidentLabel")}
               </label>
               <input
                 type="text"
                 value={issueText}
                 onChange={(e) => setIssueText(e.target.value)}
-                placeholder="e.g., Load rejected due to high industrial dust contamination"
+                placeholder={t("incidentPlaceholder")}
                 className="w-full p-2.5 bg-[#EDE5D8]/50 border border-[#D4C5B0] rounded-xl text-xs text-[#2A2218] focus:outline-none focus:border-[#C2703D]"
               />
               <button
                 onClick={handleReportIssue}
                 className="w-full mt-2 font-syne font-bold text-xs uppercase tracking-wider p-2 bg-[#2A2218] text-white rounded-lg transition-colors hover:bg-black border-0 cursor-pointer min-h-[36px]"
               >
-                Dispatch Incident Report Alert
+                {t("incidentSubmit")}
               </button>
             </div>
 

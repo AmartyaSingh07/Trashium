@@ -46,6 +46,9 @@ import type {
 
 const PICKUP_STATUSES: PickupStatus[] = ["pending", "accepted", "collected", "completed", "cancelled"];
 
+// Public URL base for geo-tagged crew collection proofs (pickup-proofs bucket).
+const PROOF_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/pickup-proofs`;
+
 // Row shape from the PostgREST embed: '*, profiles!pickup_requests_user_id_fkey(full_name, email)'
 type AdminPickup = PickupRequest & {
   profiles?: { full_name?: string | null; email?: string | null } | null;
@@ -551,6 +554,7 @@ export default function AdminContent({
                     <TableHead>Waste</TableHead>
                     <TableHead>Weight</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Proof</TableHead>
                     <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -558,7 +562,7 @@ export default function AdminContent({
                   {loading ? (
                     Array.from({ length: 4 }).map((_, i) => (
                       <TableRow key={`skeleton-${i}`}>
-                        {Array.from({ length: 6 }).map((__, j) => (
+                        {Array.from({ length: 7 }).map((__, j) => (
                           <TableCell key={j}>
                             <div className="h-4 rounded bg-sand/40 motion-safe:animate-pulse" />
                           </TableCell>
@@ -567,7 +571,7 @@ export default function AdminContent({
                     ))
                   ) : filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-xs text-smoke italic">
+                      <TableCell colSpan={7} className="py-8 text-center text-xs text-smoke italic">
                         No pickups match the current filters.
                       </TableCell>
                     </TableRow>
@@ -582,6 +586,39 @@ export default function AdminContent({
                         <TableCell className="font-mono">{Number(p.estimated_weight || 0)} kg</TableCell>
                         <TableCell>
                           <StatusBadge status={p.status} />
+                        </TableCell>
+                        <TableCell>
+                          {p.proof_photo_path ? (
+                            <a
+                              href={`${PROOF_BUCKET_BASE}/${p.proof_photo_path}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 t-focus-ring rounded"
+                              title={
+                                p.proof_verified === true
+                                  ? `Verified · ${Math.round(Number(p.proof_distance_m ?? 0))} m from booked location`
+                                  : p.proof_verified === false
+                                  ? `Flagged · ${Math.round(Number(p.proof_distance_m ?? 0))} m from booked location`
+                                  : "Proof captured (no booked coordinates to verify)"
+                              }
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={`${PROOF_BUCKET_BASE}/${p.proof_photo_path}`}
+                                alt="Collection proof"
+                                className="h-9 w-9 rounded object-cover border border-sand/40"
+                              />
+                              {p.proof_verified === true ? (
+                                <span className="text-[10px] font-mono font-bold text-sage-deep whitespace-nowrap">✓ {Math.round(Number(p.proof_distance_m ?? 0))}m</span>
+                              ) : p.proof_verified === false ? (
+                                <span className="text-[10px] font-mono font-bold text-destructive whitespace-nowrap">⚠ {Math.round(Number(p.proof_distance_m ?? 0))}m</span>
+                              ) : (
+                                <span className="text-[10px] font-mono text-smoke">📷</span>
+                              )}
+                            </a>
+                          ) : (
+                            <span className="text-[10px] text-smoke">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Select
