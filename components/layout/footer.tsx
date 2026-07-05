@@ -20,7 +20,7 @@ export default function Footer() {
       links: [
         { label: t("about"), href: "/about" },
         { label: t("careers"), href: "/careers" },
-        { label: t("blog"), href: "#" },
+        { label: t("blog"), href: "/blog" },
       ],
     },
     {
