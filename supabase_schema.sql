@@ -300,6 +300,41 @@ AS $function$
   group by p.id, p.full_name, p.green_credits, p.kg_recycled;
 $function$;
 
+-- Batch readiness for the household dashboard. A crew route is only profitable
+-- once a sector has MIN_BATCH_SIZE (3) pending pickups on the same day (the ML
+-- model amortises the per-route logistics base cost across the batch). Households
+-- may only SELECT their own pickups under RLS, so an aggregate cross-household
+-- count MUST come from this SECURITY DEFINER function. It returns ONLY counts
+-- (no other user's identity or data) for the (sector, day) groups the caller
+-- has a pending pickup in — nothing sensitive is exposed.
+CREATE OR REPLACE FUNCTION public.get_batch_readiness()
+ RETURNS TABLE(sector text, scheduled_date date, pending_count integer, threshold integer, ready boolean)
+ LANGUAGE sql SECURITY DEFINER SET search_path TO 'public' STABLE
+AS $function$
+  with my_groups as (
+    select distinct location, scheduled_date
+    from pickup_requests
+    where user_id = auth.uid()
+      and status = 'pending'
+      and location is not null
+      and scheduled_date is not null
+  )
+  select
+    g.location                                as sector,
+    g.scheduled_date,
+    count(pr.id)::int                         as pending_count,
+    3                                         as threshold,
+    (count(pr.id) >= 3)                       as ready
+  from my_groups g
+  join pickup_requests pr
+    on pr.location = g.location
+   and pr.scheduled_date = g.scheduled_date
+   and pr.status = 'pending'
+  group by g.location, g.scheduled_date;
+$function$;
+revoke execute on function public.get_batch_readiness() from public, anon;
+grant  execute on function public.get_batch_readiness() to authenticated;
+
 CREATE OR REPLACE FUNCTION public.log_daily_action(p_action text)
  RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $function$
@@ -679,4 +714,62 @@ create policy profiles_update_own on public.profiles for update to authenticated
 
 create policy price_estimates_read on public.price_estimates for select to anon, authenticated using (true);
 create policy ma_trends_read on public.ma_trends for select to anon, authenticated using (true);
-create policy model_metrics_read on pub
+create policy model_metrics_read on public.model_metrics for select to anon, authenticated using (true);
+
+create policy badges_read on public.badges for select to anon, authenticated using (true);
+create policy badges_admin on public.badges for all to authenticated
+  using (public.check_is_admin()) with check (public.check_is_admin());
+
+create policy items_read on public.marketplace_items for select to anon, authenticated using (true);
+create policy items_admin on public.marketplace_items for all to authenticated
+  using (public.check_is_admin()) with check (public.check_is_admin());
+
+create policy user_badges_own on public.user_badges for select to authenticated
+  using (auth.uid() = user_id or public.check_is_admin());
+create policy user_badges_admin on public.user_badges for all to authenticated
+  using (public.check_is_admin()) with check (public.check_is_admin());
+
+create policy orders_select_own on public.redemption_orders for select to authenticated
+  using (auth.uid() = user_id or public.check_is_admin());
+create policy orders_admin_update on public.redemption_orders for update to authenticated
+  using (public.check_is_admin()) with check (public.check_is_admin());
+
+create policy daily_activity_own on public.daily_activity for select to authenticated
+  using (auth.uid() = user_id);
+create policy streak_claims_own on public.streak_milestone_claims for select to authenticated
+  using (auth.uid() = user_id);
+
+-- Column-safety: authenticated may update only personalization columns; SECURITY
+-- DEFINER RPCs (running as owner) still write credits/streaks/boosts.
+revoke update on public.profiles from authenticated;
+grant update (full_name, operating_zone, preferred_language, avatar_url)
+  on public.profiles to authenticated;
+
+-- Function EXECUTE grants (regenerated from live prod 2026-07-06 after a
+-- network-drive truncation dropped this section). App RPCs: revoke public+anon,
+-- grant authenticated. Trigger-only fns: execute for no one. (get_batch_readiness
+-- is granted inline at its definition above.)
+revoke execute on function public.consume_payout_boost() from public, anon;
+grant  execute on function public.consume_payout_boost() to authenticated;
+revoke execute on function public.get_household_leaderboard() from public, anon;
+grant  execute on function public.get_household_leaderboard() to authenticated;
+revoke execute on function public.log_daily_action(text) from public, anon;
+grant  execute on function public.log_daily_action(text) to authenticated;
+revoke execute on function public.get_daily_status() from public, anon;
+grant  execute on function public.get_daily_status() to authenticated;
+revoke execute on function public.redeem_marketplace_item(uuid) from public, anon;
+grant  execute on function public.redeem_marketplace_item(uuid) to authenticated;
+revoke execute on function public.set_crew_zone(uuid, text) from public, anon;
+grant  execute on function public.set_crew_zone(uuid, text) to authenticated;
+revoke execute on function public.set_payout_override(uuid, numeric) from public, anon;
+grant  execute on function public.set_payout_override(uuid, numeric) to authenticated;
+revoke execute on function public.check_is_admin() from public, anon;
+grant  execute on function public.check_is_admin() to authenticated;
+revoke execute on function public.check_is_crew(uuid) from public, anon;
+grant  execute on function public.check_is_crew(uuid) to authenticated;
+revoke execute on function public.get_auth_role() from public, anon;
+grant  execute on function public.get_auth_role() to authenticated;
+
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+revoke execute on function public.apply_pickup_completion() from public, anon, authenticated;
+revoke execute on function public.update_modified_timestamp_column() from public, anon, authenticated;

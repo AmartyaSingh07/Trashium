@@ -151,7 +151,11 @@
     "viewAll": "View All",
     "dailyRitual": "Daily Ritual",
     "leaderboard": "Leaderboard",
-    "badges": "Badges"
+    "badges": "Badges",
+    "batchReady": "Route ready — collecting now",
+    "batchWaitingOne": "1 more nearby pickup and your {sector} route sets off",
+    "batchWaitingMany": "{remaining} more nearby pickups and your {sector} route sets off",
+    "batchProgress": "{count} of {threshold} pickups booked in {sector}"
   },
   "profile": {
     "title": "My Profile",

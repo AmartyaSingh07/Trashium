@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ImpactCard from "@/components/dashboard/impact-card";
 import EcoLevelBadge, { TRASHIUM_EVALUATION_TIERS, getTierIcon, getTierIconUrl } from "@/components/dashboard/eco-level-badge";
 import SchedulePickupModal from "@/components/dashboard/schedule-pickup-modal";
-import RecentPickups from "@/components/dashboard/recent-pickups";
+import RecentPickups, { type BatchReadinessMap } from "@/components/dashboard/recent-pickups";
 
 import type { Profile, PickupRequest, ResolvedBadge, LeaderboardEntry, DailyStatus, DailyActionResult } from "@/lib/types";
 import { DailyRitual } from "@/components/ui/daily-ritual";
@@ -71,6 +71,7 @@ export default function DashboardContent({
   dailyStatus,
 }: DashboardContentProps) {
   const [pickups, setPickups] = useState<PickupRequest[]>(() => initialPickups.map(normalizePickup));
+  const [batchReadiness, setBatchReadiness] = useState<BatchReadinessMap>({});
   const supabase = createClient();
   const td = useTranslations("dashboard");
   const isHousehold = profile?.role === "household";
@@ -273,15 +274,40 @@ export default function DashboardContent({
 
   // ─── Client-side pickup fetcher ────────────────────────────────────
   const refreshPickups = useCallback(async () => {
-    const { data } = await supabase
-      .from("pickup_requests")
-      .select("*")
-      .eq("user_id", profile.id)
-      .order("created_at", { ascending: false })
-      .limit(5);
+    // Own pickups (RLS-scoped) + live per-sector/day batch readiness.
+    // Readiness aggregates ALL households' pending pickups, so it must come from
+    // the SECURITY DEFINER get_batch_readiness() RPC — a direct client count
+    // would return only this user's own rows.
+    const [pickupsRes, batchRes] = await Promise.all([
+      supabase
+        .from("pickup_requests")
+        .select("*")
+        .eq("user_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(5),
+      supabase.rpc("get_batch_readiness"),
+    ]);
 
-    if (data) {
-      setPickups(data.map(normalizePickup) as PickupRequest[]);
+    if (pickupsRes.data) {
+      setPickups(pickupsRes.data.map(normalizePickup) as PickupRequest[]);
+    }
+
+    if (batchRes.data) {
+      const map: BatchReadinessMap = {};
+      for (const r of batchRes.data as Array<{
+        sector: string;
+        scheduled_date: string;
+        pending_count: number;
+        threshold: number;
+        ready: boolean;
+      }>) {
+        map[`${r.sector}|${String(r.scheduled_date).slice(0, 10)}`] = {
+          count: r.pending_count,
+          threshold: r.threshold,
+          ready: r.ready,
+        };
+      }
+      setBatchReadiness(map);
     }
   }, [supabase, profile.id]);
 
@@ -652,7 +678,7 @@ export default function DashboardContent({
           <h3 className="font-[family-name:var(--font-syne)] text-lg font-bold text-bark">
             {td("recentPickups")}
           </h3>
-          <RecentPickups pickups={pickups} onCancel={handleCancelPickup} onReschedule={handleReschedulePickup} />
+          <RecentPickups pickups={pickups} batchReadiness={batchReadiness} onCancel={handleCancelPickup} onReschedule={handleReschedulePickup} />
         </Reveal>
       </div>
 

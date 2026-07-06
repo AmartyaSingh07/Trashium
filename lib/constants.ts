@@ -51,8 +51,22 @@ export function resolveHubSectors(zone: string | null | undefined): readonly str
  */
 export const PROOF_MATCH_RADIUS_M = 150;
 
-/** Public Storage bucket holding geo-tagged crew collection photos. */
+/** Private Storage bucket holding geo-tagged crew collection photos. */
 export const PICKUP_PROOFS_BUCKET = "pickup-proofs";
+
+// -- Pickup batching (logistics profitability) ------------------------------
+
+/**
+ * Minimum number of pending pickups in the same sector on the same day for a
+ * crew route to be profitable. The ML pricing model amortises the per-route
+ * logistics base cost (see ml/config.py LOGISTICS_BASE) across the batch, so a
+ * route with fewer than this many stops loses money.
+ *
+ * This is the client-side mirror of the threshold enforced by the
+ * `get_batch_readiness()` RPC (which is authoritative for the live count).
+ * Keep the two in sync if this ever changes.
+ */
+export const MIN_BATCH_SIZE = 3;
 
 // -- Phase 2: route optimization --------------------------------------------
 

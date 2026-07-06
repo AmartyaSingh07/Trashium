@@ -151,7 +151,11 @@
     "viewAll": "সব দেখুন",
     "dailyRitual": "দৈনিক আচার",
     "leaderboard": "লিডারবোর্ড",
-    "badges": "ব্যাজ"
+    "badges": "ব্যাজ",
+    "batchReady": "রুট প্রস্তুত — এখনই সংগ্রহ হচ্ছে",
+    "batchWaitingOne": "আর ১টি কাছাকাছি পিকআপ, তারপর আপনার {sector} রুট রওনা দেবে",
+    "batchWaitingMany": "আর {remaining}টি কাছাকাছি পিকআপ, তারপর আপনার {sector} রুট রওনা দেবে",
+    "batchProgress": "{sector}-এ {threshold}টির মধ্যে {count}টি পিকআপ বুক হয়েছে"
   },
   "profile": {
     "title": "আমার প্রোফাইল",

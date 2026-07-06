@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,13 +35,87 @@ const TRASHIUM_PICKUP_SLOTS = [
   "07:30 PM - 08:30 PM"
 ];
 
+/**
+ * Per (sector, day) batch readiness, keyed by `${sector}|${YYYY-MM-DD}`.
+ * Sourced live from the `get_batch_readiness()` RPC (aggregate counts only).
+ */
+export type BatchReadinessMap = Record<
+  string,
+  { count: number; threshold: number; ready: boolean }
+>;
+
+/** Build the lookup key used by BatchReadinessMap. */
+export const batchKey = (sector: string, scheduledDate: string) =>
+  `${sector}|${String(scheduledDate).slice(0, 10)}`;
+
 interface RecentPickupsProps {
   pickups: PickupRequest[];
+  batchReadiness?: BatchReadinessMap;
   onCancel?: (pickupId: string, pickup: PickupRequest) => void;
   onReschedule?: (pickupId: string, newDate: string, newTimeSlot: string) => void;
 }
 
-export default function RecentPickups({ pickups, onCancel, onReschedule }: RecentPickupsProps) {
+/**
+ * Small, static (no motion — reduced-motion safe) progress chip shown on a
+ * pending pickup: filled/empty dots plus a friendly "N more to dispatch" or
+ * "route ready" message. Informational only — it never changes the pickup
+ * lifecycle or crew behaviour.
+ */
+function BatchChip({
+  info,
+  sector,
+}: {
+  info: { count: number; threshold: number; ready: boolean };
+  sector: string;
+}) {
+  const t = useTranslations("dashboard");
+  const remaining = Math.max(0, info.threshold - info.count);
+  const filled = Math.min(info.count, info.threshold);
+
+  const label = info.ready
+    ? t("batchReady")
+    : remaining === 1
+    ? t("batchWaitingOne", { sector })
+    : t("batchWaitingMany", { remaining, sector });
+
+  const dots = Array.from({ length: info.threshold }, (_, i) => i < filled);
+
+  return (
+    <span
+      className={[
+        "inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium font-[family-name:var(--font-dm)] border",
+        info.ready
+          ? "bg-[#8FA37E]/10 text-[#4A6741] border-[#8FA37E]/20"
+          : "bg-terra/10 text-clay border-terra/20",
+      ].join(" ")}
+      title={t("batchProgress", {
+        count: info.count,
+        threshold: info.threshold,
+        sector,
+      })}
+      aria-label={t("batchProgress", {
+        count: info.count,
+        threshold: info.threshold,
+        sector,
+      })}
+    >
+      <span className="flex items-center gap-0.5" aria-hidden="true">
+        {dots.map((on, i) => (
+          <span
+            key={i}
+            className={[
+              "h-1.5 w-1.5 rounded-full",
+              on ? "bg-current" : "bg-current opacity-25",
+            ].join(" ")}
+          />
+        ))}
+      </span>
+      <span>{label}</span>
+    </span>
+  );
+}
+
+export default function RecentPickups({ pickups, batchReadiness, onCancel, onReschedule }: RecentPickupsProps) {
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTimeSlot, setRescheduleTimeSlot] = useState("");
@@ -106,6 +181,18 @@ export default function RecentPickups({ pickups, onCancel, onReschedule }: Recen
               <StatusBadge status={pickup.status} />
             </div>
           </div>
+
+          {/* Batch readiness (pending only): informational progress toward a
+              profitable crew route in this sector on this day. */}
+          {pickup.status === "pending" && (() => {
+            const info = batchReadiness?.[batchKey(pickup.location, pickup.scheduled_date)];
+            if (!info) return null;
+            return (
+              <div className="flex">
+                <BatchChip info={info} sector={pickup.location} />
+              </div>
+            );
+          })()}
 
           {/* Action buttons for pending/accepted requests */}
           {canShowActions(pickup.status as string) && (onCancel || onReschedule) && (
