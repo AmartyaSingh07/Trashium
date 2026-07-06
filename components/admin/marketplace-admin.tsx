@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Award } from "lucide-react";
+import { marketplaceItemSchema, awardBadgeSchema } from "@/lib/schemas";
 import type { MarketplaceItem, RedemptionOrder, RedemptionStatus, MarketplaceTier } from "@/lib/types";
 
 type AdminOrder = RedemptionOrder & {
@@ -96,16 +97,12 @@ export default function MarketplaceAdmin({ initialItems, initialOrders, users, b
 
   const saveItem = async () => {
     if (!form) return;
-    if (!form.name.trim() || !form.description.trim()) {
-      toast.error("Name and description are required.");
-      return;
-    }
-    setSaving(true);
-    const payload = {
-      name: form.name.trim(),
-      description: form.description.trim(),
+    // Shape validation (defense-in-depth); DB CHECK constraints + FKs remain the boundary.
+    const candidate = {
+      name: form.name,
+      description: form.description,
       tier: form.tier,
-      cost_credits: Number(form.cost_credits) || 0,
+      cost_credits: form.cost_credits.trim() === "" ? 0 : Number(form.cost_credits),
       image_filename: strOrNull(form.image_filename),
       level_requirement: numOrNull(form.level_requirement),
       badge_requirement: strOrNull(form.badge_requirement),
@@ -114,6 +111,13 @@ export default function MarketplaceAdmin({ initialItems, initialOrders, users, b
       perk_value: numOrNull(form.perk_value),
       is_active: form.is_active,
     };
+    const parsed = marketplaceItemSchema.safeParse(candidate);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Please check the item fields.");
+      return;
+    }
+    const payload = parsed.data;
+    setSaving(true);
 
     if (form.id) {
       const { data, error } = await supabase
@@ -161,13 +165,14 @@ export default function MarketplaceAdmin({ initialItems, initialOrders, users, b
   };
 
   const award = async () => {
-    if (!awardUser || !awardBadge) {
-      toast.error("Pick a user and a badge.");
+    const parsed = awardBadgeSchema.safeParse({ user_id: awardUser, badge_id: awardBadge });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Pick a user and a badge.");
       return;
     }
     const { error } = await supabase
       .from("user_badges")
-      .insert({ user_id: awardUser, badge_id: awardBadge });
+      .insert({ user_id: parsed.data.user_id, badge_id: parsed.data.badge_id });
     if (error) {
       // 23505 = unique violation (already awarded)
       if ((error as { code?: string }).code === "23505") {

@@ -181,11 +181,10 @@ export default function SchedulePickupModal({
       if (error) throw error;
 
       // Module F: one-time use — clear the pending boost once it has been baked into a pickup payout.
+      // Via a SECURITY DEFINER RPC (not a direct update): post-lockdown, pending_payout_boost_pct is
+      // not a self-grantable column, so the RPC nulls only the caller's own row.
       if (boostPct != null && estimatedPrice != null) {
-        await supabase
-          .from("profiles")
-          .update({ pending_payout_boost_pct: null })
-          .eq("id", currentUser.id);
+        await supabase.rpc("consume_payout_boost");
         setBoostPct(null);
       }
 

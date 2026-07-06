@@ -1,14 +1,11 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- TRASHIUM — DATABASE SCHEMA
 -- Regenerated from the LIVE project `fqbjjcbrxrokvdwkydze` on 2026-07-03 to end
--- the drift the QA review found (A6). This file now reflects production reality.
+-- the drift the QA review found (A6), then updated with the 2026-07-06 security lockdown.
 --
--- ⚠️ RLS is INTENTIONALLY partial during development (see DEPLOYMENT_SECURITY_CHECKLIST.md).
---    Live right now: pickup_requests RLS ON (mixed policies), global_impact RLS ON (no policy,
---    landing uses aspirational fallbacks), everything else RLS OFF. Production hardening —
---    enabling RLS everywhere, secure policies, revoking anon EXECUTE — lives in that checklist,
---    NOT here. Two policies below (trashium_final_pickups_policy / trashium_update_pickups_policy)
---    are known-insecure (reference client-writable user_metadata) and are dropped at deploy.
+-- Security lockdown applied: all app tables have RLS, anon RPC execution is
+-- revoked, mutable search_path functions are hardened, and pickup-proofs is
+-- private. global_impact intentionally remains RLS-on/no-policy as INFO only.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 create extension if not exists "uuid-ossp" with schema extensions;
@@ -66,7 +63,7 @@ create table if not exists public.pickup_requests (
   waste_items       text[],
   credited_at       timestamptz,  -- A4: earn-loop idempotency marker (set once, on completion)
   -- Geo-tagged collection proof (captured by crew at the `collected` transition).
-  proof_photo_path  text,         -- object path within the public `pickup-proofs` bucket
+  proof_photo_path  text,         -- object path within the private `pickup-proofs` bucket
   proof_latitude    numeric,      -- crew capture coords (browser GPS fix)
   proof_longitude   numeric,
   proof_captured_at timestamptz,
@@ -74,20 +71,11 @@ create table if not exists public.pickup_requests (
   proof_verified    boolean       -- true when within PROOF_MATCH_RADIUS_M (lib/constants.ts)
 );
 
--- Public bucket for geo-tagged crew collection photos. Public read keeps the
--- demo simple (admin views via public URL); authenticated crew may insert.
--- TODO(RLS, later): tighten to private + signed URLs at deploy — these photos
--- reveal household locations. See DEPLOYMENT_SECURITY_CHECKLIST.md.
+-- Private bucket for geo-tagged crew collection photos. Admin views use
+-- short-lived signed URLs; crew may upload proofs.
 insert into storage.buckets (id, name, public)
-  values ('pickup-proofs', 'pickup-proofs', true)
-  on conflict (id) do nothing;
-
-drop policy if exists trashium_proof_insert_policy on storage.objects;
-create policy trashium_proof_insert_policy on storage.objects
-  for insert to authenticated with check (bucket_id = 'pickup-proofs');
-drop policy if exists trashium_proof_select_policy on storage.objects;
-create policy trashium_proof_select_policy on storage.objects
-  for select to public using (bucket_id = 'pickup-proofs');
+  values ('pickup-proofs', 'pickup-proofs', false)
+  on conflict (id) do update set public = excluded.public;
 
 create table if not exists public.global_impact (
   id                 integer primary key default 1,
@@ -205,7 +193,7 @@ create table if not exists public.streak_milestone_claims (
 -- ── FUNCTIONS (verbatim from live) ─────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
- RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $function$
 BEGIN
   INSERT INTO public.profiles (id, full_name, email)
@@ -215,7 +203,7 @@ END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.update_modified_timestamp_column()
- RETURNS trigger LANGUAGE plpgsql
+ RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public'
 AS $function$
 BEGIN
     NEW.updated_at = NOW();
@@ -224,7 +212,7 @@ END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.check_is_admin()
- RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
+ RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $function$
 BEGIN
   RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin');
@@ -243,7 +231,7 @@ END;
 $function$;
 
 CREATE OR REPLACE FUNCTION public.get_auth_role()
- RETURNS text LANGUAGE plpgsql SECURITY DEFINER
+ RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
 AS $function$
 BEGIN
   RETURN (SELECT role FROM public.profiles WHERE id = auth.uid());
@@ -573,6 +561,17 @@ BEGIN
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.consume_payout_boost()
+ RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $function$
+BEGIN
+  UPDATE public.profiles
+  SET pending_payout_boost_pct = NULL,
+      updated_at = now()
+  WHERE id = auth.uid();
+END;
+$function$;
+
 -- ── TRIGGERS ───────────────────────────────────────────────────────────────
 
 -- Auto-create a profiles row on signup.
@@ -629,38 +628,55 @@ create trigger tr_apply_pickup_completion
   before update of status on public.pickup_requests
   for each row execute function public.apply_pickup_completion();
 
--- ── ROW LEVEL SECURITY (CURRENT DEV STATE — see DEPLOYMENT_SECURITY_CHECKLIST.md for production) ──
--- Dev posture: RLS mostly OFF on purpose. Only the following are enabled live right now.
+-- Row level security: locked-down production state.
 
 alter table public.pickup_requests enable row level security;
-alter table public.global_impact  enable row level security;  -- 0 policies → landing uses fallbacks (intentional in dev)
+alter table public.global_impact  enable row level security;  -- 0 policies: intentional INFO only
 
--- Secure crew/insert policies (KEEP):
+-- pickup_requests policies:
 create policy trashium_crew_select_pickups_policy on public.pickup_requests for select to authenticated
-  using ((auth.uid() = user_id) or check_is_crew(auth.uid()));
+  using ((auth.uid() = user_id) or public.check_is_crew(auth.uid()));
 create policy trashium_crew_update_pickups_policy on public.pickup_requests for update to authenticated
-  using ((auth.uid() = user_id) or check_is_crew(auth.uid()))
-  with check ((auth.uid() = user_id) or check_is_crew(auth.uid()));
+  using ((auth.uid() = user_id) or public.check_is_crew(auth.uid()))
+  with check ((auth.uid() = user_id) or public.check_is_crew(auth.uid()));
 create policy trashium_insert_pickups_policy on public.pickup_requests for insert to authenticated
   with check (auth.uid() = user_id);
 
--- ⚠️ INSECURE — reference client-writable user_metadata + a hardcoded email. DROP at deploy (checklist §1b).
-create policy trashium_final_pickups_policy on public.pickup_requests for select to authenticated
-  using ((auth.uid() = user_id)
-    or ((auth.jwt() ->> 'email') = 'singhamartya07@gmail.com')
-    or (((auth.jwt() -> 'user_metadata') ->> 'role') = 'admin'));
-create policy trashium_update_pickups_policy on public.pickup_requests for update to authenticated
-  using ((auth.uid() = user_id)
-    or ((auth.jwt() ->> 'email') = 'singhamartya07@gmail.com')
-    or (((auth.jwt() -> 'user_metadata') ->> 'role') = 'admin'))
-  with check ((auth.uid() = user_id)
-    or ((auth.jwt() ->> 'email') = 'singhamartya07@gmail.com')
-    or (((auth.jwt() -> 'user_metadata') ->> 'role') = 'admin'));
+-- Admin policy:
+create policy pickups_admin_all on public.pickup_requests for all to authenticated
+  using (public.check_is_admin()) with check (public.check_is_admin());
 
--- RLS OFF (dev) on: profiles, price_estimates, ma_trends, model_metrics, badges, user_badges,
--- marketplace_items, redemption_orders, daily_activity, streak_milestone_claims.
--- Production policies for all of these are in DEPLOYMENT_SECURITY_CHECKLIST.md.
+-- pickup-proofs storage policies:
+drop policy if exists trashium_proof_insert_policy on storage.objects;
+drop policy if exists trashium_proof_insert on storage.objects;
+create policy trashium_proof_insert on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'pickup-proofs' and public.check_is_crew(auth.uid()));
+drop policy if exists trashium_proof_select_policy on storage.objects;
+drop policy if exists trashium_proof_read on storage.objects;
+create policy trashium_proof_read on storage.objects
+  for select to authenticated
+  using (bucket_id = 'pickup-proofs'
+         and (public.check_is_crew(auth.uid()) or public.check_is_admin()));
 
--- ── GRANTS (current) ───────────────────────────────────────────────────────
--- The SECURITY DEFINER RPCs are currently EXECUTE-able by anon + authenticated. At deploy, revoke anon
--- (checklist §2). The app calls them as `authenticated`.
+-- Remaining app table policies and grants:
+-- Grants: anon executes no RPCs; authenticated keeps the app RPCs.
+alter table public.profiles enable row level security;
+alter table public.price_estimates enable row level security;
+alter table public.ma_trends enable row level security;
+alter table public.model_metrics enable row level security;
+alter table public.badges enable row level security;
+alter table public.user_badges enable row level security;
+alter table public.marketplace_items enable row level security;
+alter table public.redemption_orders enable row level security;
+alter table public.daily_activity enable row level security;
+alter table public.streak_milestone_claims enable row level security;
+
+create policy profiles_select on public.profiles for select to authenticated
+  using (auth.uid() = id or public.check_is_admin());
+create policy profiles_update_own on public.profiles for update to authenticated
+  using (auth.uid() = id) with check (auth.uid() = id);
+
+create policy price_estimates_read on public.price_estimates for select to anon, authenticated using (true);
+create policy ma_trends_read on public.ma_trends for select to anon, authenticated using (true);
+create policy model_metrics_read on pub

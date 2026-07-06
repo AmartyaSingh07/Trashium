@@ -19,6 +19,7 @@ import { Lock, Sparkles, Coins, CheckCircle2, Package } from "lucide-react";
 import { Reveal, Stagger } from "@/components/motion";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import type { RedemptionOrder } from "@/lib/types";
+import { redeemItemSchema } from "@/lib/schemas";
 import type { MarketplaceItemView } from "./page";
 
 const TIER_ORDER = ["seedling", "sapling", "perk", "forest", "legendary"] as const;
@@ -97,8 +98,18 @@ export default function MarketplaceContent({
   };
 
   const handleRedeem = async (item: MarketplaceItemView) => {
+    // Shape-only guard (defense-in-depth): the RPC still enforces every real rule.
+    const parsed = redeemItemSchema.safeParse({ item_id: item.id });
+    if (!parsed.success) {
+      toast.error(t(parsed.error.issues[0]?.message ?? "redeemGeneric"));
+      setConfirmItem(null);
+      return;
+    }
+
     setRedeeming(true);
-    const { data, error } = await supabase.rpc("redeem_marketplace_item", { p_item_id: item.id });
+    const { data, error } = await supabase.rpc("redeem_marketplace_item", {
+      p_item_id: parsed.data.item_id,
+    });
     setRedeeming(false);
 
     if (error) {

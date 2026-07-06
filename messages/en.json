@@ -229,6 +229,7 @@
     "confirmRedemption": "Confirm redemption",
     "redeemFailed": "Redemption failed. Please try again.",
     "redeemGeneric": "Could not redeem this item.",
+    "invalidItem": "That item can't be redeemed right now.",
     "redeemSuccess": "Redeemed {name}! See \"My Redemptions\" below.",
     "lockedTitle": "The marketplace unlocks soon",
     "lockedSubtitle": "Earn a little more impact to open the rewards catalog. You need both of these:",
@@ -418,7 +419,9 @@
       "incidentSaved": "Incident report saved.",
       "proofSaved": "Collection verified and logged.",
       "proofFailed": "Could not upload the proof photo. Please try again.",
-      "gpsDenied": "Location access is required to verify this pickup."
+      "gpsDenied": "Location access is required to verify this pickup.",
+      "proofBadType": "Only JPG, PNG, or WebP photos are allowed.",
+      "proofTooLarge": "That photo is too large (max 8 MB)."
     },
     "allRegions": "All Regions"
   }

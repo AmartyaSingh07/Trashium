@@ -35,7 +35,7 @@ import CrewHubAssignment from "@/components/admin/crew-hub-assignment";
 import PayoutOverride from "@/components/admin/payout-override";
 import PriceGrid from "@/components/admin/price-grid";
 import { Reveal } from "@/components/motion";
-import { OPERATIONAL_SECTORS } from "@/lib/constants";
+import { OPERATIONAL_SECTORS, PICKUP_PROOFS_BUCKET } from "@/lib/constants";
 import type {
   PickupRequest,
   PriceEstimate,
@@ -46,8 +46,67 @@ import type {
 
 const PICKUP_STATUSES: PickupStatus[] = ["pending", "accepted", "collected", "completed", "cancelled"];
 
-// Public URL base for geo-tagged crew collection proofs (pickup-proofs bucket).
-const PROOF_BUCKET_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fqbjjcbrxrokvdwkydze.supabase.co"}/storage/v1/object/public/pickup-proofs`;
+// Proofs live in the PRIVATE pickup-proofs bucket — rendered via short-lived signed URLs
+// (never a public URL). The read is authorized by the crew/admin storage.objects policy.
+function ProofThumb({
+  path,
+  verified,
+  distanceM,
+}: {
+  path: string;
+  verified?: boolean | null;
+  distanceM?: number | null;
+}) {
+  const [supabase] = useState(() => createClient());
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    supabase.storage
+      .from(PICKUP_PROOFS_BUCKET)
+      .createSignedUrl(path, 3600)
+      .then(({ data }) => {
+        if (active) setUrl(data?.signedUrl ?? null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [supabase, path]);
+
+  const meters = Math.round(Number(distanceM ?? 0));
+  const title =
+    verified === true
+      ? `Verified · ${meters} m from booked location`
+      : verified === false
+      ? `Flagged · ${meters} m from booked location`
+      : "Proof captured (no booked coordinates to verify)";
+
+  if (!url) return <span className="text-[10px] text-smoke">…</span>;
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 t-focus-ring rounded"
+      title={title}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt="Collection proof"
+        className="h-9 w-9 rounded object-cover border border-sand/40"
+      />
+      {verified === true ? (
+        <span className="text-[10px] font-mono font-bold text-sage-deep whitespace-nowrap">✓ {meters}m</span>
+      ) : verified === false ? (
+        <span className="text-[10px] font-mono font-bold text-destructive whitespace-nowrap">⚠ {meters}m</span>
+      ) : (
+        <span className="text-[10px] font-mono text-smoke">📷</span>
+      )}
+    </a>
+  );
+}
 
 // Row shape from the PostgREST embed: '*, profiles!pickup_requests_user_id_fkey(full_name, email)'
 type AdminPickup = PickupRequest & {
@@ -589,33 +648,11 @@ export default function AdminContent({
                         </TableCell>
                         <TableCell>
                           {p.proof_photo_path ? (
-                            <a
-                              href={`${PROOF_BUCKET_BASE}/${p.proof_photo_path}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 t-focus-ring rounded"
-                              title={
-                                p.proof_verified === true
-                                  ? `Verified · ${Math.round(Number(p.proof_distance_m ?? 0))} m from booked location`
-                                  : p.proof_verified === false
-                                  ? `Flagged · ${Math.round(Number(p.proof_distance_m ?? 0))} m from booked location`
-                                  : "Proof captured (no booked coordinates to verify)"
-                              }
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={`${PROOF_BUCKET_BASE}/${p.proof_photo_path}`}
-                                alt="Collection proof"
-                                className="h-9 w-9 rounded object-cover border border-sand/40"
-                              />
-                              {p.proof_verified === true ? (
-                                <span className="text-[10px] font-mono font-bold text-sage-deep whitespace-nowrap">✓ {Math.round(Number(p.proof_distance_m ?? 0))}m</span>
-                              ) : p.proof_verified === false ? (
-                                <span className="text-[10px] font-mono font-bold text-destructive whitespace-nowrap">⚠ {Math.round(Number(p.proof_distance_m ?? 0))}m</span>
-                              ) : (
-                                <span className="text-[10px] font-mono text-smoke">📷</span>
-                              )}
-                            </a>
+                            <ProofThumb
+                              path={p.proof_photo_path}
+                              verified={p.proof_verified}
+                              distanceM={p.proof_distance_m}
+                            />
                           ) : (
                             <span className="text-[10px] text-smoke">—</span>
                           )}

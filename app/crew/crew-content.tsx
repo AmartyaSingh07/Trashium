@@ -113,6 +113,13 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
     if (isOffline) { toast.error(t("toast.offline")); return; }
     if (!proofFile || !proofCoords || proofStatus !== "ready") { toast.error(t("toast.gpsDenied")); return; }
 
+    // Upload hardening (defense-in-depth; the bucket is private with a crew-only insert policy):
+    // restrict to image MIME types and cap file size.
+    const ALLOWED_PROOF_TYPES = ["image/jpeg", "image/png", "image/webp"];
+    const MAX_PROOF_BYTES = 8 * 1024 * 1024; // 8 MB
+    if (!ALLOWED_PROOF_TYPES.includes(proofFile.type)) { toast.error(t("toast.proofBadType")); return; }
+    if (proofFile.size > MAX_PROOF_BYTES) { toast.error(t("toast.proofTooLarge")); return; }
+
     const pickup = selectedPickup;
     setProofStatus("uploading");
 

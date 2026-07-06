@@ -170,9 +170,9 @@ export default function Navbar() {
   };
 
   // ─── Helpers ──────────────────────────────────────────────────────
-  // Hard-coded admin bypass while RLS issue is being debugged
-  const isAdminByEmail = user?.email === "singhamartya07@gmail.com";
-  const isAdmin = role === "admin" || isAdminByEmail;
+  // Admin is determined solely by profiles.role (server-controlled). The old
+  // hardcoded-email bypass was removed as part of the P0 security lockdown.
+  const isAdmin = role === "admin";
 
   // Build role-aware navigation items
   const navItems = useMemo(() => {
@@ -180,7 +180,7 @@ export default function Navbar() {
       return [{ name: t("home"), link: "/", active: pathname === "/" }];
     }
     const currentRole = role || "household";
-    if (currentRole === "admin" || isAdminByEmail) {
+    if (currentRole === "admin") {
       return [
         { name: t("home"), link: "/", active: pathname === "/" },
         { name: t("adminHub"), link: "/admin", active: pathname === "/admin" },
@@ -200,7 +200,7 @@ export default function Navbar() {
       { name: t("marketplace"), link: "/marketplace", active: pathname === "/marketplace" },
       { name: t("myProfile"), link: "/profile", active: pathname === "/profile" },
     ];
-  }, [user, role, isAdminByEmail, pathname, t]);
+  }, [user, role, pathname, t]);
 
   // Client-side navigation handler for NavItems
   const handleNavClick = (link: string) => {
