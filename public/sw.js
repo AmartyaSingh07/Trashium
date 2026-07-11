@@ -4,7 +4,7 @@
    aggressively, otherwise new deploys won't show up. Next content-hashes its
    chunks, so the network is always the source of truth for them. We only
    precache a tiny offline fallback + icons. */
-const CACHE = "trashium-v3";
+const CACHE = "trashium-v4";
 const PRECACHE = [
   "/icon-192.png",
   "/icon-512.png",
@@ -49,17 +49,30 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Document navigations: network-first, fall back to cache only when offline.
+  // Every branch MUST resolve to a real Response — returning undefined to
+  // respondWith() throws "Failed to convert value to 'Response'".
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() =>
-        caches.match(request).then((r) => r || caches.match("/icon-512.png"))
-      )
+      fetch(request).catch(async () => {
+        const cached = await caches.match(request);
+        return (
+          cached ||
+          new Response(
+            "<!doctype html><meta charset=utf-8><title>Offline</title>" +
+              '<body style="font-family:system-ui;padding:2rem">' +
+              "<h1>You're offline</h1><p>Trashium needs a connection to load this page. " +
+              "Please reconnect and try again.</p>",
+            { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } }
+          )
+        );
+      })
     );
     return;
   }
 
   // Other same-origin GETs (icons, manifest, public files): network-first,
-  // updating the cache so the offline copy stays fresh.
+  // updating the cache so the offline copy stays fresh. Fall back to cache, and
+  // finally to a network-error Response so respondWith() never gets undefined.
   event.respondWith(
     fetch(request)
       .then((res) => {
@@ -67,6 +80,6 @@ self.addEventListener("fetch", (event) => {
         caches.open(CACHE).then((c) => c.put(request, copy)).catch(() => {});
         return res;
       })
-      .catch(() => caches.match(request))
+      .catch(async () => (await caches.match(request)) || Response.error())
   );
 });
