@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, type ReactNode } from "react";
 import { Download, Share, Plus, X, MoreVertical } from "lucide-react";
+import { createPortal } from "react-dom";
 
 /** The beforeinstallprompt event (not in the TS DOM lib by default). */
 interface BeforeInstallPromptEvent extends Event {
@@ -177,7 +178,8 @@ export default function PWAInstallButton({
         {!iconOnly && "Install App"}
       </button>
 
-      {help && (
+      {help &&
+        createPortal(
         <div
           className="fixed inset-0 z-[100] flex items-end justify-center overflow-y-auto bg-[#2A2218]/40 py-4 backdrop-blur-sm sm:items-center"
           role="dialog"
@@ -269,8 +271,9 @@ export default function PWAInstallButton({
               </p>
             )}
           </div>
-        </div>
-      )}
+        </div>,
+          document.body,
+        )}
     </div>
   );
 }
