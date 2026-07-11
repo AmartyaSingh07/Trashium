@@ -82,7 +82,7 @@ export async function quotePickup(
  *
  * Returns a nested map: sector -> material_type -> rounded payout per kg.
  * Reads live from `price_estimates`, so it always reflects the latest ML run
- * (no hardcoded rates - see CLAUDE.md rule 3). The material list lives in
+ * (no hardcoded rates). The material list lives in
  * lib/constants.ts (a server-safe module) so it stays a plain array here.
  */
 export type TileRatesBySector = Record<string, Record<string, number>>;

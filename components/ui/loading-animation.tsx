@@ -13,7 +13,7 @@ import React, { useEffect, useRef } from 'react';
  *
  * Accessibility: respects `prefers-reduced-motion` — when reduced motion is
  * requested, characters are placed statically (no 3D throws) and phrases simply
- * cross-fade via opacity. (CLAUDE.md rule #12.)
+ * cross-fade via opacity.
  */
 
 const TRASHIUM_PHRASES = [

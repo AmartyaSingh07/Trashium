@@ -56,11 +56,46 @@ next-env.d.ts
 # academic deliverables (large binaries, not app source)
 *.pdf
 
-# blog showcase — raw source media only; processed assets ship under public/blog/**
+# blog showcase â€” raw source media only; processed assets ship under public/blog/**
 /Dependencies/
 
-# Claude Code / Cowork local tooling — local settings + installed skills, not app source
+# Claude Code / Cowork local tooling â€” local settings + installed skills, not app source
 # (also avoids committing .claude/skills/karpathy-guidelines/SKILL.md, which is currently
 #  throwing a filesystem I/O error on this drive)
 .claude/settings.local.json
 .claude/skills/
+
+# --- deployment cleanup additions -------------------------------------------
+# Local archive of planning/handoff/spec docs & tool output (kept locally, never shipped)
+/_archive/
+
+# Local full-repo backup zips
+Trashium_backup_*.zip
+/*.zip
+
+# Stray local agent / tool state
+/.remember/
+/.impeccable/
+
+# Tool output & lockfiles (not app source)
+repomix-output.xml
+skills-lock.json
+.graphifyignore
+
+# Extracted media / logs (regenerable, not source)
+/extracted_images/
+extracted_text.txt
+debug.log
+
+# Academic deliverables & raw media (not app source - un-ignore if you want them in the repo)
+/Presentation/
+/Team/
+/Carousel/
+
+# Large trained model artifacts (kept locally + in backup; API only needs lr_mv.joblib)
+ml/artifacts/rf_v1.joblib
+ml/artifacts/rf_mv.joblib
+
+# stray zip temp files
+zi??????
+zip_errors.log

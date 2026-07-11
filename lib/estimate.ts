@@ -2,7 +2,7 @@
 /**
  * estimateQuote — the ONE pricing entrypoint every estimator UI (household, crew, admin) calls.
  * Server Action so client components can call it without pulling the server Supabase client into
- * their bundle (CLAUDE.md #2/#4). The model lives behind getMarketValuePerKg() — swap that body
+ * their bundle. The model lives behind getMarketValuePerKg() — swap that body
  * when the live model is connected; no UI change needed (TODO(connect-model)).
  */
 import { createClient } from "@/lib/supabase/server";

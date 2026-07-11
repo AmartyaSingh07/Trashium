@@ -1,6 +1,7 @@
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import HeroSection from "@/components/landing/hero-section";
+import ShowcaseCarousel from "@/components/landing/showcase-carousel";
 import ImpactCounter from "@/components/landing/impact-counter";
 import HowItWorks from "@/components/landing/how-it-works";
 import FeaturesSection from "@/components/landing/features-section";
@@ -25,6 +26,7 @@ export default async function HomePage() {
       <Navbar />
       <main className="flex-1">
         <HeroSection />
+        <ShowcaseCarousel />
         <ImpactCounter stats={impact ?? undefined} />
 
         <div className="animate-fadeIn">

@@ -87,7 +87,7 @@ def main():
 
     # ---- Model 2: Random Forest on log value ----------------------------- #
     rf = _log_model(RandomForestRegressor(
-        n_estimators=120, max_depth=18, min_samples_split=5, min_samples_leaf=2,
+        n_estimators=400, max_depth=18, min_samples_split=5, min_samples_leaf=2,
         max_features="sqrt", max_samples=0.5, random_state=C.RANDOM_STATE, n_jobs=-1))
     rf.fit(X_tr, y_tr)
     rf_pred = rf.predict(X_te)

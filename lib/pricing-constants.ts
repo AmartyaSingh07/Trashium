@@ -1,6 +1,6 @@
 /**
  * Pricing constants — mirror of /ml/config.py so the app never drifts from the model.
- * Client-safe (no imports). Business config, not invented prices (CLAUDE.md #3).
+ * Client-safe (no imports). Business config, not invented prices.
  */
 export const COMMISSION = 0.15;
 export const LOGISTICS_BASE = 111.06;

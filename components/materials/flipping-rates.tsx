@@ -22,8 +22,7 @@ interface RecyclableTier {
  * One entry per .png in the Supabase `flipping-rate-tiles` bucket.
  * `file` matches the bucket object name exactly (spaces preserved); it is
  * URL-encoded at render time. `material` matches a `price_estimates.material_type`
- * so every tile shows the LIVE per-sector payout (no hardcoded prices -
- * see CLAUDE.md rule 3).
+ * so every tile shows the LIVE per-sector payout (no hardcoded prices).
  */
 const recyclableTiers: RecyclableTier[] = [
   { id: "ac-comp", name: "AC Compressor", type: "Appliance", file: "AC_compressor_icon", material: "AC Compressor", wit: "AC thanda nahi ho raha hai? Fikar not, rate abhi bhi garam hai!" },
