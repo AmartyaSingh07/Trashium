@@ -14,47 +14,26 @@ import {
   ROAD_FACTOR,
   HUB_LATLNG,
   SECTOR_HUB_DISTANCE_KM,
-  MODEL_API_URL,
-  MODEL_API_TOKEN,
-  MODEL_API_TIMEOUT_MS,
   EXPECTED_STOPS_PER_RUN,
   STOPS_PER_RUN_MIN,
   STOPS_PER_RUN_MAX,
 } from "@/lib/pricing-constants";
 import type { EstimateInput, EstimateResult, MultiEstimateInput } from "@/lib/estimator-types";
+import { predictMarketValuePerKg, MODEL_VERSION } from "@/lib/pricing-model";
 
-// Live model call. Risk + demand are REAL model features, so a model-sourced market value already
-// reflects them — callers must NOT re-apply RISK/DEMAND multipliers to it. Returns null on any
-// error/timeout (missing URL, network, non-200, bad shape) so the caller falls back to the table.
-async function callModel(
+// Live model inference — runs the embedded pricing model (lib/pricing-model.ts) natively,
+// no network call. Risk + demand are REAL model features, so a model-sourced market value already
+// reflects them — callers must NOT re-apply RISK/DEMAND multipliers to it. Returns null only if the
+// result is not a positive finite number (never expected) so the caller falls back to the table.
+function callModel(
   sector: string,
   material: string,
   risk: string,
   demand: string,
-): Promise<{ value: number; modelVersion: string | null } | null> {
-  if (!MODEL_API_URL) return null;
-  try {
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), MODEL_API_TIMEOUT_MS);
-    const res = await fetch(`${MODEL_API_URL.replace(/\/$/, "")}/predict`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...(MODEL_API_TOKEN ? { authorization: `Bearer ${MODEL_API_TOKEN}` } : {}),
-      },
-      body: JSON.stringify({ sector, material, risk, demand }),
-      signal: controller.signal,
-      cache: "no-store",
-    });
-    clearTimeout(t);
-    if (!res.ok) return null;
-    const j = await res.json();
-    const mv = Number(j?.market_value_per_kg);
-    if (!Number.isFinite(mv) || mv <= 0) return null;
-    return { value: mv, modelVersion: j?.model_version ?? null };
-  } catch {
-    return null; // timeout / network / parse — fall back to the table, never throw
-  }
+): { value: number; modelVersion: string | null } | null {
+  const mv = predictMarketValuePerKg(sector, material, risk, demand);
+  if (!Number.isFinite(mv) || mv <= 0) return null;
+  return { value: mv, modelVersion: MODEL_VERSION };
 }
 
 // pincode → pin → sector default. The v2 model trained on pincode→hub ROAD distance; a map pin
@@ -79,7 +58,7 @@ async function getMarketValuePerKg(
 
   // 1) LIVE MODEL first. Returns a risk/demand-aware market value (those are model features),
   //    so we do NOT apply the multipliers to it. Null on any failure → fall through to the table.
-  const model = await callModel(input.sector, material, input.risk, demand);
+  const model = callModel(input.sector, material, input.risk, demand);
   if (model) {
     return { value: model.value, source: "model", modelVersion: model.modelVersion };
   }
