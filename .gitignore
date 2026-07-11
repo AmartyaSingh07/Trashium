@@ -89,8 +89,9 @@ debug.log
 
 # Academic deliverables & raw media (not app source - un-ignore if you want them in the repo)
 /Presentation/
-/Team/
 /Carousel/
+# NOTE: /Team/ is NOT ignored — components/layout/footer.tsx imports these photos,
+# so they must ship in the repo for the Vercel (Linux) build to resolve them.
 
 # Large trained model artifacts (kept locally + in backup; API only needs lr_mv.joblib)
 ml/artifacts/rf_v1.joblib
