@@ -103,6 +103,16 @@ export default function PWAInstallButton({
     };
   }, []);
 
+  // Close the help dialog on Escape so it's never a dead end.
+  useEffect(() => {
+    if (!help) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setHelp(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [help]);
+
   const showFallbackHelp = useCallback(() => {
     if (ios) {
       setHelp("ios");
@@ -114,7 +124,6 @@ export default function PWAInstallButton({
   }, [ios]);
 
   const handleClick = useCallback(async () => {
-    console.log("[PWA] install button clicked. hasDeferredPrompt =", !!deferred, "| ios =", ios);
     // 1) Native prompt available (Android / desktop Chromium that fired the event).
     if (deferred) {
       try {
@@ -170,14 +179,14 @@ export default function PWAInstallButton({
 
       {help && (
         <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-[#2A2218]/40 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-[100] flex items-end justify-center overflow-y-auto bg-[#2A2218]/40 py-4 backdrop-blur-sm sm:items-center"
           role="dialog"
           aria-modal="true"
           aria-label="How to install Trashium"
           onClick={() => setHelp(null)}
         >
           <div
-            className="m-4 w-full max-w-sm rounded-2xl border border-[#C2793D]/30 bg-[#F4EFE3] p-6 shadow-xl"
+            className="m-4 max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-[#C2793D]/30 bg-[#F4EFE3] p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between">
