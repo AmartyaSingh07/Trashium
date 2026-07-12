@@ -470,6 +470,11 @@ export default function SchedulePickupModal({
                 <p className="text-[11px] text-[#8C7A63] mt-1">
                   ₹{estResult.userPayoutPerKg.toFixed(2)}/kg · logistics ₹{estResult.logisticsPerKg.toFixed(2)}/kg · {estResult.distanceKm} km
                 </p>
+                {estResult.userPayoutTotal <= 0 && estResult.marketValuePerKg > 0 && (
+                  <p className="text-[11px] leading-snug text-terra mt-1.5">
+                    Pickup logistics for this load costs more than it&apos;s worth right now. Add more weight or include a few more materials to earn a payout.
+                  </p>
+                )}
               </>
             ) : (
               <p className="text-xs text-[#8C7A63]">Select materials, enter their weights and pick an area to see your payout.</p>
