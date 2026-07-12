@@ -17,20 +17,57 @@ import {
   EXPECTED_STOPS_PER_RUN,
   STOPS_PER_RUN_MIN,
   STOPS_PER_RUN_MAX,
+  MODEL_API_URL,
+  MODEL_API_TOKEN,
+  MODEL_API_TIMEOUT_MS,
 } from "@/lib/pricing-constants";
 import type { EstimateInput, EstimateResult, MultiEstimateInput } from "@/lib/estimator-types";
 import { predictMarketValuePerKg, MODEL_VERSION } from "@/lib/pricing-model";
 
-// Live model inference — runs the embedded pricing model (lib/pricing-model.ts) natively,
-// no network call. Risk + demand are REAL model features, so a model-sourced market value already
-// reflects them — callers must NOT re-apply RISK/DEMAND multipliers to it. Returns null only if the
-// result is not a positive finite number (never expected) so the caller falls back to the table.
-function callModel(
+// Live model inference — API-first with an embedded fallback (two tiers of the SAME mv_v2 model).
+// 1) If MODEL_API_URL is set, POST to the hosted FastAPI model. 2) On ANY failure — no URL,
+// timeout, non-200, bad shape, or a non-positive/non-finite value — fall through to the embedded
+// pricing model (lib/pricing-model.ts), which runs natively with no network hop and shares the
+// exact same weights (identical outputs). Risk + demand are REAL model features, so a model-sourced
+// market value already reflects them — callers must NOT re-apply RISK/DEMAND multipliers to it.
+// Returns null only if the embedded result is not a positive finite number (never expected) so the
+// caller falls back to the Supabase table.
+async function callModel(
   sector: string,
   material: string,
   risk: string,
   demand: string,
-): { value: number; modelVersion: string | null } | null {
+): Promise<{ value: number; modelVersion: string | null } | null> {
+  // TIER 1 — live FastAPI model. Guarded by a timeout; any error falls through to the embedded model.
+  if (MODEL_API_URL) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), MODEL_API_TIMEOUT_MS);
+    try {
+      const res = await fetch(`${MODEL_API_URL}/predict`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(MODEL_API_TOKEN ? { Authorization: `Bearer ${MODEL_API_TOKEN}` } : {}),
+        },
+        body: JSON.stringify({ sector, material, risk, demand }),
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const value = Number(json?.market_value_per_kg);
+        if (Number.isFinite(value) && value > 0) {
+          return { value, modelVersion: json?.model_version ?? MODEL_VERSION };
+        }
+      }
+    } catch {
+      // network error / timeout / abort → fall through to the embedded model
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // TIER 2 — embedded model. Always available, no network. The guaranteed fallback.
   const mv = predictMarketValuePerKg(sector, material, risk, demand);
   if (!Number.isFinite(mv) || mv <= 0) return null;
   return { value: mv, modelVersion: MODEL_VERSION };
@@ -58,7 +95,7 @@ async function getMarketValuePerKg(
 
   // 1) LIVE MODEL first. Returns a risk/demand-aware market value (those are model features),
   //    so we do NOT apply the multipliers to it. Null on any failure → fall through to the table.
-  const model = callModel(input.sector, material, input.risk, demand);
+  const model = await callModel(input.sector, material, input.risk, demand);
   if (model) {
     return { value: model.value, source: "model", modelVersion: model.modelVersion };
   }
