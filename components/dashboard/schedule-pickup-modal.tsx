@@ -158,6 +158,15 @@ export default function SchedulePickupModal({
       });
       const estimatedPrice: number | null = q.userPayoutTotal;
 
+      // Block scheduling a non-earning pickup: if logistics eats the whole load value the payout
+      // floors at ₹0, so there's nothing to collect for. Guard here (not just the disabled button)
+      // so an Enter-key submit can't slip a ₹0 pickup through.
+      if (estimatedPrice == null || estimatedPrice <= 0) {
+        toast.error("Pickup logistics for this load costs more than it's worth. Add more weight or materials to earn a payout.");
+        setLoading(false);
+        return;
+      }
+
       // Sector-centre coordinates so the crew route map can plot the stop.
       const depot = SECTOR_DEPOTS[form.location];
 
@@ -492,8 +501,8 @@ export default function SchedulePickupModal({
             </Button>
             <button
               type="submit"
-              disabled={loading}
-              className="btn-terra text-xs px-6 py-2.5 flex items-center justify-center gap-1.5 border-0 cursor-pointer"
+              disabled={loading || !estResult || estResult.userPayoutTotal <= 0}
+              className="btn-terra text-xs px-6 py-2.5 flex items-center justify-center gap-1.5 border-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {loading ? "Scheduling..." : "Confirm Pickup"}

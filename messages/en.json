@@ -384,6 +384,7 @@
     "payoutLabel": "Calculated Payout Estimation:",
     "payoutDetail": "₹{rate}/kg · {km}km logistics",
     "payoutPending": "₹ Dynamic Sync",
+    "payoutZeroHint": "Pickup logistics for this load costs more than it's worth right now. Add more weight or materials to earn a payout.",
     "modalTitle": "Manifest Operations: Run #{id}",
     "modalState": "Current Operational State:",
     "modalActionsHeading": "Execute Flow Transitions",

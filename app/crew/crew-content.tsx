@@ -571,6 +571,9 @@ export default function CrewDashboardContent({ profile, initialPickups }: CrewDa
                   {estResult ? `₹ ${estResult.userPayoutTotal.toFixed(2)}` : t("payoutPending")}
                 </span>
               </div>
+              {estResult && estResult.userPayoutTotal <= 0 && estResult.marketValuePerKg > 0 && (
+                <p className="mt-2 text-[11px] leading-snug text-[#C2703D]">{t("payoutZeroHint")}</p>
+              )}
             </Reveal>
           </div>
 
