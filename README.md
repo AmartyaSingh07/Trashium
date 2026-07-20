@@ -74,6 +74,14 @@ SENTRY_AUTH_TOKEN=
 
 Run `supabase_schema.sql` once against your Supabase project (SQL editor or `psql`) to create the tables, Row Level Security policies, and functions.
 
+### Seed demo accounts (Optional)
+
+To seed the demo field operator accounts, run the seed script with your project credentials:
+
+```bash
+SUPABASE_URL=your-project-url SUPABASE_SERVICE_ROLE_KEY=your-service-role-key node seed-crew-accounts.mjs
+```
+
 ### Run
 
 ```bash
